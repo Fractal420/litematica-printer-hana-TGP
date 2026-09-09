@@ -5,7 +5,9 @@ import me.aleksilassila.litematica.printer.enums.BlockMatchResult;
 import me.aleksilassila.litematica.printer.guide.Guide;
 import me.aleksilassila.litematica.printer.guide.Result;
 import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
+import me.aleksilassila.litematica.printer.utils.InteractionUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.BlockStateUtils;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
@@ -25,6 +27,15 @@ public class WaterGuide extends Guide {
     @Override
     protected Result onBuildAction(BlockMatchResult state) {
         if (shouldSkipWaterloggedTarget()) {
+            return Result.SKIP;
+        }
+        if (state == BlockMatchResult.WRONG_BLOCK
+                && Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue()
+                && !(currentState.getBlock() instanceof LiquidBlock)) {
+            if (InteractionUtils.canBreakBlock(blockPos)
+                    && InteractionUtils.breakRestriction(currentState)) {
+                InteractionUtils.getRuntime().add(context);
+            }
             return Result.SKIP;
         }
         if (isWaterloggedTarget()) {
