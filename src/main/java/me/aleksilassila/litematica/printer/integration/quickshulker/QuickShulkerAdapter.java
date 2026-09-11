@@ -62,6 +62,10 @@ public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComp
 
     @Override
     public MaterialReservation status(MaterialRequest request) {
+        if (!Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
+            this.reset();
+            return new MaterialReservation(request.token(), MaterialReservation.State.UNAVAILABLE);
+        }
         Item availableItem = findAvailableItem(request);
         if (availableItem != null) {
             this.releaseResources();
@@ -83,7 +87,8 @@ public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComp
     }
 
     public boolean hasPendingRequest() {
-        return this.requests.hasPendingSwitchRequest();
+        return Configs.Placement.QUICK_SHULKER.getBooleanValue()
+                && this.requests.hasPendingSwitchRequest();
     }
 
     /** Starts a nested-container extraction requested by another material provider. */
@@ -104,7 +109,8 @@ public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComp
     }
 
     public boolean isOpenHandler() {
-        return this.requests.isOpenHandler();
+        return Configs.Placement.QUICK_SHULKER.getBooleanValue()
+                && this.requests.isOpenHandler();
     }
 
     public boolean shouldPause() {
@@ -131,7 +137,8 @@ public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComp
     public void tick() {
         // A manual container must never be affected after the printer has been disabled.
         // Clear the automation session before the screen guard can observe stale state.
-        if (!Configs.Core.WORK_SWITCH.getBooleanValue() && !this.externalRequestActive) {
+        if (!Configs.Placement.QUICK_SHULKER.getBooleanValue()
+                || (!Configs.Core.WORK_SWITCH.getBooleanValue() && !this.externalRequestActive)) {
             this.reset();
             return;
         }

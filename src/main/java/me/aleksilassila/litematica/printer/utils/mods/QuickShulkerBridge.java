@@ -4,6 +4,7 @@ import me.aleksilassila.litematica.printer.integration.inventory.MaterialRequest
 import me.aleksilassila.litematica.printer.integration.inventory.MaterialReservation;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
+import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.Item;
@@ -18,6 +19,10 @@ import net.minecraft.world.level.GameType;
  * bridge instead of depending on the legacy package directly.</p>
  */
 public final class QuickShulkerBridge {
+    private static final int PICK_BLOCK_SETTLE_TICKS = 2;
+    private static Item pendingPickBlockItem;
+    private static int pendingPickBlockTicks;
+
     private QuickShulkerBridge() {
     }
 
@@ -51,7 +56,9 @@ public final class QuickShulkerBridge {
         if (player == null || item == null || item == Items.AIR
                 || client.gameMode == null
                 || client.gameMode.getPlayerMode() != GameType.SURVIVAL
-                || !easyPlace && !Configs.Core.WORK_SWITCH.getBooleanValue()
+                || (!easyPlace
+                    && !Configs.Core.WORK_SWITCH.getBooleanValue()
+                    && !Configs.Placement.QUICK_SHULKER.getBooleanValue())
                 || (!Configs.Placement.QUICK_SHULKER.getBooleanValue()
                     && !TakeItOutUtils.isAutoTakeoutEnabled()
                     && !Configs.Special.REMOTE_TAKE.getBooleanValue())
@@ -61,9 +68,19 @@ public final class QuickShulkerBridge {
                 || RuntimeAccess.get().materialRequests().isBusy()) {
             return false;
         }
-        if (easyPlace) {
-            RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
+
+        if (Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
+            if (pendingPickBlockItem != null) {
+                return pendingPickBlockItem == item;
+            }
+            pendingPickBlockItem = item;
+            pendingPickBlockTicks = PICK_BLOCK_SETTLE_TICKS;
+            if (easyPlace || !Configs.Core.WORK_SWITCH.getBooleanValue()) {
+                RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
+            }
+            return true;
         }
+
         MaterialReservation reservation = requestItem(item, MaterialRequest.Source.PICK_BLOCK);
         if (reservation.state() == MaterialReservation.State.UNAVAILABLE) {
             return false;
@@ -89,7 +106,8 @@ public final class QuickShulkerBridge {
     }
 
     public static boolean switchItem() {
-        return RuntimeAccess.get().quickShulkerAdapter().switchItem();
+        return Configs.Placement.QUICK_SHULKER.getBooleanValue()
+                && RuntimeAccess.get().quickShulkerAdapter().switchItem();
     }
 
     public static boolean hasPendingRequest() {
@@ -109,18 +127,53 @@ public final class QuickShulkerBridge {
     }
 
     public static void onTick() {
+        if (!Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
+            pendingPickBlockItem = null;
+            pendingPickBlockTicks = 0;
+            return;
+        }
+        processPendingPickBlock();
         RuntimeAccess.get().quickShulkerAdapter().tick();
     }
 
     public static void onInventoryContent() {
-        RuntimeAccess.get().quickShulkerAdapter().onInventoryContent();
+        if (Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
+            RuntimeAccess.get().quickShulkerAdapter().onInventoryContent();
+        }
     }
 
     public static void onMainHandUse(LocalPlayer player) {
-        RuntimeAccess.get().quickShulkerAdapter().onMainHandUse(player);
+        if (Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
+            RuntimeAccess.get().quickShulkerAdapter().onMainHandUse(player);
+        }
     }
 
     public static void resetRuntime() {
+        pendingPickBlockItem = null;
+        pendingPickBlockTicks = 0;
         RuntimeAccess.get().quickShulkerAdapter().reset();
+    }
+
+    private static void processPendingPickBlock() {
+        if (pendingPickBlockItem == null || --pendingPickBlockTicks > 0) {
+            return;
+        }
+
+        Minecraft client = Minecraft.getInstance();
+        LocalPlayer player = client.player;
+        Item item = pendingPickBlockItem;
+        pendingPickBlockItem = null;
+        pendingPickBlockTicks = 0;
+
+        if (player == null || client.gameMode == null
+                || client.gameMode.getPlayerMode() != GameType.SURVIVAL
+                || !Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
+            return;
+        }
+        if (InventoryUtils.playerHasItemInInventory(player, item)) {
+            InventoryUtils.setPickedItemToHand(new ItemStack(item), client);
+            return;
+        }
+        requestItem(item, MaterialRequest.Source.PICK_BLOCK);
     }
 }

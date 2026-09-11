@@ -8,6 +8,7 @@ import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import me.aleksilassila.litematica.printer.handler.handlers.bedrock.BedrockController;
 import me.aleksilassila.litematica.printer.integration.quickshulker.HighlightBlockRenderer;
 import me.aleksilassila.litematica.printer.utils.minecraft.MessageUtils;
+import me.aleksilassila.litematica.printer.utils.mods.QuickShulkerBridge;
 
 import static me.aleksilassila.litematica.printer.config.Configs.*;
 
@@ -40,6 +41,13 @@ public class InitHandler implements IInitializationHandler {
             if (!b.getBooleanValue()) {
                 RuntimeAccess.get().reset("work_switch_off");
             }
+        });
+
+        Placement.QUICK_SHULKER.setValueChangeCallback(b -> {
+            if (!b.getBooleanValue()) {
+                QuickShulkerBridge.resetRuntime();
+            }
+            Configs.saveToFile();
         });
 
         // 切换模式时, 关闭破基岩

@@ -6,6 +6,7 @@ import me.aleksilassila.litematica.printer.core.action.ResourceLease;
 import me.aleksilassila.litematica.printer.printer.action.ActionPort;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import java.util.EnumSet;
 
 /** Reflection-backed Take It Out capability isolated from feature code. */
@@ -33,6 +34,7 @@ public final class TakeItOutAdapter implements InventoryProvider {
         }
         Item availableItem = findAvailableItem(request);
         if (availableItem != null) {
+            selectCompletedPickBlockItem(request, availableItem);
             this.releaseResources();
             return MaterialReservation.available(request, availableItem);
         }
@@ -51,6 +53,7 @@ public final class TakeItOutAdapter implements InventoryProvider {
     public MaterialReservation status(MaterialRequest request) {
         Item availableItem = findAvailableItem(request);
         if (availableItem != null) {
+            selectCompletedPickBlockItem(request, availableItem);
             this.releaseResources();
             return MaterialReservation.available(request, availableItem);
         }
@@ -118,5 +121,14 @@ public final class TakeItOutAdapter implements InventoryProvider {
             }
         }
         return null;
+    }
+
+    private static void selectCompletedPickBlockItem(MaterialRequest request, Item item) {
+        Minecraft client = Minecraft.getInstance();
+        if (request.source() == MaterialRequest.Source.PICK_BLOCK
+                && client.player != null
+                && client.player.containerMenu == client.player.inventoryMenu) {
+            InventoryUtils.setPickedItemToHand(new ItemStack(item), client);
+        }
     }
 }
