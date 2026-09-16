@@ -45,6 +45,7 @@ public final class QuickShulkerRequestController {
     private boolean isOpenHandler;
     private boolean externalRequestAllowed;
     private int shulkerInventoryMenuSlot = -1;
+    private int automatedContainerId = -1;
 
     public QuickShulkerRequestController(Minecraft client) {
         this.client = client;
@@ -145,13 +146,20 @@ public final class QuickShulkerRequestController {
                 && hasPendingSwitchRequest();
     }
 
-    public boolean shouldSuppressContainerScreen() {
+    public void onContainerOpen(int containerId) {
+        if (this.automatedContainerId < 0
+                && (this.isOpenHandler || this.orderedStorage.isWaitingForRestoreContainer())) {
+            this.automatedContainerId = containerId;
+        }
+    }
+
+    public boolean shouldSuppressContainerScreen(int containerId) {
         LocalPlayer player = client.player;
         return (Configs.Core.WORK_SWITCH.getBooleanValue() || this.externalRequestAllowed)
                 && Configs.Placement.QUICK_SHULKER.getBooleanValue()
                 && player != null
                 && !player.containerMenu.equals(player.inventoryMenu)
-                && ModLoadUtils.closeScreen > 0
+                && containerId == this.automatedContainerId
                 && (this.isOpenHandler || this.orderedStorage.isWaitingForRestoreContainer());
     }
 
@@ -160,6 +168,7 @@ public final class QuickShulkerRequestController {
     }
 
     public void resetRuntime() {
+        closeAutomatedContainer();
         clearSwitchRequest();
         this.externalRequestAllowed = false;
         shulkerCooldown = 0;
@@ -268,10 +277,14 @@ public final class QuickShulkerRequestController {
 
     public void tick() {
         this.orderedStorage.tick();
+        if (!this.isOpenHandler && !this.orderedStorage.isWaitingForRestoreContainer()) {
+            this.automatedContainerId = -1;
+        }
         if (ModLoadUtils.closeScreen > 0) {
             ModLoadUtils.closeScreen--;
         }
         if (this.isOpenHandler && this.openHandlerTimeout > 0 && --this.openHandlerTimeout <= 0) {
+            closeAutomatedContainer();
             clearSwitchRequest();
         }
         if (shulkerCooldown > 0) {
@@ -292,5 +305,17 @@ public final class QuickShulkerRequestController {
         this.lastNeedItemList.clear();
         this.isOpenHandler = false;
         this.openHandlerTimeout = 0;
+        if (!this.orderedStorage.isWaitingForRestoreContainer()) {
+            this.automatedContainerId = -1;
+        }
+    }
+
+    private void closeAutomatedContainer() {
+        LocalPlayer player = this.client.player;
+        if (player != null
+                && !player.containerMenu.equals(player.inventoryMenu)
+                && player.containerMenu.containerId == this.automatedContainerId) {
+            player.closeContainer();
+        }
     }
 }

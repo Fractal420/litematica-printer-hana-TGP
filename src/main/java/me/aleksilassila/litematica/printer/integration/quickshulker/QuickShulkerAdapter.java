@@ -117,8 +117,12 @@ public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComp
         return this.requests.shouldPauseForSwitchRequest();
     }
 
-    public boolean shouldSuppressContainerScreen() {
-        return this.requests.shouldSuppressContainerScreen();
+    public boolean shouldSuppressContainerScreen(int containerId) {
+        return this.requests.shouldSuppressContainerScreen(containerId);
+    }
+
+    public void onContainerOpen(int containerId) {
+        this.requests.onContainerOpen(containerId);
     }
 
     public void allowExternalRequest() {

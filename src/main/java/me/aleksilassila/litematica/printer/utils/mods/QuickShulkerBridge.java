@@ -122,8 +122,14 @@ public final class QuickShulkerBridge {
         return RuntimeAccess.get().quickShulkerAdapter().shouldPause();
     }
 
-    public static boolean shouldSuppressContainerScreen() {
-        return RuntimeAccess.get().quickShulkerAdapter().shouldSuppressContainerScreen();
+    public static boolean shouldSuppressContainerScreen(int containerId) {
+        return RuntimeAccess.get().quickShulkerAdapter().shouldSuppressContainerScreen(containerId);
+    }
+
+    public static void onContainerOpen(int containerId) {
+        if (Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
+            RuntimeAccess.get().quickShulkerAdapter().onContainerOpen(containerId);
+        }
     }
 
     public static void onTick() {

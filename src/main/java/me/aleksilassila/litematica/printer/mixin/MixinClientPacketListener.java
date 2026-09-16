@@ -19,6 +19,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientPacketListener.class)
 public abstract class MixinClientPacketListener {
 
+    @Inject(at = @At("HEAD"), method = "handleOpenScreen")
+    private void printer$trackQuickShulkerContainerOpen(ClientboundOpenScreenPacket packet, CallbackInfo ci) {
+        QuickShulkerBridge.onContainerOpen(packet.getContainerId());
+    }
+
     @Inject(
             method = "handleOpenScreen",
             at = @At(
