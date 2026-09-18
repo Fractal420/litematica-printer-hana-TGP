@@ -253,6 +253,7 @@ final class OrderedStorageController {
         }
         LocalPlayer player = client.player;
         retryPendingRestore();
+        ModLoadUtils.closeScreen = 0;
         if (player != null && !player.containerMenu.equals(player.inventoryMenu)) {
             player.closeContainer();
         }

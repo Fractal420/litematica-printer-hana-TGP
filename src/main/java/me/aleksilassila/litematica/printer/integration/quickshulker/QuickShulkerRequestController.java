@@ -280,9 +280,6 @@ public final class QuickShulkerRequestController {
         if (!this.isOpenHandler && !this.orderedStorage.isWaitingForRestoreContainer()) {
             this.automatedContainerId = -1;
         }
-        if (ModLoadUtils.closeScreen > 0) {
-            ModLoadUtils.closeScreen--;
-        }
         if (this.isOpenHandler && this.openHandlerTimeout > 0 && --this.openHandlerTimeout <= 0) {
             closeAutomatedContainer();
             clearSwitchRequest();
@@ -306,6 +303,7 @@ public final class QuickShulkerRequestController {
         this.isOpenHandler = false;
         this.openHandlerTimeout = 0;
         if (!this.orderedStorage.isWaitingForRestoreContainer()) {
+            ModLoadUtils.closeScreen = 0;
             this.automatedContainerId = -1;
         }
     }

@@ -2,6 +2,7 @@ package me.aleksilassila.litematica.printer.utils.mods;
 
 import me.aleksilassila.litematica.printer.integration.inventory.MaterialRequest;
 import me.aleksilassila.litematica.printer.integration.inventory.MaterialReservation;
+import me.aleksilassila.litematica.printer.integration.quickshulker.QuickShulkerInvocationPolicy;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
@@ -70,6 +71,18 @@ public final class QuickShulkerBridge {
         }
 
         if (Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
+            // Litematica continues Easy Place immediately after this hook. Start the request in
+            // the same call, as the pre-debounce implementation did, so it never observes the
+            // shulker box that currently occupies the selected slot.
+            if (QuickShulkerInvocationPolicy.startsImmediately(easyPlace)) {
+                RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
+                MaterialReservation reservation = requestItem(item, MaterialRequest.Source.PICK_BLOCK);
+                if (reservation.state() == MaterialReservation.State.UNAVAILABLE) {
+                    return false;
+                }
+                switchItem();
+                return true;
+            }
             if (pendingPickBlockItem != null) {
                 return pendingPickBlockItem == item;
             }

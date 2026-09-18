@@ -2,14 +2,17 @@ package me.aleksilassila.litematica.printer.utils.minecraft;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
+//#if MC > 260100
+//$$ import net.minecraft.world.entity.EntityTypes;
+//#endif
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** Spawn checks shared by features that need to cover hostile-mob spawn spaces. */
 public final class SpawnCheckUtils {
-    private static final EntityType<?> SUPPORT_ENTITY = resolveEntityType("CREEPER");
-    private static final EntityType<?> WITHER_SKELETON_ENTITY = resolveEntityType("WITHER_SKELETON");
+    private static final EntityType<?> SUPPORT_ENTITY = resolveEntityType("minecraft:creeper");
+    private static final EntityType<?> WITHER_SKELETON_ENTITY = resolveEntityType("minecraft:wither_skeleton");
 
     private SpawnCheckUtils() {
     }
@@ -35,17 +38,19 @@ public final class SpawnCheckUtils {
         return isClearForSpawn(level, abovePos, above, WITHER_SKELETON_ENTITY);
     }
 
-    private static EntityType<?> resolveEntityType(String name) {
-        try {
-            return (EntityType<?>) EntityType.class.getField(name).get(null);
-        } catch (ReflectiveOperationException ignored) {
-            try {
-                Class<?> entityTypes = Class.forName("net.minecraft.world.entity.EntityTypes");
-                return (EntityType<?>) entityTypes.getField(name).get(null);
-            } catch (ReflectiveOperationException exception) {
-                throw new IllegalStateException("Unable to resolve entity type " + name, exception);
-            }
-        }
+    private static EntityType<?> resolveEntityType(String id) {
+        // Direct field references are remapped by Loom. Reflection by named field string is not,
+        // which made the production 1.21.1 jar look for a non-existent "CREEPER" field.
+        return switch (id) {
+            //#if MC > 260100
+            //$$ case "minecraft:creeper" -> EntityTypes.CREEPER;
+            //$$ case "minecraft:wither_skeleton" -> EntityTypes.WITHER_SKELETON;
+            //#else
+            case "minecraft:creeper" -> EntityType.CREEPER;
+            case "minecraft:wither_skeleton" -> EntityType.WITHER_SKELETON;
+            //#endif
+            default -> throw new IllegalArgumentException("Unsupported entity type " + id);
+        };
     }
 
     private static boolean isClearForSpawn(
