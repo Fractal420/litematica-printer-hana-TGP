@@ -134,7 +134,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigInteger LAZY_ENTER_TICKS = integer("lazyEnterTicks")
-                .defaultValue(10)
+                .defaultValue(0)
                 .range(0, 40)
                 .build();
 
@@ -271,7 +271,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
 
         // 放置冷却
         public static final ConfigInteger PLACE_COOLDOWN = integer("placeCooldown")
-                .defaultValue(8)
+                .defaultValue(2)
                 .range(0, 64)
                 .build();
 

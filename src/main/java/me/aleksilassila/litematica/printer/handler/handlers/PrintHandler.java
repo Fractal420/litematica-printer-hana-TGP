@@ -95,7 +95,7 @@ public class PrintHandler extends FeatureModuleBase {
 
     @Override
     protected boolean hasRunnableIterationWork() {
-        return this.hasPendingIterationWork() || !this.retryTargets.isEmpty();
+        return true;
     }
 
     @Override
@@ -125,6 +125,7 @@ public class PrintHandler extends FeatureModuleBase {
     protected void preprocess() {
         this.printTasks.tick(this.level, this.litematica.schematicWorld());
         this.updatePrintSkipCache();
+        this.pruneResolvedRetryTargets();
         int actionConfigHash = this.getActionConfigHash();
         if (this.observedActionConfigHash != Integer.MIN_VALUE
                 && this.observedActionConfigHash != actionConfigHash) {
@@ -134,6 +135,20 @@ public class PrintHandler extends FeatureModuleBase {
             this.requestFullScan();
         }
         this.observedActionConfigHash = actionConfigHash;
+    }
+
+    private void pruneResolvedRetryTargets() {
+        if (this.retryTargets.isEmpty() || this.level == null) {
+            return;
+        }
+        WorldSchematic schematic = this.litematica.schematicWorld();
+        if (schematic == null) {
+            return;
+        }
+        this.retryTargets.removeIf(pos -> {
+            BlockState required = schematic.getBlockState(pos);
+            return this.level.getBlockState(pos).equals(required);
+        });
     }
 
     @Override
@@ -186,6 +201,9 @@ public class PrintHandler extends FeatureModuleBase {
         this.printTaskAction = null;
         WorldSchematic schematic = this.litematica.schematicWorld();
         if (schematic == null) return false;
+        if (this.hudStats.isPrintPlacementPending(blockPos)) {
+            return false;
+        }
         if (InteractionUtils.getRuntime().isRecentlyBroken(blockPos) && !this.printTasks.isActiveTaskPos(blockPos)) {
             return false;
         }
@@ -268,8 +286,11 @@ public class PrintHandler extends FeatureModuleBase {
         PrintTaskAction taskAction = this.printTaskAction;
         PrintPlacementResult result = this.placementExecutor.execute(this.ctx, this.action, taskAction);
         if (taskAction == null && result.taskEvent() == PrintPlacementResult.TaskEvent.SUCCESS) {
-            this.retryTargets.remove(blockPos);
-            this.sortedTargets.remove(blockPos);
+            if (!Configs.Print.PRINT_SORT_TARGETS.getBooleanValue()) {
+                this.retryTargets.add(blockPos.immutable());
+            } else {
+                this.sortedTargets.requeue(blockPos);
+            }
         } else if (taskAction == null && result.shouldRetryTarget()) {
             if (!Configs.Print.PRINT_SORT_TARGETS.getBooleanValue()) {
                 this.retryTargets.add(blockPos.immutable());

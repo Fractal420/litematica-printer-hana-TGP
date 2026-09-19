@@ -17,7 +17,7 @@ import java.util.function.LongSupplier;
 
 public final class HudStatsManager implements RuntimeComponent {
     private static final long RATE_WINDOW_NANOS = 1_000_000_000L;
-    private static final int PRINT_CONFIRM_TIMEOUT_TICKS = 80;
+    private static final int PRINT_CONFIRM_TIMEOUT_TICKS = 40;
     private static final int FALLBACK_CONFIRM_CHECKS_PER_MODE = 8;
 
     private final Minecraft client;
@@ -162,8 +162,13 @@ public final class HudStatsManager implements RuntimeComponent {
         BlockState currentState = this.client.level.getBlockState(pos);
 
         PendingBlockState printPending = this.pendingPrintStates.remove(pos);
-        if (printPending != null && currentState.equals(printPending.expectedState())) {
-            this.stats.get(Mode.PRINT).recordConfirmedUnit(now, 1);
+        if (printPending != null) {
+            if (currentState.equals(printPending.expectedState())) {
+                this.stats.get(Mode.PRINT).recordConfirmedUnit(now, 1);
+            } else if (this.client.level != null) {
+                RuntimeAccess.get().cooldownUtils().removeCooldown(
+                        this.client.level, "print", pos);
+            }
         }
 
         if (currentState.isAir() && this.pendingMineTargets.remove(pos) != null) {
@@ -213,16 +218,22 @@ public final class HudStatsManager implements RuntimeComponent {
             BlockPos pos = entry.getKey();
             PendingBlockState pending = entry.getValue();
             iterator.remove();
-            if (now > pending.expireTick()) {
-                continue;
-            }
             if (now - pending.sentTick() < confirmationFloorTicks) {
                 this.pendingPrintStates.put(pos, pending);
                 continue;
             }
-            if (client.level.getBlockState(pos).equals(pending.expectedState())) {
+            boolean matches = client.level.getBlockState(pos).equals(pending.expectedState());
+            if (matches) {
                 this.stats.get(Mode.PRINT).recordConfirmedUnit(now, 1);
+                continue;
             }
+            if (now > pending.expireTick()) {
+                RuntimeAccess.get().scanEngine().invalidate(pos);
+                RuntimeAccess.get().cooldownUtils().removeCooldown(
+                        client.level, "print", pos);
+                continue;
+            }
+            this.pendingPrintStates.put(pos, pending);
         }
     }
 
