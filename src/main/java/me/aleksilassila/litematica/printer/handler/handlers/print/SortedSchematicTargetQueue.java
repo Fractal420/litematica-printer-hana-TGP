@@ -100,13 +100,15 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
                 ? Math.min(MAX_SORT_BUFFER, Math.max(256, configuredThroughput * 16))
                 : MAX_SORT_BUFFER;
         int lowWater = Math.max(configuredThroughput * 4, 16);
-        if (this.lastFillTick == currentTick) {
-            return;
-        }
-        if (this.queue.size() >= targetBufferSize) {
-            return;
-        }
-        if (!dirtyChanged && this.queue.size() >= lowWater) {
+        if (!shouldRefill(
+                currentTick,
+                this.lastFillTick,
+                dirtyChanged,
+                this.hasMoreSource,
+                this.queue.size(),
+                targetBufferSize,
+                lowWater
+        )) {
             return;
         }
         this.lastFillTick = currentTick;
@@ -147,6 +149,24 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
         for (TargetScore target : targets) {
             this.queue.addLast(target.pos());
         }
+    }
+
+    static boolean shouldRefill(
+            long currentTick,
+            long lastFillTick,
+            boolean dirtyChanged,
+            boolean hasMoreSource,
+            int queueSize,
+            int targetBufferSize,
+            int lowWater
+    ) {
+        if (lastFillTick == currentTick || queueSize >= targetBufferSize) {
+            return false;
+        }
+        if (!dirtyChanged && !hasMoreSource) {
+            return false;
+        }
+        return dirtyChanged || queueSize < lowWater;
     }
 
     @Override

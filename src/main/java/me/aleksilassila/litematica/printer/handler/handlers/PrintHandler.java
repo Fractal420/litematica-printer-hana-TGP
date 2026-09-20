@@ -95,7 +95,7 @@ public class PrintHandler extends FeatureModuleBase {
 
     @Override
     protected boolean hasRunnableIterationWork() {
-        return true;
+        return this.hasPendingIterationWork() || !this.retryTargets.isEmpty();
     }
 
     @Override
@@ -125,7 +125,6 @@ public class PrintHandler extends FeatureModuleBase {
     protected void preprocess() {
         this.printTasks.tick(this.level, this.litematica.schematicWorld());
         this.updatePrintSkipCache();
-        this.pruneResolvedRetryTargets();
         int actionConfigHash = this.getActionConfigHash();
         if (this.observedActionConfigHash != Integer.MIN_VALUE
                 && this.observedActionConfigHash != actionConfigHash) {
@@ -135,20 +134,6 @@ public class PrintHandler extends FeatureModuleBase {
             this.requestFullScan();
         }
         this.observedActionConfigHash = actionConfigHash;
-    }
-
-    private void pruneResolvedRetryTargets() {
-        if (this.retryTargets.isEmpty() || this.level == null) {
-            return;
-        }
-        WorldSchematic schematic = this.litematica.schematicWorld();
-        if (schematic == null) {
-            return;
-        }
-        this.retryTargets.removeIf(pos -> {
-            BlockState required = schematic.getBlockState(pos);
-            return this.level.getBlockState(pos).equals(required);
-        });
     }
 
     @Override
@@ -286,11 +271,8 @@ public class PrintHandler extends FeatureModuleBase {
         PrintTaskAction taskAction = this.printTaskAction;
         PrintPlacementResult result = this.placementExecutor.execute(this.ctx, this.action, taskAction);
         if (taskAction == null && result.taskEvent() == PrintPlacementResult.TaskEvent.SUCCESS) {
-            if (!Configs.Print.PRINT_SORT_TARGETS.getBooleanValue()) {
-                this.retryTargets.add(blockPos.immutable());
-            } else {
-                this.sortedTargets.requeue(blockPos);
-            }
+            this.retryTargets.remove(blockPos);
+            this.sortedTargets.remove(blockPos);
         } else if (taskAction == null && result.shouldRetryTarget()) {
             if (!Configs.Print.PRINT_SORT_TARGETS.getBooleanValue()) {
                 this.retryTargets.add(blockPos.immutable());
