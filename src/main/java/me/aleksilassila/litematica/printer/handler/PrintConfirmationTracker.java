@@ -26,7 +26,7 @@ final class PrintConfirmationTracker {
     Resolution resolve(BlockPos pos, BlockState authoritativeState) {
         PendingBlockState pending = this.pendingStates.remove(pos);
         if (pending == null) {
-            return null;
+            return Resolution.NOT_TRACKED;
         }
         return authoritativeState.equals(pending.expectedState())
                 ? Resolution.MATCHED
@@ -54,6 +54,7 @@ final class PrintConfirmationTracker {
     }
 
     enum Resolution {
+        NOT_TRACKED,
         MATCHED,
         MISMATCHED
     }

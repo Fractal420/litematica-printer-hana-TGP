@@ -51,4 +51,18 @@ class PrintConfirmationTrackerTest {
         assertEquals(List.of(POS), this.tracker.expire(91L, 8));
         assertTrue(this.tracker.expire(92L, 8).isEmpty());
     }
+
+    @Test
+    void duplicateAuthoritativeDeliveryDoesNotResolveTwice() {
+        this.tracker.track(POS, Blocks.STONE.defaultBlockState(), 10L, 80);
+
+        assertEquals(
+                PrintConfirmationTracker.Resolution.MATCHED,
+                this.tracker.resolve(POS, Blocks.STONE.defaultBlockState())
+        );
+        assertEquals(
+                PrintConfirmationTracker.Resolution.NOT_TRACKED,
+                this.tracker.resolve(POS, Blocks.STONE.defaultBlockState())
+        );
+    }
 }
