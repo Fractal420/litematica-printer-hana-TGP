@@ -1,29 +1,69 @@
 package me.aleksilassila.litematica.printer.mixin.printer.litematica;
 
-
-import fi.dy.masa.litematica.util.InventoryUtils;
-import me.aleksilassila.litematica.printer.utils.mods.ChestTrackerBridge;
+import fi.dy.masa.litematica.materials.MaterialCache;
+import fi.dy.masa.litematica.util.RayTraceUtils;
+import fi.dy.masa.litematica.util.WorldUtils;
+import fi.dy.masa.litematica.world.SchematicWorldHandler;
+import fi.dy.masa.litematica.world.WorldSchematic;
 import me.aleksilassila.litematica.printer.utils.mods.QuickShulkerBridge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(InventoryUtils.class)
+// Priority rationale: the unified provider chain must run before Take It Out's default-priority
+// Litematica hook, otherwise Easy Place can dispatch both integrations for one missing item.
+@Mixin(value = WorldUtils.class, priority = 1100)
 public class MixinInventoryUtils {
-    @Inject(at = @At("TAIL"), method = "schematicWorldPickBlock")
-    private static void schematicWorldPickBlock(ItemStack stack, BlockPos pos, Level schematicWorld, Minecraft mc, CallbackInfo ci) {
+    @Inject(at = @At("HEAD"), method = "doEasyPlaceAction", cancellable = true, remap = false)
+    private static void easyPlace(
+            Minecraft mc,
+            CallbackInfoReturnable<InteractionResult> cir
+    ) {
+        ItemStack stack = requiredStack(mc);
+        if (!stack.isEmpty() && QuickShulkerBridge.handleEasyPlacePickBlock(mc.player, stack)) {
+            cir.setReturnValue(InteractionResult.FAIL);
+        }
+    }
+
+    @Inject(at = @At("HEAD"), method = "doSchematicWorldPickBlock", cancellable = true, remap = false)
+    private static void schematicWorldPickBlock(
+            boolean closest,
+            Minecraft mc,
+            CallbackInfoReturnable<Boolean> cir
+    ) {
         if (mc.player == null || mc.player.getAbilities().instabuild || mc.player.isSpectator()) {
             return;
         }
-        if (QuickShulkerBridge.handleEasyPlacePickBlock(mc.player, stack)) {
-            return;
+        ItemStack stack = requiredStack(mc);
+        if (!stack.isEmpty() && QuickShulkerBridge.handleEasyPlacePickBlock(mc.player, stack)) {
+            cir.setReturnValue(true);
         }
-        ChestTrackerBridge.handlePickBlock(mc.player, stack.getItem());
     }
 
+    private static ItemStack requiredStack(Minecraft mc) {
+        if (mc == null || mc.player == null || mc.player.getAbilities().instabuild || mc.player.isSpectator()) {
+            return ItemStack.EMPTY;
+        }
+        BlockHitResult hitResult = RayTraceUtils.traceToSchematicWorld(mc.player, 6.0D, true, true);
+        if (hitResult == null || hitResult.getType() != HitResult.Type.BLOCK) {
+            return ItemStack.EMPTY;
+        }
+        BlockPos pos = hitResult.getBlockPos();
+        WorldSchematic schematicWorld = SchematicWorldHandler.getSchematicWorld();
+        if (schematicWorld == null) {
+            return ItemStack.EMPTY;
+        }
+        return MaterialCache.getInstance().getRequiredBuildItemForState(
+                schematicWorld.getBlockState(pos),
+                schematicWorld,
+                pos
+        );
+    }
 }

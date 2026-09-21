@@ -50,6 +50,28 @@ class MaterialRequestCoordinatorTest {
     }
 
     @Test
+    void pendingProviderConsumesRequestWithoutCallingLowerPriorityProviders() {
+        FakeProvider inventory = new FakeProvider("player_inventory", MaterialReservation.State.UNAVAILABLE);
+        FakeProvider takeItOut = new FakeProvider("take_it_out", MaterialReservation.State.PENDING);
+        FakeProvider quickShulker = new FakeProvider("quick_shulker", MaterialReservation.State.PENDING);
+        FakeProvider chestTracker = new FakeProvider("chest_tracker", MaterialReservation.State.PENDING);
+        MaterialRequestCoordinator coordinator = new MaterialRequestCoordinator(List.of(
+                inventory,
+                takeItOut,
+                quickShulker,
+                chestTracker
+        ));
+
+        MaterialReservation result = coordinator.request(Items.STONE, MaterialRequest.Source.PICK_BLOCK);
+
+        assertEquals(MaterialReservation.State.PENDING, result.state());
+        assertEquals(1, inventory.requestCount);
+        assertEquals(1, takeItOut.requestCount);
+        assertEquals(0, quickShulker.requestCount);
+        assertEquals(0, chestTracker.requestCount);
+    }
+
+    @Test
     void alternativesAreOneAtomicRequestInsteadOfCompetingTokens() {
         FakeProvider provider = new FakeProvider("external", MaterialReservation.State.PENDING);
         MaterialRequestCoordinator coordinator = new MaterialRequestCoordinator(List.of(provider));

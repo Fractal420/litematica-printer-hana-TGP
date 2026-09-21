@@ -203,6 +203,8 @@ public final class PrinterRuntime {
 
     public MaterialRequestCoordinator materialRequests() {
         if (this.materialRequests == null) {
+            // Behavioral contract: one request walks this list once and stops at the first
+            // AVAILABLE/PENDING provider. Changing the order changes user-visible pickup priority.
             this.materialRequests = new MaterialRequestCoordinator(List.of(
                     new PlayerInventoryProvider(Minecraft.getInstance()),
                     new TakeItOutAdapter(this.actionBroker),

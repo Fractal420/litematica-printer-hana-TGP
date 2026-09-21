@@ -2,6 +2,7 @@ package me.aleksilassila.litematica.printer.utils.mods;
 
 import me.aleksilassila.litematica.printer.integration.inventory.MaterialRequest;
 import me.aleksilassila.litematica.printer.integration.inventory.MaterialReservation;
+import me.aleksilassila.litematica.printer.integration.inventory.PickBlockRequestPolicy;
 import me.aleksilassila.litematica.printer.integration.quickshulker.QuickShulkerInvocationPolicy;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
@@ -13,10 +14,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
- * Compatibility boundary for the historical quick-shulker implementation.
+ * Compatibility boundary for pick-block and the historical quick-shulker implementation.
  *
- * <p>The implementation remains unchanged for now. New code should use this
- * bridge instead of depending on the legacy package directly.</p>
+ * <p>User pick requests enter the shared material coordinator here. The class name is retained
+ * because existing printer code also uses it for Quick Shulker lifecycle callbacks.</p>
  */
 public final class QuickShulkerBridge {
     private QuickShulkerBridge() {
@@ -42,12 +43,12 @@ public final class QuickShulkerBridge {
         return RuntimeAccess.get().materialRequests().request(items, source);
     }
 
-    /** Handles the optional inventory fallback for both vanilla and Litematica pick-block hooks. */
+    /** Submits one ordered provider request for vanilla or Litematica pick-block. */
     public static boolean handlePickBlock(LocalPlayer player, Item item) {
-        return handlePickBlock(player, item, false);
+        return handleMissingPickBlock(player, item);
     }
 
-    private static boolean handlePickBlock(LocalPlayer player, Item item, boolean easyPlace) {
+    private static boolean handleMissingPickBlock(LocalPlayer player, Item item) {
         Minecraft client = Minecraft.getInstance();
         if (player == null || item == null || item == Items.AIR
                 || client.gameMode == null
@@ -55,44 +56,20 @@ public final class QuickShulkerBridge {
                         player.getAbilities().instabuild,
                         player.isSpectator()
                 )
-                || (!easyPlace
-                    && !Configs.Core.WORK_SWITCH.getBooleanValue()
-                    && !Configs.Placement.QUICK_SHULKER.getBooleanValue())
-                || (!Configs.Placement.QUICK_SHULKER.getBooleanValue()
-                    && !TakeItOutUtils.isAutoTakeoutEnabled()
-                    && !Configs.Special.REMOTE_TAKE.getBooleanValue())
-                // Take It Out owns its own pick-block/material request hook. Do not
-                // consume the same request a second time from Printer.
-                || TakeItOutUtils.isAutoTakeoutEnabled()
-                || player.inventoryMenu.slots.stream().anyMatch(slot -> slot.getItem().is(item))
-                // A print/CT request already owns the coordinator. Never turn
-                // that unrelated PENDING result into a middle-click intercept.
-                || RuntimeAccess.get().materialRequests().isBusy()) {
+                || player.containerMenu != player.inventoryMenu
+                || InventoryUtils.playerHasItemInInventory(player, item)) {
             return false;
         }
 
         if (Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
             RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
-            MaterialReservation reservation = requestItem(item, MaterialRequest.Source.PICK_BLOCK);
-            if (reservation.state() == MaterialReservation.State.UNAVAILABLE) {
-                return false;
-            }
-            switchItem();
-            return true;
-        }
-
-        if (easyPlace) {
-            if (!Configs.Core.WORK_SWITCH.getBooleanValue()) {
-                RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
-            }
         }
 
         MaterialReservation reservation = requestItem(item, MaterialRequest.Source.PICK_BLOCK);
-        if (reservation.state() == MaterialReservation.State.UNAVAILABLE) {
-            return false;
-        }
-        switchItem();
-        return true;
+        return PickBlockRequestPolicy.shouldConsume(
+                reservation.state(),
+                TakeItOutUtils.isLoaded()
+        );
     }
 
     public static boolean handlePickBlock(LocalPlayer player, ItemStack stack) {
@@ -100,7 +77,7 @@ public final class QuickShulkerBridge {
                 || ItemStack.isSameItemSameComponents(player.getMainHandItem(), stack)) {
             return false;
         }
-        return handlePickBlock(player, stack.getItem());
+        return handleMissingPickBlock(player, stack.getItem());
     }
 
     public static boolean handleEasyPlacePickBlock(LocalPlayer player, ItemStack stack) {
@@ -108,7 +85,7 @@ public final class QuickShulkerBridge {
                 || ItemStack.isSameItemSameComponents(player.getMainHandItem(), stack)) {
             return false;
         }
-        return handlePickBlock(player, stack.getItem(), true);
+        return handleMissingPickBlock(player, stack.getItem());
     }
 
     public static boolean switchItem() {

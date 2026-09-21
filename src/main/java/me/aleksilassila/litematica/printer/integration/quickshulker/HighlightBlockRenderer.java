@@ -59,6 +59,7 @@ public class HighlightBlockRenderer implements IRenderer {
     public static Map<String, HighlightTheProject> highlightTheProjectMap = new HashMap<>();
     public static String threadName = Reference.MOD_ID + "-render";
     public static boolean shaderIng = false;
+    private static boolean renderFailureLogged = false;
     public static List<String> clearList = new LinkedList<>();
     public static Map<String, Set<BlockPos>> setMap = new HashMap<>();
 
@@ -187,7 +188,7 @@ public class HighlightBlockRenderer implements IRenderer {
                 //#endif
             }
         } catch (Exception e) {
-//            Litematica.logger.error("renderAreaSides: Failed to draw Area Selection box (Error: {})", e.getLocalizedMessage());
+            logRenderFailure(e);
         }
 
         //#if MC > 12104
@@ -237,10 +238,22 @@ public class HighlightBlockRenderer implements IRenderer {
         }
 
         shaderIng = true;
-        for (HighlightRenderSnapshot snapshot : snapshots) {
-            test3(matrices, snapshot.color, snapshot.pos);
+        try {
+            for (HighlightRenderSnapshot snapshot : snapshots) {
+                test3(matrices, snapshot.color, snapshot.pos);
+            }
+        } catch (RuntimeException exception) {
+            logRenderFailure(exception);
+        } finally {
+            shaderIng = false;
         }
-        shaderIng = false;
+    }
+
+    private static void logRenderFailure(Throwable exception) {
+        if (!renderFailureLogged) {
+            renderFailureLogged = true;
+            Reference.LOGGER.warn("潜影盒高亮渲染失败，已跳过本次渲染", exception);
+        }
     }
 
     // @formatter:on

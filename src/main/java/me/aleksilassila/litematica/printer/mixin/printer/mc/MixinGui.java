@@ -1,8 +1,9 @@
 package me.aleksilassila.litematica.printer.mixin.printer.mc;
 
 import me.aleksilassila.litematica.printer.render.Render2D;
+import me.aleksilassila.litematica.printer.render.HudVisibilityPolicy;
 import me.aleksilassila.litematica.printer.utils.render.Render2DUtils;
-import me.aleksilassila.litematica.printer.utils.ConfigUtils;
+import me.aleksilassila.litematica.printer.config.Configs;
 import net.minecraft.client.Minecraft;
 //#if MC >= 260200
 //$$ import net.minecraft.client.gui.Hud;
@@ -34,24 +35,27 @@ import net.minecraft.client.DeltaTracker;
 public abstract class MixinGui {
     // @formatter:off
     //#if MC >= 260200
-    //$$ @Inject(method = "extractHotbarAndDecorations", at = @At("TAIL"))
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
     //#elseif MC >= 260100
-    @Inject(method = "extractHotbarAndDecorations", at = @At("TAIL"))
+    //$$ @Inject(method = "extractRenderState", at = @At("TAIL"))
     //#else
-    //$$ @Inject(method = "renderItemHotbar", at = @At("TAIL"))
+    //$$ @Inject(method = "render", at = @At("TAIL"))
     //#endif
 
     //#if MC > 12006
-    private void hookRenderItemHotbar(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-    //#elseif MC >= 12006
-    //$$ private void hookRenderItemHotbar(GuiGraphics guiGraphics, float f, CallbackInfo ci) {
+    private void hookRenderHud(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
     //#elseif MC > 11904
-    //$$ private void hookRenderItemHotbar(float f, GuiGraphics guiGraphics, CallbackInfo ci) {
+    //$$ private void hookRenderHud(GuiGraphics guiGraphics, float f, CallbackInfo ci) {
     //#else
-    //$$ private void hookRenderItemHotbar(float f, PoseStack poseStack, CallbackInfo ci) {
+    //$$ private void hookRenderHud(PoseStack poseStack, float f, CallbackInfo ci) {
     //#endif
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null || mc.player.isSpectator() || !ConfigUtils.isEnable()) {
+        if (mc.player == null || mc.level == null || mc.player.isSpectator()
+                || !HudVisibilityPolicy.shouldRender(
+                        Configs.Core.WORK_SWITCH.getBooleanValue(),
+                        Configs.Core.RENDER_HUD.getBooleanValue(),
+                        Configs.Core.MISSING_MATERIAL_HUD.getBooleanValue()
+                )) {
             return;
         }
 
