@@ -90,6 +90,9 @@ dependencies {
     mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:$fabricLoaderVersion")
     modImplementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+    compileOnly("com.google.code.findbugs:jsr305:3.0.2")
+    compileOnly("org.jetbrains:annotations:26.0.2")
+    modCompileOnly("net.fabricmc:sponge-mixin:0.15.4+mixin.0.8.7")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
     modImplementation("com.belerweb:pinyin4j:${prop("pinyin_version")}")?.let { include(it) }
@@ -114,18 +117,26 @@ dependencies {
             }
         }
         if (mcVersionInt == 12006) {  // 1.20.6 是 Haocen2004/quickshulker 分支, 所以还是使用之前老版本的依赖
-            modImplementation("net.kyrptonaught:kyrptconfig:${prop("kyrptconfig")}") {
-                exclude(group = "com.terraformersmc", module = "modmenu")
-                exclude(group = "maven.modrinth", module = "modmenu")
+            run {
+                val kv = prop("kyrptconfig").toString()
+                val kyrptUrl = "https://maven.kyrptonaught.dev/net/kyrptonaught/kyrptconfig/$kv/kyrptconfig-$kv.jar"
+                val kyrptFile = downloadDependencyMod(kyrptUrl)
+                if (kyrptFile != null && kyrptFile.exists()) {
+                    modImplementation(files(kyrptFile))
+                }
             }
         } else {
             modImplementation("me.fallenbreath:conditional-mixin-fabric:0.6.4")
         }
     } else {
         modImplementation("curse.maven:quick-shulker-362669:${prop("quick_shulker")}")
-        modImplementation("net.kyrptonaught:kyrptconfig:${prop("kyrptconfig")}") {
-            exclude(group = "com.terraformersmc", module = "modmenu")
-            exclude(group = "maven.modrinth", module = "modmenu")
+        run {
+            val kv = prop("kyrptconfig").toString()
+            val kyrptUrl = "https://maven.kyrptonaught.dev/net/kyrptonaught/kyrptconfig/$kv/kyrptconfig-$kv.jar"
+            val kyrptFile = downloadDependencyMod(kyrptUrl)
+            if (kyrptFile != null && kyrptFile.exists()) {
+                modImplementation(files(kyrptFile))
+            }
         }
     }
 
