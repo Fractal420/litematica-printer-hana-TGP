@@ -5,6 +5,8 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.ClassReader;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.Set;
 
 /** Applies Chest Tracker mixins only when the optional mod is installed. */
 public final class ChestTrackerMixinConfigPlugin implements IMixinConfigPlugin {
+    private static final Logger LOGGER = LoggerFactory.getLogger("litematica-printer");
     private static final String PREFIX =
             "me.aleksilassila.litematica.printer.mixin.printer.chesttracker.";
     private boolean loaded;
@@ -20,6 +23,9 @@ public final class ChestTrackerMixinConfigPlugin implements IMixinConfigPlugin {
     @Override public void onLoad(String mixinPackage) {
         this.loaded = FabricLoader.getInstance().isModLoaded("chesttracker");
         this.compatible = this.loaded && hasItemListWidgetContract();
+        if (this.loaded && !this.compatible) {
+            LOGGER.warn("Chest Tracker 已加载，但 ItemListWidget API 不匹配；已停用 Chest Tracker Mixin");
+        }
     }
 
     @Override public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
@@ -38,7 +44,8 @@ public final class ChestTrackerMixinConfigPlugin implements IMixinConfigPlugin {
             boolean method = node.methods.stream().anyMatch(value -> "getOffsetItems".equals(value.name)
                     && "()Ljava/util/List;".equals(value.desc));
             return field && method;
-        } catch (Exception | LinkageError ignored) {
+        } catch (Exception | LinkageError exception) {
+            LOGGER.warn("检查 Chest Tracker ItemListWidget API 失败；已停用 Chest Tracker Mixin", exception);
             return false;
         }
     }

@@ -3,6 +3,7 @@ package me.aleksilassila.litematica.printer.mixin;
 import me.aleksilassila.litematica.printer.integration.quickshulker.QuickShulkerInvocationPolicy;
 import me.aleksilassila.litematica.printer.utils.mods.ChestTrackerBridge;
 import me.aleksilassila.litematica.printer.utils.mods.ModLoadUtils;
+import me.aleksilassila.litematica.printer.utils.mods.QuickShulkerBridge;
 import net.minecraft.client.Minecraft;
 //#if MC > 260100
 //$$ import net.minecraft.client.gui.Gui;
@@ -25,6 +26,13 @@ public abstract class MixinContainerScreenGuard {
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void suppressAutomatedQuickShulkerScreen(@Nullable Screen screen, CallbackInfo ci) {
         boolean containerScreen = screen instanceof AbstractContainerScreen<?>;
+        if (containerScreen
+                && QuickShulkerBridge.shouldSuppressContainerScreen(
+                        ((AbstractContainerScreen<?>) screen).getMenu().containerId
+                )) {
+            ci.cancel();
+            return;
+        }
         if (QuickShulkerInvocationPolicy.shouldSuppressScreen(ModLoadUtils.closeScreen, containerScreen)) {
             ModLoadUtils.closeScreen--;
             ci.cancel();

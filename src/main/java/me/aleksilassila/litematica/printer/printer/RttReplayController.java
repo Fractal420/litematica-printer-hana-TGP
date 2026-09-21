@@ -47,6 +47,29 @@ public final class RttReplayController implements RuntimeComponent {
         return intervalTicksFor(rttMillis, safetyPercent);
     }
 
+    /**
+     * Calculates a bounded wait deadline for a single server acknowledgement.
+     * The base and safety ticks keep local/hidden-ping connections from timing out
+     * before the next client tick; the cap prevents a bad ping sample from holding
+     * an inventory request indefinitely.
+     */
+    public int getWaitTimeoutTicks(int baseTicks, int safetyTicks, int maxTicks) {
+        return waitTimeoutTicksFor(
+                this.getExtraIntervalTicks(100),
+                baseTicks,
+                safetyTicks,
+                maxTicks
+        );
+    }
+
+    static int waitTimeoutTicksFor(int rttTicks, int baseTicks, int safetyTicks, int maxTicks) {
+        int base = Math.max(0, baseTicks);
+        int safety = Math.max(0, safetyTicks);
+        int cap = Math.max(base, maxTicks);
+        long candidate = (long) base + Math.max(0, rttTicks) + safety;
+        return (int) Math.min(cap, candidate);
+    }
+
     static int intervalTicksFor(double rttMillis, int safetyPercent) {
         double effectiveMillis = rttMillis * Math.max(0, safetyPercent) / 100.0D;
         int ticks = (int) Math.ceil(effectiveMillis / MILLIS_PER_TICK);

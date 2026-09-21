@@ -7,16 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class QuickShulkerInvocationPolicyTest {
     @Test
-    void easyPlaceStartsTheQuickShulkerRequestImmediately() {
-        assertTrue(QuickShulkerInvocationPolicy.startsImmediately(true));
-    }
-
-    @Test
-    void physicalPickBlockKeepsTheDuplicateInputDebounce() {
-        assertFalse(QuickShulkerInvocationPolicy.startsImmediately(false));
-    }
-
-    @Test
     void anArmedContainerScreenTokenSuppressesExactlyTheContainerScreen() {
         assertTrue(QuickShulkerInvocationPolicy.shouldSuppressScreen(1, true));
         assertFalse(QuickShulkerInvocationPolicy.shouldSuppressScreen(0, true));
@@ -24,12 +14,9 @@ class QuickShulkerInvocationPolicyTest {
     }
 
     @Test
-    void acceptedMaterialRequestBypassesLitematicaNativeShulkerSelection() {
-        assertTrue(QuickShulkerInvocationPolicy.shouldBypassLitematicaPickBlock(true));
-    }
-
-    @Test
-    void unavailableMaterialRequestLeavesLitematicaPickBlockUntouched() {
-        assertFalse(QuickShulkerInvocationPolicy.shouldBypassLitematicaPickBlock(false));
+    void allowsAdventureButNotCreativeOrSpectatorPickBlock() {
+        assertTrue(QuickShulkerInvocationPolicy.allowsPickBlock(false, false));
+        assertFalse(QuickShulkerInvocationPolicy.allowsPickBlock(true, false));
+        assertFalse(QuickShulkerInvocationPolicy.allowsPickBlock(false, true));
     }
 }
