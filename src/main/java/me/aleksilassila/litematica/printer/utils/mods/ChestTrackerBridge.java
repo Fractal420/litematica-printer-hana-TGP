@@ -22,7 +22,8 @@ public final class ChestTrackerBridge {
         Minecraft client = Minecraft.getInstance();
         if (Configs.Core.WORK_SWITCH.getBooleanValue()
                 || client.gameMode == null
-                || client.gameMode.getPlayerMode() != GameType.SURVIVAL) {
+                || client.gameMode.getPlayerMode() != GameType.SURVIVAL
+                || TakeItOutUtils.isAutoTakeoutEnabled()) {
             return false;
         }
         return RuntimeAccess.get().chestTrackerAdapter().handlePickBlock(player, item);

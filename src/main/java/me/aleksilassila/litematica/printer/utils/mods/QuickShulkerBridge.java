@@ -11,7 +11,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.GameType;
 
 /**
  * Compatibility boundary for the historical quick-shulker implementation.
@@ -20,10 +19,6 @@ import net.minecraft.world.level.GameType;
  * bridge instead of depending on the legacy package directly.</p>
  */
 public final class QuickShulkerBridge {
-    private static final int PICK_BLOCK_SETTLE_TICKS = 2;
-    private static Item pendingPickBlockItem;
-    private static int pendingPickBlockTicks;
-
     private QuickShulkerBridge() {
     }
 
@@ -56,13 +51,19 @@ public final class QuickShulkerBridge {
         Minecraft client = Minecraft.getInstance();
         if (player == null || item == null || item == Items.AIR
                 || client.gameMode == null
-                || client.gameMode.getPlayerMode() != GameType.SURVIVAL
+                || !QuickShulkerInvocationPolicy.allowsPickBlock(
+                        player.getAbilities().instabuild,
+                        player.isSpectator()
+                )
                 || (!easyPlace
                     && !Configs.Core.WORK_SWITCH.getBooleanValue()
                     && !Configs.Placement.QUICK_SHULKER.getBooleanValue())
                 || (!Configs.Placement.QUICK_SHULKER.getBooleanValue()
                     && !TakeItOutUtils.isAutoTakeoutEnabled()
                     && !Configs.Special.REMOTE_TAKE.getBooleanValue())
+                // Take It Out owns its own pick-block/material request hook. Do not
+                // consume the same request a second time from Printer.
+                || TakeItOutUtils.isAutoTakeoutEnabled()
                 || player.inventoryMenu.slots.stream().anyMatch(slot -> slot.getItem().is(item))
                 // A print/CT request already owns the coordinator. Never turn
                 // that unrelated PENDING result into a middle-click intercept.
@@ -71,27 +72,19 @@ public final class QuickShulkerBridge {
         }
 
         if (Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
-            // Litematica continues Easy Place immediately after this hook. Start the request in
-            // the same call, as the pre-debounce implementation did, so it never observes the
-            // shulker box that currently occupies the selected slot.
-            if (QuickShulkerInvocationPolicy.startsImmediately(easyPlace)) {
-                RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
-                MaterialReservation reservation = requestItem(item, MaterialRequest.Source.PICK_BLOCK);
-                if (reservation.state() == MaterialReservation.State.UNAVAILABLE) {
-                    return false;
-                }
-                switchItem();
-                return true;
+            RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
+            MaterialReservation reservation = requestItem(item, MaterialRequest.Source.PICK_BLOCK);
+            if (reservation.state() == MaterialReservation.State.UNAVAILABLE) {
+                return false;
             }
-            if (pendingPickBlockItem != null) {
-                return pendingPickBlockItem == item;
-            }
-            pendingPickBlockItem = item;
-            pendingPickBlockTicks = PICK_BLOCK_SETTLE_TICKS;
-            if (easyPlace || !Configs.Core.WORK_SWITCH.getBooleanValue()) {
-                RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
-            }
+            switchItem();
             return true;
+        }
+
+        if (easyPlace) {
+            if (!Configs.Core.WORK_SWITCH.getBooleanValue()) {
+                RuntimeAccess.get().quickShulkerAdapter().allowExternalRequest();
+            }
         }
 
         MaterialReservation reservation = requestItem(item, MaterialRequest.Source.PICK_BLOCK);
@@ -147,11 +140,8 @@ public final class QuickShulkerBridge {
 
     public static void onTick() {
         if (!Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
-            pendingPickBlockItem = null;
-            pendingPickBlockTicks = 0;
             return;
         }
-        processPendingPickBlock();
         RuntimeAccess.get().quickShulkerAdapter().tick();
     }
 
@@ -168,31 +158,6 @@ public final class QuickShulkerBridge {
     }
 
     public static void resetRuntime() {
-        pendingPickBlockItem = null;
-        pendingPickBlockTicks = 0;
         RuntimeAccess.get().quickShulkerAdapter().reset();
-    }
-
-    private static void processPendingPickBlock() {
-        if (pendingPickBlockItem == null || --pendingPickBlockTicks > 0) {
-            return;
-        }
-
-        Minecraft client = Minecraft.getInstance();
-        LocalPlayer player = client.player;
-        Item item = pendingPickBlockItem;
-        pendingPickBlockItem = null;
-        pendingPickBlockTicks = 0;
-
-        if (player == null || client.gameMode == null
-                || client.gameMode.getPlayerMode() != GameType.SURVIVAL
-                || !Configs.Placement.QUICK_SHULKER.getBooleanValue()) {
-            return;
-        }
-        if (InventoryUtils.playerHasItemInInventory(player, item)) {
-            InventoryUtils.setPickedItemToHand(new ItemStack(item), client);
-            return;
-        }
-        requestItem(item, MaterialRequest.Source.PICK_BLOCK);
     }
 }

@@ -20,4 +20,12 @@ class RttReplayControllerTest {
         assertEquals(40, RttReplayController.intervalTicksFor(10_000.0D, 300));
         assertEquals(0, RttReplayController.intervalTicksFor(250.0D, -1));
     }
+
+    @Test
+    void derivesABoundedServerWaitFromRtt() {
+        assertEquals(10, RttReplayController.waitTimeoutTicksFor(0, 8, 2, 40));
+        assertEquals(14, RttReplayController.waitTimeoutTicksFor(4, 8, 2, 40));
+        assertEquals(40, RttReplayController.waitTimeoutTicksFor(100, 8, 2, 40));
+        assertEquals(10, RttReplayController.waitTimeoutTicksFor(-1, 8, 2, 40));
+    }
 }

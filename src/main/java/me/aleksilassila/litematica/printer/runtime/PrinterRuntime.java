@@ -205,8 +205,8 @@ public final class PrinterRuntime {
         if (this.materialRequests == null) {
             this.materialRequests = new MaterialRequestCoordinator(List.of(
                     new PlayerInventoryProvider(Minecraft.getInstance()),
-                    this.quickShulkerAdapter,
                     new TakeItOutAdapter(this.actionBroker),
+                    this.quickShulkerAdapter,
                     this.chestTrackerAdapter
             ));
             this.scope.register(this.materialRequests);
