@@ -13,6 +13,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SortedSchematicTargetQueueTest {
     @Test
+    void exhaustedCleanSourceDoesNotRefillAfterQueueDrains() {
+        assertFalse(SortedSchematicTargetQueue.shouldRefill(
+                20L, 19L, false, false, 0, 256, 16));
+    }
+
+    @Test
+    void liveSourceRefillsBelowLowWater() {
+        assertTrue(SortedSchematicTargetQueue.shouldRefill(
+                20L, 19L, false, true, 15, 256, 16));
+    }
+
+    @Test
+    void dirtyRevisionRefillsAnExhaustedSource() {
+        assertTrue(SortedSchematicTargetQueue.shouldRefill(
+                20L, 19L, true, false, 0, 256, 16));
+    }
+
+    @Test
     void requeuedTargetIsDeferredToTheNextIterationPass() {
         SortedSchematicTargetQueue queue = new SortedSchematicTargetQueue(null);
         BlockPos missingTarget = new BlockPos(1, 2, 3);

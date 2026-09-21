@@ -186,6 +186,9 @@ public class PrintHandler extends FeatureModuleBase {
         this.printTaskAction = null;
         WorldSchematic schematic = this.litematica.schematicWorld();
         if (schematic == null) return false;
+        if (this.hudStats.isPrintPlacementPending(blockPos)) {
+            return false;
+        }
         if (InteractionUtils.getRuntime().isRecentlyBroken(blockPos) && !this.printTasks.isActiveTaskPos(blockPos)) {
             return false;
         }

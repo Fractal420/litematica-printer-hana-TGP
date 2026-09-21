@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.handler;
 
-import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeComponent;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeEvent;
 import me.aleksilassila.litematica.printer.printer.RttReplayController;
@@ -12,19 +11,21 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
 
 public final class HudStatsManager implements RuntimeComponent {
     private static final long RATE_WINDOW_NANOS = 1_000_000_000L;
-    private static final int PRINT_CONFIRM_TIMEOUT_TICKS = 80;
+    private static final int DEFAULT_CONFIRM_TIMEOUT_TICKS = 10;
+    private static final int RTT_CONFIRM_SAFETY_TICKS = 2;
     private static final int FALLBACK_CONFIRM_CHECKS_PER_MODE = 8;
 
     private final Minecraft client;
     private final LongSupplier tickClock;
     private final RttReplayController rttReplayController;
     private final EnumMap<Mode, ModeStats> stats = new EnumMap<>(Mode.class);
-    private final Map<BlockPos, PendingBlockState> pendingPrintStates = new LinkedHashMap<>();
+    private final PrintConfirmationTracker printConfirmationTracker = new PrintConfirmationTracker();
     private final Map<BlockPos, Long> pendingMineTargets = new LinkedHashMap<>();
     private final Map<BlockPos, PendingStateChange> pendingFillTargets = new LinkedHashMap<>();
     private final Map<BlockPos, PendingStateChange> pendingFluidTargets = new LinkedHashMap<>();
@@ -49,7 +50,7 @@ public final class HudStatsManager implements RuntimeComponent {
     }
 
     public void resetAll() {
-        this.pendingPrintStates.clear();
+        this.printConfirmationTracker.clear();
         this.pendingMineTargets.clear();
         this.pendingFillTargets.clear();
         this.pendingFluidTargets.clear();
@@ -63,7 +64,7 @@ public final class HudStatsManager implements RuntimeComponent {
 
     public void resetMode(Mode mode) {
         switch (mode) {
-            case PRINT -> this.pendingPrintStates.clear();
+            case PRINT -> this.printConfirmationTracker.clear();
             case MINE -> this.pendingMineTargets.clear();
             case FILL -> this.pendingFillTargets.clear();
             case FLUID -> this.pendingFluidTargets.clear();
@@ -98,25 +99,14 @@ public final class HudStatsManager implements RuntimeComponent {
             return;
         }
         long now = this.tickClock.getAsLong();
-        this.pendingPrintStates.put(
-                pos.immutable(),
-                new PendingBlockState(expectedState, now, now + PRINT_CONFIRM_TIMEOUT_TICKS)
-        );
+        this.printConfirmationTracker.track(pos, expectedState, now, this.getConfirmationTimeoutTicks());
     }
 
     public boolean isPrintPlacementPending(BlockPos pos) {
         if (pos == null) {
             return false;
         }
-        PendingBlockState pending = this.pendingPrintStates.get(pos);
-        if (pending == null) {
-            return false;
-        }
-        if (this.tickClock.getAsLong() > pending.expireTick()) {
-            this.pendingPrintStates.remove(pos);
-            return false;
-        }
-        return true;
+        return this.printConfirmationTracker.isPending(pos);
     }
 
     public void trackExpectedMineClear(Mode mode, BlockPos pos) {
@@ -124,7 +114,7 @@ public final class HudStatsManager implements RuntimeComponent {
             return;
         }
         long now = this.tickClock.getAsLong();
-        this.pendingMineTargets.put(pos.immutable(), now + PRINT_CONFIRM_TIMEOUT_TICKS);
+        this.pendingMineTargets.put(pos.immutable(), now + this.getConfirmationTimeoutTicks());
     }
 
     public void trackExpectedBlockChange(Mode mode, BlockPos pos, BlockState originalState) {
@@ -132,7 +122,10 @@ public final class HudStatsManager implements RuntimeComponent {
             return;
         }
         long now = this.tickClock.getAsLong();
-        PendingStateChange pending = new PendingStateChange(originalState, now + PRINT_CONFIRM_TIMEOUT_TICKS);
+        PendingStateChange pending = new PendingStateChange(
+                originalState,
+                now + this.getConfirmationTimeoutTicks()
+        );
         if (mode == Mode.FILL) {
             this.pendingFillTargets.put(pos.immutable(), pending);
         } else if (mode == Mode.FLUID) {
@@ -158,26 +151,52 @@ public final class HudStatsManager implements RuntimeComponent {
         if (this.client.level == null) {
             return;
         }
-        long now = this.tickClock.getAsLong();
-        BlockState currentState = this.client.level.getBlockState(pos);
+        this.confirmBlockUpdate(pos, this.client.level.getBlockState(pos));
+    }
 
-        PendingBlockState printPending = this.pendingPrintStates.remove(pos);
-        if (printPending != null && currentState.equals(printPending.expectedState())) {
+    public void confirmBlockUpdate(BlockPos pos, BlockState authoritativeState) {
+        if (pos == null || authoritativeState == null) {
+            return;
+        }
+        long now = this.tickClock.getAsLong();
+
+        PrintConfirmationTracker.Resolution printResolution =
+                this.printConfirmationTracker.resolve(pos, authoritativeState);
+        if (printResolution == PrintConfirmationTracker.Resolution.MATCHED) {
             this.stats.get(Mode.PRINT).recordConfirmedUnit(now, 1);
+        } else if (printResolution == PrintConfirmationTracker.Resolution.MISMATCHED
+                && this.client.level != null) {
+            RuntimeAccess.get().cooldownUtils().removeCooldown(
+                    this.client.level, "print", pos);
         }
 
-        if (currentState.isAir() && this.pendingMineTargets.remove(pos) != null) {
+        if (authoritativeState.isAir() && this.pendingMineTargets.remove(pos) != null) {
             this.stats.get(Mode.MINE).recordConfirmedUnit(now, 1);
         }
 
-        this.confirmStateChange(now, Mode.FILL, pos, currentState, this.pendingFillTargets);
-        this.confirmStateChange(now, Mode.FLUID, pos, currentState, this.pendingFluidTargets);
-        this.confirmStateChange(now, Mode.COVER, pos, currentState, this.pendingCoverTargets);
+        this.confirmStateChange(now, Mode.FILL, pos, authoritativeState, this.pendingFillTargets);
+        this.confirmStateChange(now, Mode.FLUID, pos, authoritativeState, this.pendingFluidTargets);
+        this.confirmStateChange(now, Mode.COVER, pos, authoritativeState, this.pendingCoverTargets);
     }
 
     public Snapshot snapshot(Mode mode) {
         long now = this.tickClock.getAsLong();
         return this.stats.get(mode).snapshot(now);
+    }
+
+    static int confirmationTimeoutTicksFor(int rttTicks) {
+        return Math.max(
+                DEFAULT_CONFIRM_TIMEOUT_TICKS,
+                Math.max(0, rttTicks) + RTT_CONFIRM_SAFETY_TICKS
+        );
+    }
+
+    private int getConfirmationTimeoutTicks() {
+        return confirmationTimeoutTicksFor(
+                this.rttReplayController == null
+                        ? 0
+                        : this.rttReplayController.getExtraIntervalTicks(100)
+        );
     }
 
     private void confirmStateChange(
@@ -198,42 +217,20 @@ public final class HudStatsManager implements RuntimeComponent {
         if (this.client.level == null) {
             return;
         }
-        flushConfirmedPrintPlacements(this.client, now, maxChecksPerMode);
+        flushExpiredPrintPlacements(this.client, now, maxChecksPerMode);
         flushConfirmedMineClears(this.client, now, maxChecksPerMode);
         flushConfirmedBlockChanges(this.client, now, Mode.FILL, this.pendingFillTargets, maxChecksPerMode);
         flushConfirmedBlockChanges(this.client, now, Mode.FLUID, this.pendingFluidTargets, maxChecksPerMode);
         flushConfirmedBlockChanges(this.client, now, Mode.COVER, this.pendingCoverTargets, maxChecksPerMode);
     }
 
-    private void flushConfirmedPrintPlacements(Minecraft client, long now, int maxChecks) {
-        int confirmationFloorTicks = this.getPrintConfirmationFloorTicks();
-        for (int checked = 0; checked < maxChecks && !this.pendingPrintStates.isEmpty(); checked++) {
-            Iterator<Map.Entry<BlockPos, PendingBlockState>> iterator = this.pendingPrintStates.entrySet().iterator();
-            Map.Entry<BlockPos, PendingBlockState> entry = iterator.next();
-            BlockPos pos = entry.getKey();
-            PendingBlockState pending = entry.getValue();
-            iterator.remove();
-            if (now > pending.expireTick()) {
-                continue;
-            }
-            if (now - pending.sentTick() < confirmationFloorTicks) {
-                this.pendingPrintStates.put(pos, pending);
-                continue;
-            }
-            if (client.level.getBlockState(pos).equals(pending.expectedState())) {
-                this.stats.get(Mode.PRINT).recordConfirmedUnit(now, 1);
-            }
+    private void flushExpiredPrintPlacements(Minecraft client, long now, int maxChecks) {
+        List<BlockPos> expired = this.printConfirmationTracker.expire(now, maxChecks);
+        for (BlockPos pos : expired) {
+            RuntimeAccess.get().scanEngine().invalidate(pos);
+            RuntimeAccess.get().cooldownUtils().removeCooldown(
+                    client.level, "print", pos);
         }
-    }
-
-    private int getPrintConfirmationFloorTicks() {
-        int safetyPercent = Configs.Placement.RTT_ADAPTIVE_INTERVAL.getBooleanValue()
-                ? Configs.Placement.RTT_SAFETY_PERCENT.getIntegerValue()
-                : 100;
-        return Math.max(
-                2,
-                this.rttReplayController.getExtraIntervalTicks(safetyPercent)
-        );
     }
 
     private void flushConfirmedMineClears(Minecraft client, long now, int maxChecks) {
@@ -385,9 +382,6 @@ public final class HudStatsManager implements RuntimeComponent {
         private static String normalizeReason(String reason) {
             return reason == null || reason.isBlank() ? HudStatus.RUNNING : reason;
         }
-    }
-
-    private record PendingBlockState(BlockState expectedState, long sentTick, long expireTick) {
     }
 
     private record PendingStateChange(BlockState originalState, long expireTick) {

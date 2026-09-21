@@ -92,13 +92,6 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
     }
 
     private void fill(List<PrinterBox> sourceBoxes, ClientLevel level, WorldSchematic schematic, LocalPlayer player, int scanGuardLimit) {
-        // Do not refill while a batch is still available. The scan budget is shared with the
-        // iteration runner; scanning again every tick while the queue is non-empty consumes the
-        // whole budget before placement starts, which turns the sorted path into a low-throughput
-        // printer. Refill only after the current batch has been consumed.
-        if (!this.queue.isEmpty()) {
-            return;
-        }
         long currentTick = level.getGameTime();
         long dirtyVersion = this.scanEngine.dirtyVersion();
         boolean dirtyChanged = dirtyVersion != this.lastDirtyVersion;
@@ -106,9 +99,16 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
         int targetBufferSize = configuredThroughput > 0
                 ? Math.min(MAX_SORT_BUFFER, Math.max(256, configuredThroughput * 16))
                 : MAX_SORT_BUFFER;
-        if (this.lastFillTick == currentTick
-                || !dirtyChanged && !this.hasMoreSource && this.queue.isEmpty()
-                || !dirtyChanged && this.queue.size() >= targetBufferSize) {
+        int lowWater = Math.max(configuredThroughput * 4, 16);
+        if (!shouldRefill(
+                currentTick,
+                this.lastFillTick,
+                dirtyChanged,
+                this.hasMoreSource,
+                this.queue.size(),
+                targetBufferSize,
+                lowWater
+        )) {
             return;
         }
         this.lastFillTick = currentTick;
@@ -149,6 +149,24 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
         for (TargetScore target : targets) {
             this.queue.addLast(target.pos());
         }
+    }
+
+    static boolean shouldRefill(
+            long currentTick,
+            long lastFillTick,
+            boolean dirtyChanged,
+            boolean hasMoreSource,
+            int queueSize,
+            int targetBufferSize,
+            int lowWater
+    ) {
+        if (lastFillTick == currentTick || queueSize >= targetBufferSize) {
+            return false;
+        }
+        if (!dirtyChanged && !hasMoreSource) {
+            return false;
+        }
+        return dirtyChanged || queueSize < lowWater;
     }
 
     @Override
