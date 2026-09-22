@@ -12,6 +12,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,6 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Uses the tested Minecraft version's own tag data, not a hard-coded carpet fixture. */
 class CoverMaterialFilterTest {
     private static final List<String> DEFAULT_FILTERS = List.of(
             "#minecraft:carpets", "#minecraft:slabs", "#minecraft:rails");
@@ -58,7 +58,7 @@ class CoverMaterialFilterTest {
             Set<Item> members = readVanillaItemTag(tag);
             expected.addAll(members);
             for (Item item : members) {
-                bindTags(item.builtInRegistryHolder(), List.of(TagKey.create(
+                bindTags(itemHolder(item), List.of(TagKey.create(
                         BuiltInRegistries.ITEM.key(), IdentifierUtils.of("minecraft", tag))));
             }
         }
@@ -76,15 +76,15 @@ class CoverMaterialFilterTest {
     @Test
     void carpetAliasAlsoWorksWhenOnlyBlockTagIsBound() throws Exception {
         Item carpet = itemById("minecraft:white_carpet");
-        bindTags(carpet.builtInRegistryHolder(), List.of());
-        bindTags(((BlockItem) carpet).getBlock().builtInRegistryHolder(), List.of(TagKey.create(
+        bindTags(itemHolder(carpet), List.of());
+        bindTags(blockHolder(((BlockItem) carpet).getBlock()), List.of(TagKey.create(
                 BuiltInRegistries.BLOCK.key(), IdentifierUtils.of("minecraft:wool_carpets"))));
         assertTrue(RegistryFilterResolver.resolveItems(DEFAULT_FILTERS).contains(carpet));
     }
 
     @Test
     void customIdsAndTagsRemainAnAlternativeList() throws Exception {
-        bindTags(Items.GLASS.builtInRegistryHolder(), List.of(TagKey.create(
+        bindTags(itemHolder(Items.GLASS), List.of(TagKey.create(
                 BuiltInRegistries.ITEM.key(), IdentifierUtils.of("test:cover_materials"))));
         List<Item> actual = RegistryFilterResolver.resolveItems(List.of(
                 "minecraft:white_carpet", "#test:cover_materials"));
@@ -116,6 +116,16 @@ class CoverMaterialFilterTest {
         return BuiltInRegistries.ITEM.stream()
                 .filter(item -> BuiltInRegistries.ITEM.getKey(item).toString().equals(id))
                 .findFirst().orElseThrow();
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Holder.Reference<Item> itemHolder(Item item) {
+        return item.builtInRegistryHolder();
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Holder.Reference<Block> blockHolder(Block block) {
+        return block.builtInRegistryHolder();
     }
 
     private <T> void bindTags(Holder.Reference<T> holder, Collection<TagKey<T>> tags) throws Exception {

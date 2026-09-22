@@ -1,0 +1,146 @@
+name: Bug 反馈
+description: 报告可以稳定复现的功能异常、崩溃或兼容性问题
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。这里用于提交**可以复现的 Bug**。
+
+        安装帮助、配置疑问、服务器限制和一般交流请前往 [Discussions](https://github.com/Yur1Ca/litematica-printer/discussions)。每个 Issue 只报告一个可以独立复现的问题。
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已经搜索过现有 Issues 和 Discussions，确认没有相同问题。
+          required: true
+        - label: 我已经使用当前适用的最新 Alpha 或 Beta 版本重新测试。
+          required: true
+        - label: 我确认这不是单纯的使用方法、配置或服务器反作弊问题。
+          required: true
+        - label: 这个 Issue 只包含一个可以独立复现的问题。
+          required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: 出现问题的功能
+      options:
+        - 打印/放置
+        - 扫描器/迭代器
+        - 挖掘
+        - 填充
+        - 排流体
+        - 破基岩
+        - Quick Shulker/有序存放
+        - Take It Out 取物
+        - HUD/界面
+        - 配置/快捷键
+        - 启动/模组兼容
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: printer_version
+    attributes:
+      label: 打印机版本
+      description: 请填写完整版本号，不要只写“最新版”。
+      placeholder: "例如：0.7.2.1-Hana-dev377"
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft_version
+    attributes:
+      label: Minecraft 与 Fabric Loader 版本
+      placeholder: "例如：Minecraft 26.2，Fabric Loader 0.19.3"
+    validations:
+      required: true
+
+  - type: input
+    id: dependencies
+    attributes:
+      label: Litematica、MaLiLib 与 Fabric API 版本
+      placeholder: "请填写三个前置模组的完整版本号"
+    validations:
+      required: true
+
+  - type: input
+    id: server_environment
+    attributes:
+      label: 运行环境
+      description: 请说明单人世界或服务器；服务器请尽量注明核心、反作弊和平均延迟。
+      placeholder: "例如：Paper 26.2 服务器，延迟约 45 ms，未安装反作弊"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: 实际发生了什么
+      description: 清楚描述错误现象、出现频率和受影响范围。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: 期望行为
+      description: 描述正常情况下应该发生什么。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce_steps
+    attributes:
+      label: 稳定复现步骤
+      placeholder: |
+        1. 使用……版本进入……
+        2. 加载尺寸为……的投影/选区
+        3. 将……配置为……
+        4. 开启……后出现……
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: 复现频率
+      options:
+        - 每次都能复现
+        - 经常出现
+        - 偶尔出现
+        - 只出现过一次
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs_and_mods
+    attributes:
+      label: 日志、崩溃报告与模组列表
+      description: 请把 `latest.log`、崩溃报告和 `modlist.txt` 直接拖到这里上传。发生崩溃时这些文件必须提供，不要只粘贴日志中的几行。
+      placeholder: 将文件拖到此处，等待 GitHub 上传完成后再提交。
+
+  - type: textarea
+    id: media
+    attributes:
+      label: 截图或视频
+      description: 放置错位、HUD、扫描顺序或间歇性问题请尽量提供短视频，并标出问题发生的位置和时刻。
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: 其他补充
+      description: 可以填写相关配置、投影尺寸、交互距离、扫描预算、工作间隔等信息。
+
+  - type: checkboxes
+    id: final_confirmation
+    attributes:
+      label: 最后确认
+      options:
+        - label: 我提供的信息足以让其他人在没有额外猜测的情况下尝试复现；如果信息明显不完整，我理解 Issue 可能会被关闭。
+          required: true
