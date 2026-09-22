@@ -6,6 +6,7 @@ import me.aleksilassila.litematica.printer.guide.Result;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
+import me.aleksilassila.litematica.printer.utils.ConfigUtils;
 import me.aleksilassila.litematica.printer.utils.InteractionUtils;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.*;
@@ -72,7 +73,9 @@ public class SignGuide extends Guide {
 
     @Override
     protected Result onBuildActionWrongBlock(BlockMatchResult state) {
-        if (Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue() && InteractionUtils.canBreakBlock(blockPos)) {
+        if (Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue()
+                && ConfigUtils.isPositionInMineSelectionRange(client.player, blockPos)
+                && InteractionUtils.canBreakBlock(blockPos)) {
             boolean isLegitimateSign = currentBlock instanceof StandingSignBlock
                     || currentBlock instanceof WallSignBlock
                     //#if MC >= 12002

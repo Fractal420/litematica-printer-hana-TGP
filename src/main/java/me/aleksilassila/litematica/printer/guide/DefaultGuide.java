@@ -5,6 +5,7 @@ import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.enums.BlockMatchResult;
 import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
+import me.aleksilassila.litematica.printer.utils.ConfigUtils;
 import me.aleksilassila.litematica.printer.utils.InteractionUtils;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.*;
@@ -118,7 +119,9 @@ public class DefaultGuide extends Guide {
         boolean printBreakWrongBlock = Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue();
         boolean printBreakExtraBlock = Configs.Print.BREAK_EXTRA_BLOCK.getBooleanValue();
         if (printBreakWrongBlock || printBreakExtraBlock) {
-            if (InteractionUtils.canBreakBlock(blockPos) && InteractionUtils.breakRestriction(currentState)) {
+            if (ConfigUtils.isPositionInMineSelectionRange(client.player, blockPos)
+                    && InteractionUtils.canBreakBlock(blockPos)
+                    && InteractionUtils.breakRestriction(currentState)) {
                 if (printBreakWrongBlock && !requiredState.isAir()) {
                     InteractionUtils.getRuntime().add(context);
                 } else if (printBreakExtraBlock && requiredState.isAir()) {
@@ -134,7 +137,9 @@ public class DefaultGuide extends Guide {
         if (!Configs.Print.BREAK_WRONG_STATE_BLOCK.getBooleanValue() || shouldIgnoreWrongStateBreak()) {
             return Result.PASS;
         }
-        if (InteractionUtils.canBreakBlock(blockPos) && InteractionUtils.breakRestriction(currentState)) {
+        if (ConfigUtils.isPositionInMineSelectionRange(client.player, blockPos)
+                && InteractionUtils.canBreakBlock(blockPos)
+                && InteractionUtils.breakRestriction(currentState)) {
             InteractionUtils.getRuntime().add(context);
         }
         return Result.PASS;

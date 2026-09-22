@@ -3,6 +3,7 @@ package me.aleksilassila.litematica.printer.handler.handlers;
 import com.google.common.collect.Iterables;
 import fi.dy.masa.litematica.world.WorldSchematic;
 import me.aleksilassila.litematica.printer.config.Configs;
+import me.aleksilassila.litematica.printer.enums.BlockMatchResult;
 import me.aleksilassila.litematica.printer.enums.PrintModeType;
 import me.aleksilassila.litematica.printer.guide.Guides;
 import me.aleksilassila.litematica.printer.handler.HudStatsManager;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.Nullable;
 
 public class PrintHandler extends FeatureModuleBase {
@@ -122,6 +124,37 @@ public class PrintHandler extends FeatureModuleBase {
     }
 
     @Override
+    protected boolean isInSelectionRange(BlockPos pos) {
+        if (super.isInSelectionRange(pos)) {
+            return true;
+        }
+        return ConfigUtils.isPrintBreakEnabled()
+                && ConfigUtils.isPositionInMineSelectionRange(this.player, pos);
+    }
+
+    @Override
+    protected Predicate<BlockPos> createSelectionRangePredicate() {
+        Predicate<BlockPos> printSelection = super.createSelectionRangePredicate();
+        if (!ConfigUtils.isPrintBreakEnabled()) {
+            return printSelection;
+        }
+        return pos -> printSelection.test(pos)
+                || ConfigUtils.isPositionInMineSelectionRange(this.player, pos);
+    }
+
+    @Override
+    protected List<PrinterBox> getScanSourceBoxes(PrinterBox playerInteractionBox) {
+        List<PrinterBox> printBoxes = super.getScanSourceBoxes(playerInteractionBox);
+        if (!ConfigUtils.isPrintBreakEnabled() || playerInteractionBox == null) {
+            return printBoxes;
+        }
+        List<PrinterBox> baseBoxes = this.litematica.createSchematicPlacementBoxes();
+        List<PrinterBox> mineBoxes = ConfigUtils.buildClampedSelectionBoxes(
+                baseBoxes, playerInteractionBox, this.player, Configs.Mine.MINE_SELECTION_TYPE);
+        return ConfigUtils.unionPrinterBoxes(printBoxes, mineBoxes);
+    }
+
+    @Override
     protected void preprocess() {
         this.printTasks.tick(this.level, this.litematica.schematicWorld());
         this.updatePrintSkipCache();
@@ -205,6 +238,14 @@ public class PrintHandler extends FeatureModuleBase {
             return false;
         }
         this.ctx = new SchematicBlockContext(client, level, schematic, blockPos);
+        boolean inPrintSelection = ConfigUtils.isPositionInSelectionRange(
+                this.player, blockPos, Configs.Print.PRINT_SELECTION_TYPE);
+        if (!inPrintSelection) {
+            BlockMatchResult match = BlockMatchResult.compare(this.ctx);
+            if (match == BlockMatchResult.MISSING || match == BlockMatchResult.CORRECT) {
+                return false;
+            }
+        }
         if (this.ctx.requiredState.getBlock() instanceof net.minecraft.world.level.block.FallingBlock
                 && this.fallingPlacements.blocks(
                         blockPos,
@@ -248,6 +289,7 @@ public class PrintHandler extends FeatureModuleBase {
         int result = Boolean.hashCode(Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue());
         result = 31 * result + Boolean.hashCode(Configs.Print.BREAK_EXTRA_BLOCK.getBooleanValue());
         result = 31 * result + Boolean.hashCode(Configs.Print.BREAK_WRONG_STATE_BLOCK.getBooleanValue());
+        result = 31 * result + Configs.Mine.MINE_SELECTION_TYPE.getOptionListValue().hashCode();
         result = 31 * result + Boolean.hashCode(Configs.Print.PRINT_SKIP.getBooleanValue());
         result = 31 * result + this.printSkipListCache.hashCode();
         result = 31 * result + Boolean.hashCode(Configs.Print.PRINT_REPLACE.getBooleanValue());

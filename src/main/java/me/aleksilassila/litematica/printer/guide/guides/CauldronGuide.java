@@ -6,6 +6,7 @@ import me.aleksilassila.litematica.printer.guide.Guide;
 import me.aleksilassila.litematica.printer.guide.Result;
 import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
+import me.aleksilassila.litematica.printer.utils.ConfigUtils;
 import me.aleksilassila.litematica.printer.utils.InteractionUtils;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import me.aleksilassila.litematica.printer.utils.PotionStackUtils;
@@ -60,6 +61,7 @@ public class CauldronGuide extends Guide {
             return Result.success(new ClickAction().setItem(Items.GLASS_BOTTLE));
         }
         if (Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue()
+                && ConfigUtils.isPositionInMineSelectionRange(client.player, blockPos)
                 && InteractionUtils.canBreakBlock(blockPos)) {
                 InteractionUtils.getRuntime().add(context);
         }

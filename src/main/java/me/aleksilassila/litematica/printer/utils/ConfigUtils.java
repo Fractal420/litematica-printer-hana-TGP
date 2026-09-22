@@ -3,6 +3,7 @@ package me.aleksilassila.litematica.printer.utils;
 import fi.dy.masa.malilib.config.options.ConfigOptionList;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.enums.*;
+import me.aleksilassila.litematica.printer.printer.PrinterBox;
 import me.aleksilassila.litematica.printer.utils.minecraft.PlayerUtils;
 import me.aleksilassila.litematica.printer.utils.mods.LitematicaUtils;
 import net.minecraft.client.Minecraft;
@@ -12,7 +13,10 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class ConfigUtils {
@@ -190,10 +194,108 @@ public class ConfigUtils {
         }
         return switch (selectionType) {
             case LITEMATICA_RENDER_LAYER -> LitematicaUtils.isPositionWithinRange(pos);
-            case LITEMATICA_SELECTION_BELOW_PLAYER -> pos.getY() <= Math.floor(player.getY());
-            case LITEMATICA_SELECTION_ABOVE_PLAYER -> pos.getY() >= Math.ceil(player.getY());
+            case LITEMATICA_SELECTION_BELOW_PLAYER -> {
+                int standingY = player.getBlockY() - 1;
+                yield LitematicaUtils.isPositionWithinRange(pos) && pos.getY() <= standingY;
+            }
+            case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
+                int standingY = player.getBlockY() - 1;
+                yield LitematicaUtils.isPositionWithinRange(pos) && pos.getY() > standingY;
+            }
             default -> true;
         };
+    }
+
+    public static boolean isPrintBreakEnabled() {
+        return Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue()
+                || Configs.Print.BREAK_EXTRA_BLOCK.getBooleanValue()
+                || Configs.Print.BREAK_WRONG_STATE_BLOCK.getBooleanValue();
+    }
+
+    public static boolean isPositionInMineSelectionRange(Player player, @NotNull BlockPos pos) {
+        return isPositionInSelectionRange(player, pos, Configs.Mine.MINE_SELECTION_TYPE);
+    }
+
+    public static @Nullable PrinterBox clampBoxToSelection(
+            @Nullable PrinterBox box,
+            Player player,
+            ConfigOptionList selectionTypeConfig
+    ) {
+        if (box == null || selectionTypeConfig == null) {
+            return box;
+        }
+        if (!(selectionTypeConfig.getOptionListValue() instanceof SelectionType selectionType)) {
+            return null;
+        }
+        return switch (selectionType) {
+            case LITEMATICA_SELECTION -> box;
+            case LITEMATICA_RENDER_LAYER -> LitematicaUtils.clampToRenderLayer(box);
+            case LITEMATICA_SELECTION_BELOW_PLAYER -> {
+                if (player == null) yield null;
+                PrinterBox layerClamped = LitematicaUtils.clampToRenderLayer(box);
+                if (layerClamped == null) yield null;
+                yield clipMaximumY(layerClamped, player.getBlockY() - 1);
+            }
+            case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
+                if (player == null) yield null;
+                PrinterBox layerClamped = LitematicaUtils.clampToRenderLayer(box);
+                if (layerClamped == null) yield null;
+                yield clipMinimumY(layerClamped, player.getBlockY());
+            }
+        };
+    }
+
+    public static List<PrinterBox> buildClampedSelectionBoxes(
+            List<PrinterBox> baseBoxes,
+            PrinterBox interactionBox,
+            Player player,
+            ConfigOptionList selectionTypeConfig
+    ) {
+        if (interactionBox == null || baseBoxes == null || baseBoxes.isEmpty()) {
+            return List.of();
+        }
+        List<PrinterBox> result = new ArrayList<>(baseBoxes.size());
+        for (PrinterBox baseBox : baseBoxes) {
+            PrinterBox bounded = intersect(interactionBox, baseBox);
+            bounded = clampBoxToSelection(bounded, player, selectionTypeConfig);
+            if (bounded != null) {
+                result.add(bounded);
+            }
+        }
+        return result.isEmpty() ? List.of() : List.copyOf(result);
+    }
+
+    public static List<PrinterBox> unionPrinterBoxes(List<PrinterBox> first, List<PrinterBox> second) {
+        if (first == null || first.isEmpty()) {
+            return second == null || second.isEmpty() ? List.of() : second;
+        }
+        if (second == null || second.isEmpty()) {
+            return first;
+        }
+        List<PrinterBox> result = new ArrayList<>(first.size() + second.size());
+        result.addAll(first);
+        result.addAll(second);
+        return List.copyOf(result);
+    }
+
+    private static @Nullable PrinterBox clipMaximumY(PrinterBox box, int maxY) {
+        int clipped = Math.min(box.maxY, maxY);
+        return clipped < box.minY ? null
+                : new PrinterBox(box.minX, box.minY, box.minZ, box.maxX, clipped, box.maxZ);
+    }
+
+    private static @Nullable PrinterBox clipMinimumY(PrinterBox box, int minY) {
+        int clipped = Math.max(box.minY, minY);
+        return clipped > box.maxY ? null
+                : new PrinterBox(box.minX, clipped, box.minZ, box.maxX, box.maxY, box.maxZ);
+    }
+
+    private static @Nullable PrinterBox intersect(PrinterBox first, PrinterBox second) {
+        int minX = Math.max(first.minX, second.minX), minY = Math.max(first.minY, second.minY);
+        int minZ = Math.max(first.minZ, second.minZ), maxX = Math.min(first.maxX, second.maxX);
+        int maxY = Math.min(first.maxY, second.maxY), maxZ = Math.min(first.maxZ, second.maxZ);
+        return minX > maxX || minY > maxY || minZ > maxZ ? null
+                : new PrinterBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     public static Direction getFillModeFacing() {

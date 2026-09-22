@@ -8,6 +8,7 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
 import me.aleksilassila.litematica.printer.utils.minecraft.BlockUtils;
+import me.aleksilassila.litematica.printer.utils.ConfigUtils;
 import me.aleksilassila.litematica.printer.utils.InteractionUtils;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import net.minecraft.core.Direction;
@@ -91,6 +92,7 @@ public class CropsGuide extends Guide {
                 || requiredKey.contains("melon_stem") && !currentKey.contains("melon_stem");
         if (wrongStem
                 && Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue()
+                && ConfigUtils.isPositionInMineSelectionRange(client.player, blockPos)
                 && InteractionUtils.canBreakBlock(blockPos)
                 && InteractionUtils.breakRestriction(currentState)) {
             InteractionUtils.getRuntime().add(context);

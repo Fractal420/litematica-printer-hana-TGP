@@ -17,6 +17,8 @@ final class ModuleSelectionScope {
     private final FeatureModuleBase owner;
     @Nullable private final ConfigOptionList selectionConfig;
     @Nullable private PrinterBox cachedInput;
+    @Nullable private SelectionType cachedSelectionType;
+    private int cachedStandingY = Integer.MIN_VALUE;
     private List<PrinterBox> cachedBoxes = List.of();
 
     ModuleSelectionScope(FeatureModuleBase owner, @Nullable ConfigOptionList selectionConfig) {
@@ -26,6 +28,8 @@ final class ModuleSelectionScope {
 
     void clearCache() {
         this.cachedInput = null;
+        this.cachedSelectionType = null;
+        this.cachedStandingY = Integer.MIN_VALUE;
         this.cachedBoxes = List.of();
     }
 
@@ -42,7 +46,13 @@ final class ModuleSelectionScope {
 
     List<PrinterBox> boxes(PrinterBox interactionBox) {
         if (interactionBox == null) return List.of();
-        if (interactionBox.equals(this.cachedInput)) return this.cachedBoxes;
+
+        SelectionType currentType = this.currentSelectionType();
+        int currentStandingY = this.standingYForCache(currentType);
+        boolean cacheValid = interactionBox.equals(this.cachedInput)
+                && currentType == this.cachedSelectionType
+                && currentStandingY == this.cachedStandingY;
+        if (cacheValid) return this.cachedBoxes;
 
         List<PrinterBox> baseBoxes;
         if (this.owner.isSchematicBlockHandler()) {
@@ -59,6 +69,8 @@ final class ModuleSelectionScope {
             if (bounded != null) result.add(bounded);
         }
         this.cachedInput = interactionBox;
+        this.cachedSelectionType = currentType;
+        this.cachedStandingY = currentStandingY;
         this.cachedBoxes = result.isEmpty() ? List.of() : List.copyOf(result);
         return this.cachedBoxes;
     }
@@ -90,10 +102,18 @@ final class ModuleSelectionScope {
         return switch (selectionType) {
             case LITEMATICA_SELECTION -> pos -> true;
             case LITEMATICA_RENDER_LAYER -> this.owner.litematica::isPositionWithinRenderLayer;
-            case LITEMATICA_SELECTION_BELOW_PLAYER -> player == null
-                    ? pos -> false : below((int) Math.floor(player.getY()));
-            case LITEMATICA_SELECTION_ABOVE_PLAYER -> player == null
-                    ? pos -> false : above((int) Math.ceil(player.getY()));
+            case LITEMATICA_SELECTION_BELOW_PLAYER -> {
+                if (player == null) yield pos -> false;
+                int standingY = standingBlockY(player);
+                yield pos -> this.owner.litematica.isPositionWithinRenderLayer(pos)
+                        && pos.getY() <= standingY;
+            }
+            case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
+                if (player == null) yield pos -> false;
+                int standingY = standingBlockY(player);
+                yield pos -> this.owner.litematica.isPositionWithinRenderLayer(pos)
+                        && pos.getY() > standingY;
+            }
         };
     }
 
@@ -104,19 +124,39 @@ final class ModuleSelectionScope {
         return switch (selectionType) {
             case LITEMATICA_SELECTION -> box;
             case LITEMATICA_RENDER_LAYER -> this.owner.litematica.clampToRenderLayer(box);
-            case LITEMATICA_SELECTION_BELOW_PLAYER -> player == null
-                    ? null : clipMaximumY(box, (int) Math.floor(player.getY()));
-            case LITEMATICA_SELECTION_ABOVE_PLAYER -> player == null
-                    ? null : clipMinimumY(box, (int) Math.ceil(player.getY()));
+            case LITEMATICA_SELECTION_BELOW_PLAYER -> {
+                if (player == null) yield null;
+                PrinterBox layerClamped = this.owner.litematica.clampToRenderLayer(box);
+                if (layerClamped == null) yield null;
+                yield clipMaximumY(layerClamped, standingBlockY(player));
+            }
+            case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
+                if (player == null) yield null;
+                PrinterBox layerClamped = this.owner.litematica.clampToRenderLayer(box);
+                if (layerClamped == null) yield null;
+                yield clipMinimumY(layerClamped, standingBlockY(player) + 1);
+            }
         };
     }
 
-    private static Predicate<BlockPos> below(int y) {
-        return pos -> pos.getY() <= y;
+    @Nullable
+    private SelectionType currentSelectionType() {
+        if (this.selectionConfig == null) return null;
+        if (this.selectionConfig.getOptionListValue() instanceof SelectionType type) return type;
+        return null;
     }
 
-    private static Predicate<BlockPos> above(int y) {
-        return pos -> pos.getY() >= y;
+    private int standingYForCache(@Nullable SelectionType type) {
+        if (type != SelectionType.LITEMATICA_SELECTION_BELOW_PLAYER
+                && type != SelectionType.LITEMATICA_SELECTION_ABOVE_PLAYER) {
+            return Integer.MIN_VALUE;
+        }
+        LocalPlayer player = this.owner.player;
+        return player == null ? Integer.MIN_VALUE : standingBlockY(player);
+    }
+
+    private static int standingBlockY(LocalPlayer player) {
+        return player.getBlockY() - 1;
     }
 
     private static @Nullable PrinterBox clipMaximumY(PrinterBox box, int maxY) {
