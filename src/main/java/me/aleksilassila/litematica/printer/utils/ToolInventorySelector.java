@@ -1,6 +1,7 @@
 package me.aleksilassila.litematica.printer.utils;
 
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
+import me.aleksilassila.litematica.printer.utils.EatingYieldUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.PlayerUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.ToolSelectionUtils;
 import net.minecraft.client.Minecraft;
@@ -34,7 +35,8 @@ public final class ToolInventorySelector {
             return false;
         }
         if (RuntimeAccess.get().inventorySwitchGuard().isWaiting()
-                || PlayerUtils.getAbilities(player).instabuild) {
+                || PlayerUtils.getAbilities(player).instabuild
+                || EatingYieldUtils.shouldYield(player)) {
             return false;
         }
 

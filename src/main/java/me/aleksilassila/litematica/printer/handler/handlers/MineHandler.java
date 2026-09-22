@@ -206,6 +206,13 @@ public class MineHandler extends FeatureModuleBase {
     }
 
     @Override
+    protected void cancelActiveWorkForEating() {
+        this.activeMinePos = null;
+        this.toolSession.reset();
+        this.actionBroker.cancelQueue();
+    }
+
+    @Override
     protected boolean canIterate() {
         return this.activeMinePos == null && !InteractionUtils.getRuntime().hasActiveDestroyTarget();
     }

@@ -149,6 +149,18 @@ public class PrintHandler extends FeatureModuleBase {
     }
 
     @Override
+    protected void cancelActiveWorkForEating() {
+        this.action = null;
+        this.printTaskAction = null;
+        this.ctx = null;
+        this.printTasks.clear();
+        this.fallingPlacements.clear();
+        this.retryTargets.clear();
+        this.sortedTargets.clear();
+        this.actionBroker.cancelQueue();
+    }
+
+    @Override
     protected Iterable<BlockPos> getIterationPositions(PrinterBox playerInteractionBox) {
         WorldSchematic schematic = this.litematica.schematicWorld();
         List<BlockPos> runnableTasks = this.printTasks.readyTargetPositions();

@@ -9,6 +9,8 @@ import me.aleksilassila.litematica.printer.handler.handlers.MineDebugLog;
 import me.aleksilassila.litematica.printer.core.action.ResourceLease;
 import net.minecraft.client.Minecraft;
 import me.aleksilassila.litematica.printer.runtime.PrinterRuntime;
+import me.aleksilassila.litematica.printer.utils.EatingYieldUtils;
+import me.aleksilassila.litematica.printer.mixin_extension.MultiPlayerGameModeExtension;
 
 
 final class TickScheduler implements RuntimeComponent {
@@ -53,19 +55,20 @@ final class TickScheduler implements RuntimeComponent {
             return;
         }
         boolean inventoryBusy = this.pauseForInventoryState("shared_precheck");
-        // Advance a pending look transaction, but do not turn it into a global scheduler
-        // barrier.  The coordinator owns LOOK/INTERACTION per action owner; unrelated features
-        // must still be able to scan and submit their own resources in this tick.
+        boolean eating = this.pauseForEating(mc);
         this.advancePendingLookQueue(mc);
         this.pauseForLagCheck();
         TickContext context = TickContext.capture();
-        if (!inventoryBusy) {
+        if (!inventoryBusy && !eating) {
             this.resume();
         }
         for (FeatureModuleBase handler : this.modules) {
             if (handler instanceof GuiHandler) {
                 handler.tick(context);
             }
+        }
+        if (eating) {
+            return;
         }
         int actionableCount = Math.max(0, this.modules.size() - 1);
         if (actionableCount == 0) {
@@ -134,6 +137,23 @@ final class TickScheduler implements RuntimeComponent {
             return true;
         }
         return false;
+    }
+
+    private boolean pauseForEating(Minecraft mc) {
+        if (!EatingYieldUtils.shouldYield(mc.player)) {
+            return false;
+        }
+        this.pause("player_eating");
+        this.runtime.actionBroker().cancelQueue();
+        this.runtime.inventorySwitchGuard().reset();
+        this.runtime.interactionUtils().resetRuntime();
+        if (mc.gameMode instanceof MultiPlayerGameModeExtension extension) {
+            extension.litematica_printer$resetRuntime();
+        }
+        for (FeatureModuleBase module : this.modules) {
+            module.cancelActiveWorkForEating();
+        }
+        return true;
     }
 
     private void advancePendingLookQueue(Minecraft mc) {

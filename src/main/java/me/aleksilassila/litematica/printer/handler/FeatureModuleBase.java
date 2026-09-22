@@ -200,6 +200,9 @@ public abstract class FeatureModuleBase extends ConfigUtils implements RuntimeCo
     protected void onRuntimeReset() {
     }
 
+    protected void cancelActiveWorkForEating() {
+    }
+
     protected boolean isSchematicBlockHandler() {
         return false;
     }

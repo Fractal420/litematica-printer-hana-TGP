@@ -111,6 +111,10 @@ public final class InteractionUtils implements RuntimeComponent {
         if (player == null || level == null) {
             return;
         }
+        if (EatingYieldUtils.shouldYield(player)) {
+            this.breakState.clearActive();
+            return;
+        }
         if (this.breakState.isLocked()) {
             return;
         }

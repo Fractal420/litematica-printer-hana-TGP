@@ -2,6 +2,7 @@ package me.aleksilassila.litematica.printer.interaction;
 
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.integration.tweakeroo.TweakerooToolSwitchPort;
+import me.aleksilassila.litematica.printer.utils.EatingYieldUtils;
 import me.aleksilassila.litematica.printer.utils.InventorySwitchGuard;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import net.minecraft.client.Minecraft;
@@ -39,6 +40,9 @@ public final class ToolSwitchService {
         }
         if (this.switchGuard.isWaiting()) {
             return ToolPreparationResult.SWITCHED_WAITING_SYNC;
+        }
+        if (EatingYieldUtils.shouldYield(player)) {
+            return ToolPreparationResult.UNAVAILABLE;
         }
 
         int beforeSlot = InventoryUtils.getSelectedSlot(player.getInventory());
