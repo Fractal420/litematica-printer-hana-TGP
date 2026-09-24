@@ -195,7 +195,11 @@ public class ConfigUtils {
         return switch (selectionType) {
             case LITEMATICA_RENDER_LAYER -> LitematicaUtils.isPositionWithinRange(pos);
             case LITEMATICA_SELECTION_BELOW_PLAYER -> pos.getY() <= standingBlockY(player);
+            case LITEMATICA_SELECTION_BELOW_PLAYER_LAYER ->
+                    LitematicaUtils.isPositionWithinRange(pos) && pos.getY() <= standingBlockY(player);
             case LITEMATICA_SELECTION_ABOVE_PLAYER -> pos.getY() > standingBlockY(player);
+            case LITEMATICA_SELECTION_ABOVE_PLAYER_LAYER ->
+                    LitematicaUtils.isPositionWithinRange(pos) && pos.getY() > standingBlockY(player);
             default -> true;
         };
     }
@@ -228,17 +232,21 @@ public class ConfigUtils {
         return switch (selectionType) {
             case LITEMATICA_SELECTION -> box;
             case LITEMATICA_RENDER_LAYER -> LitematicaUtils.clampToRenderLayer(box);
-            case LITEMATICA_SELECTION_BELOW_PLAYER -> {
+            case LITEMATICA_SELECTION_BELOW_PLAYER, LITEMATICA_SELECTION_BELOW_PLAYER_LAYER -> {
                 if (player == null) yield null;
-                PrinterBox layerClamped = LitematicaUtils.clampToRenderLayer(box);
-                if (layerClamped == null) yield null;
-                yield clipMaximumY(layerClamped, standingBlockY(player));
+                PrinterBox base = selectionType.requiresRenderLayer()
+                        ? LitematicaUtils.clampToRenderLayer(box)
+                        : box;
+                if (base == null) yield null;
+                yield clipMaximumY(base, standingBlockY(player));
             }
-            case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
+            case LITEMATICA_SELECTION_ABOVE_PLAYER, LITEMATICA_SELECTION_ABOVE_PLAYER_LAYER -> {
                 if (player == null) yield null;
-                PrinterBox layerClamped = LitematicaUtils.clampToRenderLayer(box);
-                if (layerClamped == null) yield null;
-                yield clipMinimumY(layerClamped, standingBlockY(player) + 1);
+                PrinterBox base = selectionType.requiresRenderLayer()
+                        ? LitematicaUtils.clampToRenderLayer(box)
+                        : box;
+                if (base == null) yield null;
+                yield clipMinimumY(base, standingBlockY(player) + 1);
             }
         };
     }

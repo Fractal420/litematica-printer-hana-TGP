@@ -236,8 +236,8 @@
   "litematica-printer.config.renderLayerLimit.desc": "Ограничивает рабочую область принтера диапазоном слоёв, которые сейчас отображает Litematica.",
   "litematica-printer.config.selectionType.litematica.renderLayer": "Отображаемый слой проекции",
   "litematica-printer.config.selectionType.litematica.selection": "Выделение проекции",
-  "litematica-printer.config.selectionType.litematica.selection.abovePlayer": "Выделение проекции (выше игрока)",
-  "litematica-printer.config.selectionType.litematica.selection.belowPlayer": "Выделение проекции (ниже игрока)",
+  "litematica-printer.config.selectionType.litematica.selection.abovePlayer": "Выделение проекции (выше игрока · всё)",
+  "litematica-printer.config.selectionType.litematica.selection.belowPlayer": "Выделение проекции (ниже игрока · всё)",
   "litematica-printer.config.storeOrderly": "Упорядоченное хранение предметов",
   "litematica-printer.config.storeOrderly.desc": "Когда инвентарь почти заполнен, возвращает реже всего использовавшиеся предметы Quick Shulker и автоматически убирает неиспользуемые предметы; в первую очередь использует исходный шалкер и слот, затем совпадающие стопки и пустые слоты.",
   "litematica-printer.config.switchPrinterMode": "Переключить режим",
@@ -363,5 +363,7 @@
   "litematica-printer.hud.network.confirmed": "Подтверждено",
   "litematica-printer.hud.network.late_update": "Позднее обновление",
   "litematica-printer.hud.network.retry": "Повтор",
-  "litematica-printer.hud.network.stuck": "Застрял"
+  "litematica-printer.hud.network.stuck": "Застрял",
+  "litematica-printer.config.selectionType.litematica.selection.abovePlayer.renderLayer": "Выделение проекции (выше игрока · отображаемый слой)",
+  "litematica-printer.config.selectionType.litematica.selection.belowPlayer.renderLayer": "Выделение проекции (ниже игрока · отображаемый слой)"
 }

@@ -230,8 +230,8 @@
   "litematica-printer.config.renderLayerLimit.desc": "限機巧工域為Litematica當前渲染之圖層界。",
   "litematica-printer.config.selectionType.litematica.renderLayer": "投影渲染層",
   "litematica-printer.config.selectionType.litematica.selection": "投影選界",
-  "litematica-printer.config.selectionType.litematica.selection.abovePlayer": "投影選界（玩家之上）",
-  "litematica-printer.config.selectionType.litematica.selection.belowPlayer": "投影選界（玩家之下）",
+  "litematica-printer.config.selectionType.litematica.selection.abovePlayer": "投影選界（玩家之上 · 全）",
+  "litematica-printer.config.selectionType.litematica.selection.belowPlayer": "投影選界（玩家之下 · 全）",
   "litematica-printer.config.storeOrderly": "物歸其位",
   "litematica-printer.config.storeOrderly.desc": "囊將滿則先歸久未用之速啟盒物，久不用亦自清；先歸原盒原格，不能盡納則次合於同物之疊，復用空格。",
   "litematica-printer.config.switchPrinterMode": "切式",
@@ -363,5 +363,7 @@
   "litematica-printer.hud.network.confirmed": "已驗",
   "litematica-printer.hud.network.late_update": "遲更",
   "litematica-printer.hud.network.retry": "重試",
-  "litematica-printer.hud.network.stuck": "滯"
+  "litematica-printer.hud.network.stuck": "滯",
+  "litematica-printer.config.selectionType.litematica.selection.abovePlayer.renderLayer": "投影選界（玩家之上 · 渲染層）",
+  "litematica-printer.config.selectionType.litematica.selection.belowPlayer.renderLayer": "投影選界（玩家之下 · 渲染層）"
 }

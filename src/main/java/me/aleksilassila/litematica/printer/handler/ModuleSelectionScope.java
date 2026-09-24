@@ -101,16 +101,18 @@ final class ModuleSelectionScope {
         return switch (selectionType) {
             case LITEMATICA_SELECTION -> pos -> true;
             case LITEMATICA_RENDER_LAYER -> this.owner.litematica::isPositionWithinRenderLayer;
-            case LITEMATICA_SELECTION_BELOW_PLAYER -> {
+            case LITEMATICA_SELECTION_BELOW_PLAYER, LITEMATICA_SELECTION_BELOW_PLAYER_LAYER -> {
                 if (player == null) yield pos -> false;
                 int standingY = standingBlockY(player);
-                yield pos -> this.owner.litematica.isPositionWithinRenderLayer(pos)
+                boolean layer = selectionType.requiresRenderLayer();
+                yield pos -> (!layer || this.owner.litematica.isPositionWithinRenderLayer(pos))
                         && pos.getY() <= standingY;
             }
-            case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
+            case LITEMATICA_SELECTION_ABOVE_PLAYER, LITEMATICA_SELECTION_ABOVE_PLAYER_LAYER -> {
                 if (player == null) yield pos -> false;
                 int standingY = standingBlockY(player);
-                yield pos -> this.owner.litematica.isPositionWithinRenderLayer(pos)
+                boolean layer = selectionType.requiresRenderLayer();
+                yield pos -> (!layer || this.owner.litematica.isPositionWithinRenderLayer(pos))
                         && pos.getY() > standingY;
             }
         };
@@ -123,17 +125,21 @@ final class ModuleSelectionScope {
         return switch (selectionType) {
             case LITEMATICA_SELECTION -> box;
             case LITEMATICA_RENDER_LAYER -> this.owner.litematica.clampToRenderLayer(box);
-            case LITEMATICA_SELECTION_BELOW_PLAYER -> {
+            case LITEMATICA_SELECTION_BELOW_PLAYER, LITEMATICA_SELECTION_BELOW_PLAYER_LAYER -> {
                 if (player == null) yield null;
-                PrinterBox layerClamped = this.owner.litematica.clampToRenderLayer(box);
-                if (layerClamped == null) yield null;
-                yield clipMaximumY(layerClamped, standingBlockY(player));
+                PrinterBox base = selectionType.requiresRenderLayer()
+                        ? this.owner.litematica.clampToRenderLayer(box)
+                        : box;
+                if (base == null) yield null;
+                yield clipMaximumY(base, standingBlockY(player));
             }
-            case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
+            case LITEMATICA_SELECTION_ABOVE_PLAYER, LITEMATICA_SELECTION_ABOVE_PLAYER_LAYER -> {
                 if (player == null) yield null;
-                PrinterBox layerClamped = this.owner.litematica.clampToRenderLayer(box);
-                if (layerClamped == null) yield null;
-                yield clipMinimumY(layerClamped, standingBlockY(player) + 1);
+                PrinterBox base = selectionType.requiresRenderLayer()
+                        ? this.owner.litematica.clampToRenderLayer(box)
+                        : box;
+                if (base == null) yield null;
+                yield clipMinimumY(base, standingBlockY(player) + 1);
             }
         };
     }
@@ -146,8 +152,7 @@ final class ModuleSelectionScope {
     }
 
     private int standingYForCache(@Nullable SelectionType type) {
-        if (type != SelectionType.LITEMATICA_SELECTION_BELOW_PLAYER
-                && type != SelectionType.LITEMATICA_SELECTION_ABOVE_PLAYER) {
+        if (type == null || (!type.isBelowPlayer() && !type.isAbovePlayer())) {
             return Integer.MIN_VALUE;
         }
         LocalPlayer player = this.owner.player;

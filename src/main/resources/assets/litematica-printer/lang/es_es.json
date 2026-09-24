@@ -236,8 +236,8 @@
   "litematica-printer.config.renderLayerLimit.desc": "Limita el área de trabajo de la impresora al intervalo de capas que Litematica muestra actualmente.",
   "litematica-printer.config.selectionType.litematica.renderLayer": "Capa renderizada de la proyección",
   "litematica-printer.config.selectionType.litematica.selection": "Selección de la proyección",
-  "litematica-printer.config.selectionType.litematica.selection.abovePlayer": "Selección de la proyección (sobre el jugador)",
-  "litematica-printer.config.selectionType.litematica.selection.belowPlayer": "Selección de la proyección (bajo el jugador)",
+  "litematica-printer.config.selectionType.litematica.selection.abovePlayer": "Selección de la proyección (sobre el jugador · todo)",
+  "litematica-printer.config.selectionType.litematica.selection.belowPlayer": "Selección de la proyección (bajo el jugador · todo)",
   "litematica-printer.config.storeOrderly": "Almacenamiento ordenado de objetos",
   "litematica-printer.config.storeOrderly.desc": "Cuando el inventario esté casi lleno, devuelve los objetos menos usados recientemente por Quick Shulker y limpia automáticamente los objetos inactivos; da prioridad a la caja de shulker y la ranura originales, después a las pilas coincidentes y las ranuras vacías.",
   "litematica-printer.config.switchPrinterMode": "Cambiar de modo",
@@ -363,5 +363,7 @@
   "litematica-printer.hud.network.confirmed": "Confirmado",
   "litematica-printer.hud.network.late_update": "Actualización tardía",
   "litematica-printer.hud.network.retry": "Reintento",
-  "litematica-printer.hud.network.stuck": "Atascado"
+  "litematica-printer.hud.network.stuck": "Atascado",
+  "litematica-printer.config.selectionType.litematica.selection.abovePlayer.renderLayer": "Selección de la proyección (sobre el jugador · capa renderizada)",
+  "litematica-printer.config.selectionType.litematica.selection.belowPlayer.renderLayer": "Selección de la proyección (bajo el jugador · capa renderizada)"
 }
