@@ -125,11 +125,7 @@ public class PrintHandler extends FeatureModuleBase {
 
     @Override
     protected boolean isInSelectionRange(BlockPos pos) {
-        if (super.isInSelectionRange(pos)) {
-            return true;
-        }
-        return ConfigUtils.isPrintBreakEnabled()
-                && ConfigUtils.isPositionInMineSelectionRange(this.player, pos);
+        return this.createSelectionRangePredicate().test(pos);
     }
 
     @Override

@@ -81,8 +81,7 @@ final class ModuleSelectionScope {
                 && !this.owner.litematica.isWithinSelectionRange(pos)) {
             return false;
         }
-        return this.selectionConfig == null
-                || ConfigUtils.isPositionInSelectionRange(this.owner.player, pos, this.selectionConfig);
+        return this.configuredPredicate().test(pos);
     }
 
     Predicate<BlockPos> predicate() {
@@ -156,7 +155,7 @@ final class ModuleSelectionScope {
     }
 
     private static int standingBlockY(LocalPlayer player) {
-        return player.getBlockY() - 1;
+        return ConfigUtils.standingBlockY(player);
     }
 
     private static @Nullable PrinterBox clipMaximumY(PrinterBox box, int maxY) {

@@ -194,16 +194,14 @@ public class ConfigUtils {
         }
         return switch (selectionType) {
             case LITEMATICA_RENDER_LAYER -> LitematicaUtils.isPositionWithinRange(pos);
-            case LITEMATICA_SELECTION_BELOW_PLAYER -> {
-                int standingY = player.getBlockY() - 1;
-                yield LitematicaUtils.isPositionWithinRange(pos) && pos.getY() <= standingY;
-            }
-            case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
-                int standingY = player.getBlockY() - 1;
-                yield LitematicaUtils.isPositionWithinRange(pos) && pos.getY() > standingY;
-            }
+            case LITEMATICA_SELECTION_BELOW_PLAYER -> pos.getY() <= standingBlockY(player);
+            case LITEMATICA_SELECTION_ABOVE_PLAYER -> pos.getY() > standingBlockY(player);
             default -> true;
         };
+    }
+
+    public static int standingBlockY(Player player) {
+        return player.getBlockY() - 1;
     }
 
     public static boolean isPrintBreakEnabled() {
@@ -234,13 +232,13 @@ public class ConfigUtils {
                 if (player == null) yield null;
                 PrinterBox layerClamped = LitematicaUtils.clampToRenderLayer(box);
                 if (layerClamped == null) yield null;
-                yield clipMaximumY(layerClamped, player.getBlockY() - 1);
+                yield clipMaximumY(layerClamped, standingBlockY(player));
             }
             case LITEMATICA_SELECTION_ABOVE_PLAYER -> {
                 if (player == null) yield null;
                 PrinterBox layerClamped = LitematicaUtils.clampToRenderLayer(box);
                 if (layerClamped == null) yield null;
-                yield clipMinimumY(layerClamped, player.getBlockY());
+                yield clipMinimumY(layerClamped, standingBlockY(player) + 1);
             }
         };
     }
