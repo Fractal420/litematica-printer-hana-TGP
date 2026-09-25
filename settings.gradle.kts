@@ -63,14 +63,38 @@ val requestedVersions = System.getenv("TARGET_MC_VERSIONS")
     ?.filter { it.isNotEmpty() }
     ?.distinct()
 
-val selectedVersions = when {
-    requestedVersions.isNullOrEmpty() -> versions
-    else -> {
-        val unknownVersions = requestedVersions - versions.toSet()
-        require(unknownVersions.isEmpty()) {
-            "Unknown TARGET_MC_VERSIONS entries: ${unknownVersions.joinToString(", ")}"
+// When a version-specific Gradle task is requested directly (for example
+// `./gradlew :1.21.11:build`), only configure the versions needed by that
+// target. Keep root/all-version tasks unchanged: `./gradlew build` still
+// configures every version.
+//
+// TARGET_MC_VERSIONS remains supported for CI/release jobs that explicitly
+// provide a version set.
+val taskRequestedVersions = if (requestedVersions.isNullOrEmpty()) {
+    gradle.startParameter.taskNames
+        .mapNotNull { taskName ->
+            Regex("^:?([^:]+):").find(taskName)?.groupValues?.get(1)
         }
-        expandWithPreprocessParents(requestedVersions).let { expanded ->
+        .filter { it in versions }
+        .distinct()
+} else {
+    emptyList()
+}
+
+val effectiveRequestedVersions = when {
+    !requestedVersions.isNullOrEmpty() -> requestedVersions
+    taskRequestedVersions.isNotEmpty() -> taskRequestedVersions
+    else -> null
+}
+
+val selectedVersions = when {
+    effectiveRequestedVersions == null -> versions
+    else -> {
+        val unknownVersions = effectiveRequestedVersions - versions.toSet()
+        require(unknownVersions.isEmpty()) {
+            "Unknown target Minecraft versions: ${unknownVersions.joinToString(", ")}"
+        }
+        expandWithPreprocessParents(effectiveRequestedVersions).let { expanded ->
             if (mainProjectVersion in expanded) expanded else expanded + mainProjectVersion
         }
     }
