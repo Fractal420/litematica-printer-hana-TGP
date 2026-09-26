@@ -10,8 +10,8 @@ import me.aleksilassila.litematica.printer.core.action.ResourceLease;
 import net.minecraft.client.Minecraft;
 import me.aleksilassila.litematica.printer.runtime.PrinterRuntime;
 import me.aleksilassila.litematica.printer.utils.EatingYieldUtils;
+import me.aleksilassila.litematica.printer.utils.CarriedItemUtils;
 import me.aleksilassila.litematica.printer.mixin_extension.MultiPlayerGameModeExtension;
-
 
 final class TickScheduler implements RuntimeComponent {
     private final ImmutableList<FeatureModuleBase> modules;
@@ -35,6 +35,10 @@ final class TickScheduler implements RuntimeComponent {
                 mc.player,
                 mc.level != null ? mc.level.getGameTime() : 0L
         );
+        if (Configs.Core.WORK_SWITCH.getBooleanValue()
+                && !this.runtime.manualVanillaRefill().isBusy()) {
+            CarriedItemUtils.tryClearCarried(mc);
+        }
         if (!Configs.Core.WORK_SWITCH.getBooleanValue()) {
             if (this.runtimeActive) {
                 this.runtime.reset("work_switch_disabled");
@@ -56,10 +60,11 @@ final class TickScheduler implements RuntimeComponent {
         }
         boolean inventoryBusy = this.pauseForInventoryState("shared_precheck");
         boolean eating = this.pauseForEating(mc);
+        boolean vanillaRefill = this.pauseForVanillaRefill(mc);
         this.advancePendingLookQueue(mc);
         this.pauseForLagCheck();
         TickContext context = TickContext.capture();
-        if (!inventoryBusy && !eating) {
+        if (!inventoryBusy && !eating && !vanillaRefill) {
             this.resume();
         }
         for (FeatureModuleBase handler : this.modules) {
@@ -67,7 +72,7 @@ final class TickScheduler implements RuntimeComponent {
                 handler.tick(context);
             }
         }
-        if (eating) {
+        if (eating || vanillaRefill) {
             return;
         }
         int actionableCount = Math.max(0, this.modules.size() - 1);
@@ -131,9 +136,11 @@ final class TickScheduler implements RuntimeComponent {
     private boolean pauseForInventoryState(String reasonPrefix) {
         boolean inventoryLease = this.runtime.actionBroker().isResourceHeld(ResourceLease.INVENTORY);
         boolean inventorySwitchPending = this.runtime.inventorySwitchGuard().isWaiting();
-        if (inventoryLease || inventorySwitchPending) {
+        boolean carriedBlocked = CarriedItemUtils.hasCarriedItem(this.runtime.client().player);
+        if (inventoryLease || inventorySwitchPending || carriedBlocked) {
             this.pause(reasonPrefix + " inventoryLease=" + inventoryLease
-                    + " inventorySwitchPending=" + inventorySwitchPending);
+                    + " inventorySwitchPending=" + inventorySwitchPending
+                    + " carriedBlocked=" + carriedBlocked);
             return true;
         }
         return false;
@@ -149,6 +156,25 @@ final class TickScheduler implements RuntimeComponent {
         this.runtime.interactionUtils().resetRuntime();
         if (mc.gameMode instanceof MultiPlayerGameModeExtension extension) {
             extension.litematica_printer$resetRuntime();
+        }
+        for (FeatureModuleBase module : this.modules) {
+            module.cancelActiveWorkForEating();
+        }
+        return true;
+    }
+
+    private boolean pauseForVanillaRefill(Minecraft mc) {
+        if (!this.runtime.manualVanillaRefill().shouldPause()) {
+            return false;
+        }
+        this.pause("manual_vanilla_refill");
+        this.runtime.actionBroker().cancelQueue();
+        this.runtime.inventorySwitchGuard().reset();
+        if (this.runtime.manualVanillaRefill().shouldBlockExternalBreaking()) {
+            this.runtime.interactionUtils().resetRuntime();
+            if (mc.gameMode instanceof MultiPlayerGameModeExtension extension) {
+                extension.litematica_printer$resetRuntime();
+            }
         }
         for (FeatureModuleBase module : this.modules) {
             module.cancelActiveWorkForEating();

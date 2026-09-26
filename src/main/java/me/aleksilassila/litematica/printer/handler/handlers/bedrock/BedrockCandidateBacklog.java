@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-/** Retains modeled bedrock candidates until the controller accepts or invalidates them. */
 final class BedrockCandidateBacklog<T> {
     private static final int DEFAULT_CAPACITY = 16;
     private final LinkedHashMap<BlockPos, T> entries = new LinkedHashMap<>();

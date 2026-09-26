@@ -9,7 +9,6 @@ import net.minecraft.core.BlockPos;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Consumes one feature candidate stream without owning its scan lifecycle. */
 final class ModuleIterationRunner {
     private static final int BUDGET_CHECK_INTERVAL = 8;
 

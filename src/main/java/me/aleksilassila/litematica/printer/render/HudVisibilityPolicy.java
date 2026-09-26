@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.render;
 
-/** Determines whether Printer may contribute any HUD elements for the current frame. */
 public final class HudVisibilityPolicy {
     private HudVisibilityPolicy() {
     }

@@ -9,7 +9,7 @@ public enum PrintModeType implements ConfigOptionListEntry<PrintModeType> {
     FLUID("printMode.fluid"),
     FILL("printMode.fill"),
     COVER("printMode.cover"),
-    // REPLACE("printMode.replace"),
+
     BEDROCK("printMode.bedrock");
 
     private final I18n i18n;

@@ -2,6 +2,7 @@ package me.aleksilassila.litematica.printer.mixin;
 
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import me.aleksilassila.litematica.printer.utils.mods.QuickShulkerBridge;
+import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.utils.mods.ChestTrackerBridge;
 import me.aleksilassila.litematica.printer.utils.minecraft.NetworkUtils;
 import net.minecraft.client.Minecraft;
@@ -15,13 +16,15 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-
 @Mixin(ClientPacketListener.class)
 public abstract class MixinClientPacketListener {
 
     @Inject(at = @At("HEAD"), method = "handleOpenScreen")
     private void printer$trackQuickShulkerContainerOpen(ClientboundOpenScreenPacket packet, CallbackInfo ci) {
         QuickShulkerBridge.onContainerOpen(packet.getContainerId());
+        if (Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()) {
+            RuntimeAccess.get().manualVanillaRefill().onContainerOpen(packet.getContainerId());
+        }
     }
 
     @Inject(
@@ -57,6 +60,9 @@ public abstract class MixinClientPacketListener {
         //$$ int containerId = packet.getContainerId();
         //#endif
         ChestTrackerBridge.onContainerContent(containerId);
+        if (Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()) {
+            RuntimeAccess.get().manualVanillaRefill().onInventoryContent(containerId);
+        }
         if (client.player == null
                 || client.player.containerMenu == client.player.inventoryMenu
                 || containerId != client.player.containerMenu.containerId) {

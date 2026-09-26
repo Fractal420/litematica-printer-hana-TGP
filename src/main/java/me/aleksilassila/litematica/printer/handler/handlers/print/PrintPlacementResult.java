@@ -22,12 +22,10 @@ public record PrintPlacementResult(
         return new PrintPlacementResult(false, skipIteration, TaskEvent.MATERIAL_UNAVAILABLE, -1);
     }
 
-    /** A neighbouring world update must make this target placeable before it is scanned again. */
     public static PrintPlacementResult worldBlocked() {
         return new PrintPlacementResult(false, false, TaskEvent.WORLD_BLOCKED, -1);
     }
 
-    /** Only transient submission failures retry immediately; external waits need a wake-up. */
     public boolean shouldRetryTarget() {
         return this.taskEvent == TaskEvent.DEFERRED
                 || this.taskEvent == TaskEvent.CANCELLED

@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-/** Captures the Fabric strippable registry once and exposes the inverse lookup to print tasks. */
 public final class StrippableBlockAdapter implements StrippableBlockPort {
     private final Map<Block, Block> sourceByStripped = new IdentityHashMap<>();
 

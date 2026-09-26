@@ -14,9 +14,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 箱子
- */
 public class ChestGuide extends Guide {
 
     public ChestGuide(SchematicBlockContext context) {
@@ -30,7 +27,6 @@ public class ChestGuide extends Guide {
         Direction facingOpposite = facing.getOpposite();
         ChestType chestType = getProperty(requiredState, BlockStateProperties.CHEST_TYPE).orElse(ChestType.SINGLE);
 
-        // 收集所有不与其他箱子相邻的面
         Map<Direction, Vec3> noChestSides = new HashMap<>();
         for (Direction side : Direction.values()) {
             if (level.getBlockState(blockPos.relative(side)).getBlock() instanceof ChestBlock) {
@@ -40,7 +36,7 @@ public class ChestGuide extends Guide {
         }
 
         if (chestType == ChestType.SINGLE) {
-            // 有水平方向的箱子邻居 → 潜行放置（防止自动合并）
+
             boolean hasChestNeighbor = Direction.Plane.HORIZONTAL.stream()
                     .anyMatch(s -> !noChestSides.containsKey(s));
             if (hasChestNeighbor) {
@@ -49,14 +45,12 @@ public class ChestGuide extends Guide {
             return Result.success(new Action().setSides(noChestSides).setLookDirection(facingOpposite));
         }
 
-        // 双箱子：不潜行放置，让 Minecraft 自动合并
-        // 无论另一半是否已放，都不能潜行，否则会阻止合并
         Direction partnerDir = chestType == ChestType.LEFT
                 ? facing.getClockWise()
                 : facing.getCounterClockWise();
 
         Map<Direction, Vec3> clickSides = new HashMap<>(noChestSides);
-        clickSides.put(partnerDir, Vec3.ZERO);  // 也允许从另一半方向点击
+        clickSides.put(partnerDir, Vec3.ZERO);
 
         return Result.success(new Action()
                 .setSides(clickSides)

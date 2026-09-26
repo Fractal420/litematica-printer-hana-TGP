@@ -19,9 +19,6 @@ import net.minecraft.world.item.Items;
 
 import java.util.Optional;
 
-/**
- * 农作物
- */
 public class CropsGuide extends Guide {
 
     public CropsGuide(SchematicBlockContext context) {
@@ -46,18 +43,16 @@ public class CropsGuide extends Guide {
 
         Direction facing = getProperty(requiredState, BlockStateProperties.HORIZONTAL_FACING).orElse(null);
 
-        // 茎类（StemBlock/AttachedStemBlock）：AGE 是生长阶段，facing 朝向不对应破坏重放
         if (requiredBlock instanceof StemBlock || requiredBlock instanceof AttachedStemBlock) {
             if (facing != null
                     && currentState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
                     && !getProperty(currentState, BlockStateProperties.HORIZONTAL_FACING).equals(Optional.of(facing))) {
-                return Result.PASS; // facing 不对 → 放置性错误，交给 DefaultGuide 破坏重放
+                return Result.PASS;
             }
-            // AGE 由生长决定，跳过
+
             return Result.SKIP;
         }
 
-        // 农作物（CropBlock）和甜菜根（BeetrootBlock）：骨粉催熟
         if (currentBlock == requiredBlock
                 && InventoryUtils.playerHasAccessToItem(client.player, Items.BONE_MEAL)) {
             IntegerProperty ageProp;

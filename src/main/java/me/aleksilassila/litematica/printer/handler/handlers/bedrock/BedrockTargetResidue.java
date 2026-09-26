@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Classifies and cleans transient machine residue for one target. */
 final class BedrockTargetResidue {
     private static final int CLEANUP_INTERVAL_TICKS = 4;
 

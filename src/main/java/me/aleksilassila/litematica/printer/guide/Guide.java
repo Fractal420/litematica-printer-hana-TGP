@@ -36,41 +36,35 @@ public abstract class Guide extends BlockStateUtils {
         this.requiredState = context.requiredState;
     }
 
-    /**
-     * 构建 Action 的入口方法。
-     */
     public final Result buildAction(BlockMatchResult state) {
-        // 前置检查: 完全一致
+
         if (state == BlockMatchResult.CORRECT) {
             return this.onBuildActionCorrect(state);
         }
 
         if (state == BlockMatchResult.MISSING) {
-            // 水相关方块由 WaterGuide 特判处理，不能在这里提前拦掉
+
             if (!BlockStateUtils.isWaterBlock(requiredState) && !requiredState.canSurvive(level, blockPos)) {
                 return Result.PASS;
             }
-            // 双格方块的上半部分由下半部分生成，缺失时不独立放置
+
             if (requiredState.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
                     && requiredState.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.UPPER) {
                 return Result.PASS;
             }
         }
 
-        // 水生植物（海草等）需要水环境才能放置
         if (BlockStateUtils.requiresWaterToPlace(requiredBlock)) {
             if (!BlockStateUtils.hasSourceWaterFluid(level.getBlockState(blockPos))) {
                 return Result.PASS;
             }
         }
 
-        // 交给子类的 onBuildAction 拦截钩子
         Result result = this.onBuildAction(state);
         if (!result.passToNext() || result.skipOtherGuide()) {
             return result;
         }
 
-        // 分状态分发
         return switch (state) {
             case MISSING -> this.onBuildActionMissingBlock(state);
             case WRONG_BLOCK -> this.onBuildActionWrongBlock(state);
@@ -79,50 +73,26 @@ public abstract class Guide extends BlockStateUtils {
         };
     }
 
-    /**
-     * 检查此 Guide 是否应该处理当前方块
-     * 可被子类覆盖以实现更细粒度的过滤
-     * @return true 表示应该执行此 Guide
-     */
     protected boolean canExecute() {
         return true;
     }
 
-    // -------------------------------------------------------
-    // 子类钩子
-    // -------------------------------------------------------
-
-    /**
-     * 所有状态均会先经过此钩子，可在此拦截任意状态
-     */
     protected Result onBuildAction(BlockMatchResult state) {
         return Result.PASS;
     }
 
-    /**
-     * 位置为空气 / 可替换方块：需要放置
-     */
     protected Result onBuildActionMissingBlock(BlockMatchResult state) {
         return Result.PASS;
     }
 
-    /**
-     * 方块类型完全不同：需要先破坏再放置
-     */
     protected Result onBuildActionWrongBlock(BlockMatchResult state) {
         return Result.PASS;
     }
 
-    /**
-     * 方块类型相同但状态不对：可能需要交互修正
-     */
     protected Result onBuildActionWrongState(BlockMatchResult state) {
         return Result.PASS;
     }
 
-    /**
-     * 完全正确：通常无需操作
-     */
     protected Result onBuildActionCorrect(BlockMatchResult state) {
         return Result.PASS;
     }

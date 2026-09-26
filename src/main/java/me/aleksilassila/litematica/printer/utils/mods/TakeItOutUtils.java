@@ -80,7 +80,6 @@ public final class TakeItOutUtils {
         }
     }
 
-    /** Requests Take It Out to refresh its linked-container material cache. */
     public static void requestAvailableItemsRefresh() {
         if (!isLoaded() || !isAutoTakeoutEnabled()) {
             return;
@@ -90,7 +89,7 @@ public final class TakeItOutUtils {
                     .getMethod("requestRefresh", Minecraft.class)
                     .invoke(null, client);
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-            // Older Take It Out versions do not expose the material-list cache API.
+
         } catch (ReflectiveOperationException | LinkageError exception) {
             logApiFailure("刷新远程容器材料", exception);
         }
@@ -162,7 +161,7 @@ public final class TakeItOutUtils {
             }
             return false;
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-            // 旧版 Take It Out 只有背包潜影盒取货，没有世界容器 API。
+
             return false;
         } catch (ReflectiveOperationException | LinkageError exception) {
             logApiFailure("请求世界容器", exception);
@@ -268,7 +267,7 @@ public final class TakeItOutUtils {
             Field field = Class.forName(CLIENT_CLASS).getField("TAKE_SINGLE_ITEM_MODE");
             return field.getBoolean(null);
         } catch (NoSuchFieldException ignored) {
-            // 旧版 payload 不支持单物品模式。
+
             return false;
         } catch (ReflectiveOperationException | LinkageError exception) {
             logApiFailure("读取单物品模式", exception);

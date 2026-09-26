@@ -3,9 +3,10 @@ package me.aleksilassila.litematica.printer.handler;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.litematica.world.WorldSchematic;
 import me.aleksilassila.litematica.printer.utils.ConfigUtils;
+import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
+import me.aleksilassila.litematica.printer.handler.handlers.GuiHandler;
 import org.jetbrains.annotations.Nullable;
 
-/** Client-thread lifecycle for one feature module. */
 final class ModuleRuntimeLoop {
     private final FeatureModuleBase owner;
     private long lastTickTime = -1L;
@@ -19,6 +20,10 @@ final class ModuleRuntimeLoop {
     }
 
     void tick(TickContext context) {
+        if (RuntimeAccess.get().manualVanillaRefill().shouldPause()
+                && !(this.owner instanceof GuiHandler)) {
+            return;
+        }
         this.owner.guiBuffer().tickCache();
         if (this.shouldSkipByTickInterval(context)) return;
         if (!ConfigUtils.isEnable()) {

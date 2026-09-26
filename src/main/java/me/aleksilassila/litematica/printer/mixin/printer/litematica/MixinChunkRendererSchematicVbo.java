@@ -16,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Filters schematic blocks during mesh construction without binding to a version-specific signature. */
 @Mixin(value = ChunkRendererSchematicVbo.class, remap = false)
 public abstract class MixinChunkRendererSchematicVbo implements InventoryAvailabilityRenderExtension {
     @Shadow

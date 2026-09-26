@@ -8,9 +8,6 @@ import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.LanternBlock;
 
-/**
- * 灯笼
- */
 public class LanternGuide extends Guide {
 
     public LanternGuide(SchematicBlockContext context) {

@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-/** Owns active target membership, reservations and machine-overlap rules. */
 final class BedrockTargetRegistry {
     private final List<BedrockTarget> targets = new ArrayList<>();
 

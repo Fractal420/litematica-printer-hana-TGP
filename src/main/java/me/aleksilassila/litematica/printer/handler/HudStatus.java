@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.handler;
 
-/** Stable, language-independent status identifiers consumed by the Printer HUD. */
 public final class HudStatus {
     public static final String IDLE = "idle";
     public static final String RUNNING = "running";

@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.handlers.print;
 
-/** Pure transition table for the place-source-then-strip workflow. */
 final class StripLogStageResolver {
     enum Observation {
         COMPLETE,

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
 
-/** Owns scan sessions and their per-owner metrics, independent of budget policy. */
 final class ScanSessionStore implements AutoCloseable {
     private final Map<String, SectionScanSession> sessions = new HashMap<>();
     private final Map<String, ScanMetricsAccumulator> metrics = new HashMap<>();

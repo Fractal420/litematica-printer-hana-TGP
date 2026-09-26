@@ -4,10 +4,11 @@ import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeComponent;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeEvent;
 
-/** Coordinates configured placement pacing with the optional RTT floor. */
 public final class PlacementRateController implements RuntimeComponent {
     private final RttReplayController rttReplayController;
     private long lastSentTick = Long.MIN_VALUE;
+    private long windowStartTick = Long.MIN_VALUE;
+    private int sentInWindow;
 
     public PlacementRateController(RttReplayController rttReplayController) {
         this.rttReplayController = rttReplayController;
@@ -22,15 +23,39 @@ public final class PlacementRateController implements RuntimeComponent {
                 Configs.Placement.RTT_SAFETY_PERCENT.getIntegerValue()));
     }
 
+    public int maxSendsPerWindow() {
+        return Math.max(1, Configs.Placement.PLACE_BLOCKS_PER_TICK.getIntegerValue());
+    }
+
     public boolean canSend(long currentTick) {
-        if (!Configs.Placement.RTT_ADAPTIVE_INTERVAL.getBooleanValue()) return true;
-        int interval = this.effectiveIntervalTicks();
-        return interval <= 0 || this.lastSentTick == Long.MIN_VALUE
-                || currentTick - this.lastSentTick >= interval;
+        this.rollWindow(currentTick);
+        return this.sentInWindow < this.maxSendsPerWindow();
     }
 
     public void recordSent(long currentTick) {
+        this.rollWindow(currentTick);
+        this.sentInWindow++;
         this.lastSentTick = currentTick;
+    }
+
+    private void rollWindow(long currentTick) {
+        int interval = this.effectiveIntervalTicks();
+        if (this.windowStartTick == Long.MIN_VALUE) {
+            this.windowStartTick = currentTick;
+            this.sentInWindow = 0;
+            return;
+        }
+        if (interval <= 0) {
+            if (this.windowStartTick != currentTick) {
+                this.windowStartTick = currentTick;
+                this.sentInWindow = 0;
+            }
+            return;
+        }
+        if (currentTick - this.windowStartTick >= interval) {
+            this.windowStartTick = currentTick;
+            this.sentInWindow = 0;
+        }
     }
 
     public long lastSentTick() {
@@ -44,6 +69,8 @@ public final class PlacementRateController implements RuntimeComponent {
 
     public void reset() {
         this.lastSentTick = Long.MIN_VALUE;
+        this.windowStartTick = Long.MIN_VALUE;
+        this.sentInWindow = 0;
     }
 
     @Override

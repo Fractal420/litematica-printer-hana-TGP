@@ -8,9 +8,6 @@ import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.WallTorchBlock;
 
-/**
- * 火把
- */
 public class TorchGuide extends Guide {
 
     public TorchGuide(SchematicBlockContext context) {

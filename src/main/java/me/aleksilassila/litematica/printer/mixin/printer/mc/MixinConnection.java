@@ -15,14 +15,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-
 @Environment(EnvType.CLIENT)
 @Mixin(Connection.class)
 public class MixinConnection {
     @Inject(method = "genericsFtw", at = @At("HEAD"), require = 0)
     private static void hookGenericsFtw(Packet<?> packet, PacketListener listener, CallbackInfo ci) {
         if (ConfigUtils.isEnable()) {
-            RuntimeAccess.get().modules().recordInboundPacket();   // 仅用于连接静默/延迟检测
+            RuntimeAccess.get().modules().recordInboundPacket();
         }
     }
 

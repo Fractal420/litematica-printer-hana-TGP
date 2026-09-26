@@ -26,7 +26,7 @@ public final class BedrockCandidatePlanner {
     private final ScanEngine scanEngine;
     private final LitematicaAdapter litematica;
     private final BedrockCandidateBacklog<BedrockCandidatePlan> candidateBacklog = new BedrockCandidateBacklog<>();
-    /** Avoid rebuilding the same unavailable piston layout on every scan pass. */
+
     private final Long2LongOpenHashMap rejectedPlanRevisions = new Long2LongOpenHashMap();
     private final Map<BlockPos, Long> retryUntil = new HashMap<>();
     private boolean sourceHasMore;
@@ -198,8 +198,7 @@ public final class BedrockCandidatePlanner {
         long modelingBudgetNanos = Math.max(1L, Configs.Core.SCAN_TIME_BUDGET_MS.getIntegerValue()) * 1_000_000L;
 
         while (scanned < scanLimit) {
-            // Always model at least one candidate so a very small budget cannot
-            // deadlock progress. After that, yield cooperatively to the next tick.
+
             if (modeled > 0 && System.nanoTime() - modelingStart >= modelingBudgetNanos) {
                 hasMoreSource = true;
                 break;
@@ -238,9 +237,6 @@ public final class BedrockCandidatePlanner {
         return new CandidateShard(candidates, hasMoreSource);
     }
 
-    /**
-     * 廉价过滤:仅做范围/目标方块/冷却判断,不触碰 layout 与火把探测等重型逻辑。不计入建模预算。
-     */
     private boolean passesCheapFilters(ClientLevel level, BlockPos pos) {
         if (pos == null || !BedrockEnvironment.canInteract(pos)) {
             return false;
@@ -251,14 +247,10 @@ public final class BedrockCandidatePlanner {
         if (!BedrockTargetBlocks.isTargetBlock(level.getBlockState(pos))) {
             return false;
         }
-        // Cooldown is an admission concern. Keeping the target in the backlog lets it become
-        // eligible as soon as the deadline expires without requiring movement or another scan.
+
         return true;
     }
 
-    /**
-     * 重型建模阶段:调用方需保证已通过 {@link #passesCheapFilters}。计入建模预算。
-     */
     private BedrockCandidatePlan buildModeledCandidate(ClientLevel level, BlockPos pos, boolean allowSide) {
         BedrockCandidatePlan candidate = buildCandidate(level, pos.immutable());
         if (candidate.layout() == null) {
@@ -294,9 +286,7 @@ public final class BedrockCandidatePlanner {
     }
 
     private int getCandidateScanLimit(int scanGuardLimit) {
-        // The scan session already yields cooperatively on the configured time budget and keeps
-        // its cursor between ticks. A second fixed spatial slice would stop scanning around
-        // the same part of a large selection until movement rebuilt the cursor.
+
         return scanGuardLimit > 0 ? scanGuardLimit : Integer.MAX_VALUE;
     }
 
@@ -322,8 +312,7 @@ public final class BedrockCandidatePlanner {
     }
 
     private static PrinterBox footprint(BlockPos pos) {
-        // Layout search reaches at most three blocks from the bedrock target. One extra block
-        // covers neighbor-dependent support and torch-face changes at the boundary.
+
         return new PrinterBox(
                 pos.getX() - 4,
                 pos.getY() - 4,

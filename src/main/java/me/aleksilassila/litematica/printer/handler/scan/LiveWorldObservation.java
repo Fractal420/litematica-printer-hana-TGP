@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-/** Adapts live Minecraft and schematic worlds to the scan observation contract. */
 final class LiveWorldObservation implements WorldObservationPort {
     private static final Direction[] DIRECTIONS = Direction.values();
 

@@ -12,7 +12,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Pure placement-anchor and torch-neighborhood queries for the bedrock machine. */
 final class BedrockPlacementQuery {
     private static final Direction[] PLACEMENT_DIRECTIONS = {
             Direction.DOWN, Direction.NORTH, Direction.SOUTH,

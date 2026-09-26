@@ -5,10 +5,6 @@ import me.aleksilassila.litematica.printer.I18n;
 
 import java.util.Arrays;
 
-/**
- * 泛型二次包装接口，修复 getDeclaringClass() 不存在的问题
- * T：当前实现该接口的枚举类型（自限定泛型）
- */
 public interface ConfigOptionListEntry<T extends Enum<T> & ConfigOptionListEntry<T>> extends IConfigOptionListEntry {
     I18n getI18n();
 
@@ -46,7 +42,7 @@ public interface ConfigOptionListEntry<T extends Enum<T> & ConfigOptionListEntry
         return Arrays.stream(enumClass.getEnumConstants())
                 .filter(enumEntry -> enumEntry.getStringValue().equalsIgnoreCase(name))
                 .findFirst()
-                // 解析失败返回第一个枚举值（也可自定义默认值）
+
                 .orElse(enumClass.getEnumConstants()[0]);
     }
 

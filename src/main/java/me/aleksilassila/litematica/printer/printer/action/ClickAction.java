@@ -35,16 +35,6 @@ public class ClickAction extends Action {
         return this.clickItems;
     }
 
-    /**
-     * 获取有效的侧面。
-     * <p>
-     * 遍历所有侧面并返回第一个可用的方向，
-     * 如果没有可用的侧面，则返回 null 。
-     *
-     * @param world 当前的 ClientLevel 实例
-     * @param pos   块的位置
-     * @return 第一个有效侧面，如果不存在则返回 null
-     */
     @Override
     public @Nullable Direction getValidSide(ClientLevel world, BlockPos pos) {
         for (Direction side : getOrderedSides()) {

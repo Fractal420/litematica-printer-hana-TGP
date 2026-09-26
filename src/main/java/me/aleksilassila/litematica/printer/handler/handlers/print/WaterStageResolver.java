@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.handlers.print;
 
-/** Pure transition table for the water workflow; safe to characterize without a live world. */
 final class WaterStageResolver {
     enum Observation {
         COMPLETE,

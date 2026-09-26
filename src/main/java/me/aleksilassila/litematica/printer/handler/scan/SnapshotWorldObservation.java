@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-/** Reads live state once and serves subsequent passes from the incremental section cache. */
 final class SnapshotWorldObservation implements WorldObservationPort {
     private final SectionSnapshotStore snapshots;
     private final WorldObservationPort source;

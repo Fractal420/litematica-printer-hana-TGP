@@ -1,12 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.handlers.bedrock;
 
-/**
- * Pure scheduling policy for bedrock target advancement.
- *
- * <p>An interval is an execution window, rather than a credit accumulator. This keeps
- * {@code interval=2, throughput=6} as a deterministic {@code 6,0,6,0} cadence and prevents
- * unused work from becoming a later burst.</p>
- */
 final class BedrockThroughputScheduler {
     private long tick;
     private int configuredThroughput = -1;
@@ -36,8 +29,7 @@ final class BedrockThroughputScheduler {
         if (allocation == null) {
             return;
         }
-        // A window expires at the end of its tick. Never carry unused capacity into a later
-        // window: doing so turns a bounded throughput setting into an unbounded burst.
+
     }
 
     record Allocation(int total, int critical, int preparation, int interval) {

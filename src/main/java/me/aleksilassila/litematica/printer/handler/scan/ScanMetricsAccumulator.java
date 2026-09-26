@@ -3,7 +3,6 @@ package me.aleksilassila.litematica.printer.handler.scan;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
-/** Mutable, client-thread-owned counters for one scan owner. */
 final class ScanMetricsAccumulator {
     long scanNanos;
     int scannedBlocks;

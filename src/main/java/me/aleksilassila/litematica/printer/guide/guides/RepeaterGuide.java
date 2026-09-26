@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
 import net.minecraft.world.level.block.RepeaterBlock;
 
-/**
- * 红石中继器
- */
 public class RepeaterGuide extends Guide {
 
     public RepeaterGuide(SchematicBlockContext context) {

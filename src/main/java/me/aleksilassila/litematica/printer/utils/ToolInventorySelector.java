@@ -13,7 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Selects and equips the most effective tool for one block state. */
 public final class ToolInventorySelector {
     private ToolInventorySelector() {
     }
@@ -68,8 +67,9 @@ public final class ToolInventorySelector {
                 || !InventoryUtils.setPickedItemToHand(bestSlot, bestStack, client)) {
             return false;
         }
-        if (!Inventory.isHotbarSlot(bestSlot)) {
+        if (player != null && !player.getMainHandItem().is(bestStack.getItem())) {
             RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(bestStack);
+            return false;
         }
         return true;
     }

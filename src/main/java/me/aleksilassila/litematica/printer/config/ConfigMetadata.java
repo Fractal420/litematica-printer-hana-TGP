@@ -9,12 +9,6 @@ import java.util.WeakHashMap;
 import java.util.function.BooleanSupplier;
 import me.aleksilassila.litematica.printer.utils.minecraft.StringUtils;
 
-/**
- * Printer-owned presentation metadata for MaLiLib config objects.
- *
- * <p>Keeping this data beside our own config instances avoids changing every
- * MaLiLib config object in the game through a global mixin.</p>
- */
 public final class ConfigMetadata {
     private static final BooleanSupplier ALWAYS_VISIBLE = () -> true;
     private static final Map<IConfigBase, Entry> ENTRIES =

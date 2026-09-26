@@ -9,7 +9,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import java.util.EnumSet;
 
-/** Reflection-backed Take It Out capability isolated from feature code. */
 public final class TakeItOutAdapter implements InventoryProvider {
     private static final String LEASE_OWNER = "take_it_out";
     private final ActionPort actionBroker;

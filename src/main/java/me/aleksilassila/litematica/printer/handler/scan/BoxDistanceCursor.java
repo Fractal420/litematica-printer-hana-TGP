@@ -3,17 +3,6 @@ package me.aleksilassila.litematica.printer.handler.scan;
 import me.aleksilassila.litematica.printer.printer.PrinterBox;
 import net.minecraft.core.BlockPos;
 
-/**
- * Iterates one box in exact player-distance order via a heap merge of three per-axis
- * coordinate lists (each sorted by distance from the center).
- *
- * <p>The heap frontier grows with the scanned radius, so positions are emitted in a smooth
- * wavefront of genuinely increasing distance instead of one integer radius band at a time.
- * The band-at-a-time shell enumeration this replaced made time-budgeted scans visibly expand
- * ring by ring: every tick's budget finished inside a single band, and the next tick resumed
- * at the next band's edge. A heap's frontier interleaves positions from many distances, so a
- * partial tick still hands the handler candidates spread across the reach shape.</p>
- */
 final class BoxDistanceCursor {
     private static final int STATE_BITS = 21;
     private static final long STATE_MASK = (1L << STATE_BITS) - 1L;
@@ -88,8 +77,7 @@ final class BoxDistanceCursor {
     private void push(long state) {
         this.probeCount++;
         if (this.distanceSqr(state) > this.maxDistanceSqr) {
-            // Beyond the reach band. Every successor only increases distance, so the whole
-            // subtree is out of range and can be pruned.
+
             return;
         }
         if (this.heapSize >= this.heap.length) {

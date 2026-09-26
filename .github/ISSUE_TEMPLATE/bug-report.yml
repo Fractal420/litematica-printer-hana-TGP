@@ -1,0 +1,146 @@
+name: Bug Report
+description: Report a reproducible functional issue, crash, or compatibility problem
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting an issue. Use this template for reproducible bugs.
+
+        For installation help, configuration questions, server limitations, or general discussion, use [Discussions](https://github.com/Yur1Ca/litematica-printer/discussions). Please report only one independently reproducible issue per Issue.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing Issues and Discussions and found no duplicate report.
+          required: true
+        - label: I retested with the latest applicable Alpha or Beta version.
+          required: true
+        - label: I confirmed this is not simply a usage, configuration, or server anti-cheat issue.
+          required: true
+        - label: This Issue contains only one independently reproducible problem.
+          required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Affected feature
+      options:
+        - Printing/placement
+        - Scanner/iterator
+        - Mining
+        - Filling
+        - Fluid removal
+        - Bedrock breaking
+        - Quick Shulker/orderly storage
+        - Take It Out item retrieval
+        - HUD/interface
+        - Configuration/hotkeys
+        - Startup/mod compatibility
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: printer_version
+    attributes:
+      label: Printer version
+      description: Provide the complete version number, not just "latest".
+      placeholder: "Example: 0.7.2.1-Hana-dev377"
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft_version
+    attributes:
+      label: Minecraft and Fabric Loader versions
+      placeholder: "Example: Minecraft 26.2, Fabric Loader 0.19.3"
+    validations:
+      required: true
+
+  - type: input
+    id: dependencies
+    attributes:
+      label: Litematica, MaLiLib, and Fabric API versions
+      placeholder: "Provide the complete versions of all three dependencies"
+    validations:
+      required: true
+
+  - type: input
+    id: server_environment
+    attributes:
+      label: Environment
+      description: State whether this is single-player or a server. For servers, include the server software, anti-cheat, and approximate latency when possible.
+      placeholder: "Example: Paper 26.2 server, about 45 ms latency, no anti-cheat"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: What happened?
+      description: Clearly describe the problem, how often it occurs, and what is affected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected behavior
+      description: Describe what should normally happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce_steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Use version ... and enter ...
+        2. Load a schematic/selection of size ...
+        3. Set ... to ...
+        4. Enable ... and observe ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Reproduction frequency
+      options:
+        - Every time
+        - Frequently
+        - Occasionally
+        - Only happened once
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs_and_mods
+    attributes:
+      label: Logs, crash reports, and mod list
+      description: Drag and drop latest.log, crash reports, and modlist.txt here. Crash reports and logs are required for crashes; do not paste only a few log lines.
+      placeholder: Drop files here and wait for GitHub to finish uploading them before submitting.
+
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or video
+      description: For placement errors, HUD issues, scan ordering, or intermittent problems, please provide a short video when possible and indicate where and when the problem occurs.
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Include relevant configuration, schematic size, interaction distance, scan budget, work interval, or other useful details.
+
+  - type: checkboxes
+    id: final_confirmation
+    attributes:
+      label: Final confirmation
+      options:
+        - label: I have provided enough information for someone else to attempt reproduction without significant guesswork. I understand that an Issue may be closed if essential information is missing.
+          required: true

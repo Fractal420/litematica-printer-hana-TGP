@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
 import net.minecraft.world.level.block.LeverBlock;
 
-/**
- * 拉杆
- */
 public class LeverGuide extends Guide {
 
     public LeverGuide(SchematicBlockContext context) {

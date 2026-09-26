@@ -82,7 +82,7 @@ public class FluidHandler extends FeatureModuleBase {
     @Override
     protected void preprocess() {
         this.refreshTargetStates();
-        // 填充方块
+
         List<String> fileBlocks = Configs.Fluid.FLUID_REPLACE_BLOCK_LIST.getStrings();
         if (!fileBlocks.equals(fillBlocks)) {
             fillBlocks = new ArrayList<>(fileBlocks);
@@ -92,7 +92,7 @@ public class FluidHandler extends FeatureModuleBase {
             }
             fillItemArray = fillItems.toArray(new Item[0]);
         }
-        // 流体方块
+
         List<String> fluidBlocks = Configs.Fluid.FLUID_LIST.getStrings();
         if (!fluidBlocks.equals(this.fluidBlocks)) {
             this.fluidBlocks = new ArrayList<>(fluidBlocks);
@@ -180,15 +180,6 @@ public class FluidHandler extends FeatureModuleBase {
             return retainedTargets;
         }
 
-        // Finish the initial pass, then let ModuleScanCoordinator enter lazy mode. The lazy
-        // policy bounds restart frequency while retaining recovery when a client-side fluid
-        // condition changes; dirty regions still run first.
-        //
-        // Iterate the scan session directly (Beta2.6 behaviour). The session cursor resumes from
-        // where the previous tick left off and yields distance-ordered targets for as long as the
-        // per-tick scan budget allows. No intermediate FIFO queue: a queue serialised work to one
-        // target per tick and let already-placed ("zombie") entries accumulate to ~15k, which read
-        // as a slow ring-by-ring expansion even though the scan itself finished in 3 ticks.
         Iterable<BlockPos> source = this.scanEngine.iterable(
                 NAME,
                 scanSourceBoxes,
@@ -245,7 +236,7 @@ public class FluidHandler extends FeatureModuleBase {
             Direction placementSide = this.findPlacementSide(blockPos);
             if (placementSide == null) {
                 this.hudStats.recordDeferred(HudStatsManager.Mode.FLUID, HudStatus.NO_VALID_FACE);
-                // This was ready when scanned but its support disappeared before execution.
+
                 setIterationConsumedEffectiveExecution(false);
                 this.retryTargets.add(blockPos.immutable());
                 return;
@@ -311,12 +302,7 @@ public class FluidHandler extends FeatureModuleBase {
         if (this.level == null) {
             return false;
         }
-        // Only target cells the fill block can actually replace. Waterlogged non-replaceable
-        // blocks (kelp, seagrass, plants) still report a source fluid state, but a solid block
-        // cannot be placed into them: BlockPlaceContext.canPlace() fails on replaceClicked, so
-        // every scan would emit them and every attempt would be INTERACTION_REJECTED. Excluding
-        // them both avoids wasted rejected traffic and lets the scan actually complete so the
-        // module can settle into lazy scanning once all real water is filled.
+
         if (!BlockUtils.isReplaceable(this.level.getBlockState(blockPos))) {
             return false;
         }

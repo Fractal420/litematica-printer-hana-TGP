@@ -25,10 +25,8 @@ base {
     archivesName.set(modArchivesBaseName)
 }
 
-// 获取所有子项目（排除当前项目）
 val fabricSubprojects = rootProject.subprojects.filter { it.name != "fabricWrapper" }
 
-// 确保先评估所有子项目
 fabricSubprojects.forEach {
     evaluationDependsOn(":${it.name}")
 }
@@ -191,7 +189,7 @@ fun optimizeWrapperSubmoduleJars(jarsDir: File, sharedResourcePrefixes: Set<Stri
 }
 
 tasks {
-    // 收集子模块 JAR 文件任务
+
     register("collectSubModules") {
         description = "收集所有子模块的 JAR 文件"
         outputs.upToDateWhen { false }
@@ -199,14 +197,12 @@ tasks {
         val embeddedJarsDir = layout.buildDirectory.dir("tmp/submods/META-INF/jars")
         val standaloneJarsDir = layout.buildDirectory.dir("libs/jars")
 
-        // 依赖所有子项目的 remapJar 任务
         dependsOn(fabricSubprojects.map { it.tasks.named("buildAndCollect") })
 
         doFirst {
             delete(embeddedJarsDir)
             delete(standaloneJarsDir)
 
-            // wrapper 内嵌 JAR 会做瘦身，独立版本 JAR 保持原始产物。
             copy {
                 from(fabricSubprojects.map { sub ->
                     sub.tasks.named("buildAndCollect").get().outputs.files
@@ -231,7 +227,6 @@ tasks {
         }
     }
 
-    // JAR 打包任务
     named<Jar>("jar") {
         outputs.upToDateWhen { false }
 
@@ -239,7 +234,6 @@ tasks {
         from(layout.buildDirectory.dir("tmp/submods"))
     }
 
-    // 资源处理任务
     named<ProcessResources>("processResources") {
         outputs.upToDateWhen { false }
 
@@ -296,7 +290,6 @@ tasks {
                 }
             }
 
-            // 更新 fabric.mod.json 文件
             val jsonFile = layout.buildDirectory.file("resources/main/fabric.mod.json").get().asFile
             if (jsonFile.exists()) {
                 val slurper = JsonSlurper()
@@ -304,15 +297,12 @@ tasks {
                 @Suppress("UNCHECKED_CAST")
                 val jsonContent = slurper.parse(jsonFile) as MutableMap<String, Any>
 
-                // 设置 jars 数组
                 jsonContent["jars"] = jars
 
-                // 更新 Minecraft 依赖
                 @Suppress("UNCHECKED_CAST")
                 val depends = jsonContent["depends"] as? MutableMap<String, Any>
                 depends?.put("minecraft", minecraftVersions)
 
-                // 写回文件
                 val builder = JsonBuilder(jsonContent)
                 jsonFile.bufferedWriter().use { writer ->
                     writer.write(builder.toPrettyString())

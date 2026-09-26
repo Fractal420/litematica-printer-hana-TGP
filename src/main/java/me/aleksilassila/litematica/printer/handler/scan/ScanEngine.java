@@ -12,13 +12,6 @@ import me.aleksilassila.litematica.printer.core.runtime.RuntimeComponent;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeEvent;
 import me.aleksilassila.litematica.printer.runtime.PrinterRuntime;
 
-/**
- * Feature-facing scan middleware.
- *
- * <p>The current implementation is backed by {@link ScanCache}. Keeping this
- * boundary separate lets the scan algorithm evolve without making handlers
- * depend on cache ownership, invalidation storage, or cursor internals.</p>
- */
 public final class ScanEngine implements RuntimeComponent {
     private final PrinterRuntime runtime;
     private final ScanCache cache;

@@ -51,7 +51,6 @@ import red.jackf.chesttracker.api.memory.MemoryBankAccess;
 import red.jackf.chesttracker.api.providers.ProviderUtils;
 //#endif
 
-/** Optional Chest Tracker world-container material provider. */
 public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComponent {
     private static final String LEASE_OWNER = "chest_tracker";
     private static final String DISPATCH_LEASE_OWNER = "chest_tracker_dispatch";
@@ -102,7 +101,6 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
         return "chest_tracker";
     }
 
-    /** Handles a standalone survival pick-block request when the printer switch is off. */
     public boolean handlePickBlock(LocalPlayer player, Item item) {
         if (!enabled() || player == null || item == null || item == Items.AIR
                 || player.containerMenu != player.inventoryMenu
@@ -140,8 +138,7 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
         }
         Item item = request.preferredItem();
         if (failedRecently(item)) return unavailable(request);
-        // Candidate failures are scoped to one material request. Keeping them
-        // across requests would permanently hide a box after the first miss.
+
         this.invalidCandidates.clear();
         this.activeRequest = request;
         this.requestedItem = item;
@@ -225,7 +222,6 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
         }
     }
 
-    /** Called after a matching container-content packet has populated the active menu. */
     public void onContainerContent(int containerId) {
         if (this.activeRequest == null
                 || (this.phase != Phase.WAITING_CONTENT && this.phase != Phase.RESTORE_WAIT_CONTENT)) return;
@@ -334,9 +330,7 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
     }
 
     public boolean shouldSuppressContainerScreen() {
-        // Only hide the screen opened by our own remote interaction. Keeping
-        // this tied to the phase used to block a player's manually opened
-        // chest while an inventory packet was still pending.
+
         return this.suppressContainerScreen;
     }
 
@@ -358,7 +352,6 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
         return false;
     }
 
-    /** Adds remembered containers inside the active Litematica AreaSelection to the allow-list. */
     public int addSelectionToCache() {
         if (!ModLoadUtils.isChestTrackerLoaded() || this.client.level == null) return 0;
         List<me.aleksilassila.litematica.printer.printer.PrinterBox> boxes = LitematicaUtils.createSelection1Boxes();

@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-/** Advances active target state machines without owning admission or scanning policy. */
 final class BedrockTargetExecutor {
     private static final int FAILURE_RETRY_COOLDOWN_TICKS = 12;
     private static final int OUT_OF_RANGE_RETRY_COOLDOWN_TICKS = 6;

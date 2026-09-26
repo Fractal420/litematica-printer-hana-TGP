@@ -20,13 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-/**
- * Tracks material requirements that have actually blocked an action.
- *
- * <p>The scanner never writes a second material index for this HUD. Print/fill
- * executors report a requirement as soon as the inventory switch cannot supply
- * it. A successful retrieval removes the entry on the next tick.</p>
- */
 public final class MissingMaterialTracker implements RuntimeComponent {
     private static final long STALE_AFTER_TICKS = 100L;
 

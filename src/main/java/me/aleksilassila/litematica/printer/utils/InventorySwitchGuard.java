@@ -7,9 +7,8 @@ import net.minecraft.world.item.ItemStack;
 import java.util.function.LongSupplier;
 
 public final class InventorySwitchGuard {
-    // Inventory clicks are client-predicted. Keep a short recovery window for a delayed packet,
-    // but do not freeze the whole printer for a full second when the prediction was rejected.
-    private static final int MAX_SETTLE_TICKS = 4;
+
+    private static final int MAX_SETTLE_TICKS = 3;
     private final Minecraft client;
     private final LongSupplier tickClock;
     private Item pendingItem;
@@ -37,7 +36,6 @@ public final class InventorySwitchGuard {
         return true;
     }
 
-    /** Records a tool switch where two stacks may contain the same item but different durability. */
     public boolean markSwitchIfNeeded(ItemStack stack) {
         if (stack == null || stack.isEmpty()) {
             return false;
@@ -64,11 +62,14 @@ public final class InventorySwitchGuard {
     }
 
     private boolean isMainHandReady() {
-        if (client.player == null || pendingItem == null) {
+        return isMainHandReadyFor(pendingItem, pendingDamage, matchDamage);
+    }
+
+    private boolean isMainHandReadyFor(Item item, int damage, boolean checkDamage) {
+        if (client.player == null || item == null) {
             return false;
         }
         ItemStack hand = client.player.getMainHandItem();
-        return hand.is(pendingItem)
-                && (!this.matchDamage || hand.getDamageValue() == this.pendingDamage);
+        return hand.is(item) && (!checkDamage || hand.getDamageValue() == damage);
     }
 }

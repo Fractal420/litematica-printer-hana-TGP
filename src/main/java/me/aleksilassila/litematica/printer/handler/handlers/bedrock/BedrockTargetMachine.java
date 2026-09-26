@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
-/** Owns mutable power-source placement and recovery for one bedrock machine. */
 final class BedrockTargetMachine {
     private static final int REPOWER_INTERVAL_TICKS = 4;
     private static final int POWERED_STALL_REBUILD_LIMIT = 3;

@@ -13,9 +13,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import java.util.Map;
 
-/**
- * 去皮原木
- */
 public class StripLogGuide extends Guide {
 
     @SuppressWarnings("all")
@@ -32,7 +29,6 @@ public class StripLogGuide extends Guide {
 
         Action action = new Action().setSides(axis);
 
-        // 配置启用去皮时，可接受原版或去皮版本
         if (Configs.Print.STRIP_LOGS.getBooleanValue()) {
             for (Map.Entry<Block, Block> entry : STRIPPED_LOGS.entrySet()) {
                 if (requiredBlock == entry.getValue()) {
@@ -47,7 +43,7 @@ public class StripLogGuide extends Guide {
 
     @Override
     protected Result onBuildActionWrongBlock(BlockMatchResult state) {
-        // Stateful source-log stripping is exclusively owned by PrintWorkflowScheduler.
+
         return Result.PASS;
     }
 }

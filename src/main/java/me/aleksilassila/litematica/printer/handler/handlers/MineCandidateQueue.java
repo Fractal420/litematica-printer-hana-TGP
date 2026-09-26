@@ -8,15 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Predicate;
 
-/**
- * Retains mine candidates across scan batches and ticks.
- *
- * <p>The scan engine is allowed to wait for another batch while a mine action
- * is still in progress.  A coordinate keyed queue makes that boundary
- * explicit: a rescan refreshes a target instead of duplicating it, and a
- * temporarily empty scan never discards targets already admitted by the
- * feature.</p>
- */
 final class MineCandidateQueue {
     private final LinkedHashMap<BlockPos, MineBreakExecutor.Target> entries = new LinkedHashMap<>();
 

@@ -9,10 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import java.awt.Color;
 import java.util.List;
 
-/**
- * Renders missing materials through the printer's own HUD entry point.
- * This keeps it independent from Litematica's optional InfoHud lifecycle.
- */
 public final class MissingMaterialHudRenderer {
     public static final MissingMaterialHudRenderer INSTANCE = new MissingMaterialHudRenderer();
 

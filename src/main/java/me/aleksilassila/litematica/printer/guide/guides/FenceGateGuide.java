@@ -10,9 +10,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/**
- * 栅栏门
- */
 public class FenceGateGuide extends Guide {
 
     public FenceGateGuide(SchematicBlockContext context) {

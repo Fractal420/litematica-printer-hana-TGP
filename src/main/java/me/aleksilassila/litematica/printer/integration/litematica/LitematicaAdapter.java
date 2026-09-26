@@ -12,12 +12,6 @@ import fi.dy.masa.litematica.world.WorldSchematic;
 import java.util.List;
 import java.util.function.Predicate;
 
-/**
- * Litematica capability boundary used by feature code.
- *
- * <p>Keeping the dependency here prevents feature state machines from knowing
- * which Litematica utility or world-holder supplies a capability.</p>
- */
 public final class LitematicaAdapter {
     public WorldSchematic schematicWorld() {
         return SchematicWorldHandler.getSchematicWorld();

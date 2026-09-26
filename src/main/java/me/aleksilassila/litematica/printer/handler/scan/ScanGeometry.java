@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 
 import java.util.List;
 
-/** Small geometry operations shared by scan sessions and cursors. */
 final class ScanGeometry {
     private ScanGeometry() {
     }

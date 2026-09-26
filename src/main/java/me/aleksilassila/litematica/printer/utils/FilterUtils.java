@@ -16,12 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/**
- * Minecraft 方块/物品名称匹配工具类
- * 支持：标签匹配、中文/拼音模糊匹配、包含/精确相等判断
- */
 public class FilterUtils {
-    // 常量定义：提升可读性，避免魔法值
+
     private static final char TAG_PREFIX = '#';
     private static final String SPLIT_SEPARATOR = ",";
     private static final String CONTAINS_FLAG = "c";
@@ -38,19 +34,12 @@ public class FilterUtils {
             }
     );
 
-    /**
-     * 字符串匹配规则：支持"包含"（c参数）或"精确相等"
-     * @param targetStr 目标字符串（待匹配的字符串）
-     * @param matchStr  匹配字符串（要检查的内容）
-     * @param matchRules 匹配规则参数（包含"c"则启用包含匹配）
-     * @return true=匹配成功，false=匹配失败
-     */
     public static boolean matchString(String targetStr, String matchStr, String[] matchRules) {
-        // 空值防护：任意字符串为null则直接不匹配
+
         if (targetStr == null || matchStr == null) {
             return false;
         }
-        // 规则1：是否启用"包含"匹配（只要有一个"c"参数就启用）
+
         boolean enableContainsMatch = false;
         for (String rule : matchRules) {
             if (CONTAINS_FLAG.equals(rule)) {
@@ -59,44 +48,30 @@ public class FilterUtils {
             }
         }
         boolean containsMatchResult = enableContainsMatch && targetStr.contains(matchStr);
-        // 规则2：精确相等匹配
+
         boolean exactMatchResult = targetStr.equals(matchStr);
-        // 满足任一规则即匹配成功
+
         return containsMatchResult || exactMatchResult;
     }
 
-    /**
-     * 匹配方块名称（封装matchName，提升语义）
-     */
     public static boolean matchBlockName(String expectedName, BlockState blockState) {
         return matchName(expectedName, blockState);
     }
 
-    /**
-     * 匹配物品名称（封装matchName，提升语义）
-     */
     public static boolean matchItemName(String expectedName, ItemStack itemStack) {
         return matchName(expectedName, itemStack);
     }
 
-    /**
-     * 核心匹配逻辑：支持方块/物品的名称、标签、中文/拼音模糊匹配
-     * @param expectedName 期望的名称（支持#开头的标签，逗号分隔规则参数）
-     * @param targetObj    目标对象（仅支持BlockState/ItemStack）
-     * @return true=匹配成功，false=匹配失败
-     */
     public static boolean matchName(String expectedName, Object targetObj) {
-        // 空值防护
+
         if (expectedName == null || targetObj == null) {
             return false;
         }
 
-        // 解析期望名称和匹配规则（逗号分隔，第一个是名称，后续是规则）
         ParsedFilter parsedFilter = parseExpectedName(expectedName);
         String coreName = parsedFilter.coreName();
         String[] matchRules = parsedFilter.matchRules();
 
-        // 获取目标对象的核心标识（注册表名称）
         String targetRegistryName = getTargetRegistryName(targetObj);
         if (targetRegistryName == null) {
             return false;
@@ -112,10 +87,9 @@ public class FilterUtils {
             }
         }
 
-        // 优先匹配标签（如果期望名称以#开头）
         if (coreName.startsWith(String.valueOf(TAG_PREFIX))) {
             String tagName = coreName.substring(1);
-            // 拆分处理Block和Item的标签，避免泛型转换错误
+
             if (targetObj instanceof BlockState blockState) {
                 return matchBlockTag(blockState, tagName, matchRules);
             } else if (targetObj instanceof ItemStack itemStack) {
@@ -124,7 +98,6 @@ public class FilterUtils {
             return false;
         }
 
-        // 匹配中文名称、拼音、注册表名称
         String targetDisplayName = getTargetDisplayName(targetObj);
         if (targetDisplayName == null) {
             return false;
@@ -278,9 +251,6 @@ public class FilterUtils {
         return property.getName(blockState.getValue(property));
     }
 
-    /**
-     * 获取目标对象（BlockState/ItemStack）的注册表名称
-     */
     private static String getTargetRegistryName(Object targetObj) {
         if (targetObj instanceof BlockState blockState) {
             return BuiltInRegistries.BLOCK.getKey(blockState.getBlock()).toString();
@@ -290,9 +260,6 @@ public class FilterUtils {
         return null;
     }
 
-    /**
-     * 获取目标对象（BlockState/ItemStack）的显示名称（中文名称）
-     */
     private static String getTargetDisplayName(Object targetObj) {
         if (targetObj instanceof BlockState blockState) {
             return blockState.getBlock().getName().getString();
@@ -302,30 +269,22 @@ public class FilterUtils {
         return null;
     }
 
-    /**
-     * 匹配方块的标签（类型安全，无泛型转换）
-     */
     private static boolean matchBlockTag(BlockState blockState, String tagName, String[] matchRules) {
         if (tagName.isEmpty()) {
             return false;
         }
 
-        // 直接处理Block类型的TagKey流，无类型转换
         Stream<TagKey<Block>> blockTagStream = blockState.tags();
         return blockTagStream
                 .map(tag -> tag.location().toString())
                 .anyMatch(tagFullName -> matchTagName(tagFullName, tagName, matchRules));
     }
 
-    /**
-     * 匹配物品的标签（类型安全，无泛型转换）
-     */
     private static boolean matchItemTag(ItemStack itemStack, String tagName, String[] matchRules) {
         if (tagName.isEmpty()) {
             return false;
         }
-        // 物品标签和方块标签是两套注册表标签。铺盖等方块材料通常
-        // 使用方块标签配置，但实际切换材料时拿到的是 BlockItem，二者都要匹配。
+
         boolean itemTagMatched = itemStack.tags()
                 .map(tag -> tag.location().toString())
                 .anyMatch(tagFullName -> matchTagName(tagFullName, tagName, matchRules));
@@ -341,8 +300,7 @@ public class FilterUtils {
     }
 
     private static boolean matchTagName(String actual, String requested, String[] matchRules) {
-        // Keep the configured legacy carpet tag usable on versions that renamed it.
-        // Also retain direct matching for worlds/data packs that still define carpets.
+
         return matchString(actual, requested, matchRules)
                 || "minecraft:carpets".equals(requested) && "minecraft:wool_carpets".equals(actual);
     }

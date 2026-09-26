@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.world.level.block.CocoaBlock;
 
-/**
- * 可可豆
- */
 public class CocoaGuide extends Guide {
 
     public CocoaGuide(SchematicBlockContext context) {
@@ -24,7 +21,7 @@ public class CocoaGuide extends Guide {
 
     @Override
     protected Result onBuildActionWrongState(BlockMatchResult state) {
-        // AGE 由生长决定，环境决定 → 跳过
+
         return Result.SKIP;
     }
 }

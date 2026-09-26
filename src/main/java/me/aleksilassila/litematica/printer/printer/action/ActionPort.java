@@ -15,7 +15,6 @@ import java.util.EnumSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-/** Feature-facing action capability, independent of the queue implementation. */
 public interface ActionPort {
     enum ActionSource { GENERIC, PRINT, FILL, COVER, FLUID }
 

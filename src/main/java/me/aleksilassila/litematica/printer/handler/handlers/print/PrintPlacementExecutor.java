@@ -15,8 +15,11 @@ import me.aleksilassila.litematica.printer.printer.PlayerLook;
 import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
+import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import me.aleksilassila.litematica.printer.utils.ConfigUtils;
 import me.aleksilassila.litematica.printer.utils.CooldownUtils;
+import me.aleksilassila.litematica.printer.utils.InteractionUtils;
+import me.aleksilassila.litematica.printer.utils.CarriedItemUtils;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import me.aleksilassila.litematica.printer.utils.InventorySwitchGuard;
 import me.aleksilassila.litematica.printer.utils.minecraft.DirectionUtils;
@@ -73,14 +76,22 @@ public final class PrintPlacementExecutor {
 
     public PrintPlacementResult execute(SchematicBlockContext context, Action action, @Nullable PrintTaskAction taskAction) {
         BlockPos blockPos = context.blockPos;
+        if (context.client.player != null && CarriedItemUtils.hasCarriedItem(context.client.player)) {
+            CarriedItemUtils.tryClearCarried(context.client);
+            if (CarriedItemUtils.hasCarriedItem(context.client.player)) {
+                return PrintPlacementResult.deferred(true);
+            }
+        }
+        if (InteractionUtils.getRuntime().hasActiveDestroyTarget()
+                || RuntimeAccess.get().modules().mine().hasActiveBreakingWork()) {
+            return PrintPlacementResult.deferred(true);
+        }
         if (Configs.Placement.FALLING_CHECK.getBooleanValue() && context.requiredState.getBlock() instanceof FallingBlock) {
             BlockPos downPos = blockPos.below();
             if (FallingBlock.isFree(context.level.getBlockState(downPos))) {
                 this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.FALLING_NO_SUPPORT);
                 MessageUtils.setOverlayMessage(I18n.FALLING_BLOCK_NO_SUPPORT.getName(context.requiredBlockName().getString()));
-                // Do not hot-retry an unchanged unsupported column. PRINT invalidation expands a
-                // support block update to its neighbours, so this target is discovered again as
-                // soon as the block below changes while unrelated columns keep printing.
+
                 return PrintPlacementResult.worldBlocked();
             }
         }
@@ -138,9 +149,7 @@ public final class PrintPlacementExecutor {
                     return PrintPlacementResult.failure(false, shouldStopAfterTaskAction(taskAction));
                 }
                 this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.WAITING_RETRIEVAL);
-                // The HUD describes what is currently absent from the player inventory. Keep the
-                // requirement visible while an external material provider is working; tick() removes it
-                // as soon as the requested stack actually arrives.
+
                 this.missingMaterials.recordMissing(
                         requiredItems,
                         requiredStackPredicate,
@@ -160,12 +169,10 @@ public final class PrintPlacementExecutor {
                 showReserveNotice(context, reserveBlockedStack);
             }
             if (retrievalPending) {
-                // 换槽或外部取货只是暂时未就绪。多阶段任务必须保留当前阶段，
-                // 否则破冰放水会在材料到达前被当成永久失败并丢失目标。
+
                 return PrintPlacementResult.materialUnavailable(this.materialRequests.blocksPrinterWhilePending());
             }
-            // 真正缺少材料属于无效放置，不应消耗每 tick 的有效放置预算。
-            // 对多阶段任务也不能停止整轮；调度器会仅暂停当前任务，等待背包增加材料。
+
             return PrintPlacementResult.materialUnavailable(false);
         }
         this.missingMaterials.resolve(requiredItems, requiredStackPredicate);

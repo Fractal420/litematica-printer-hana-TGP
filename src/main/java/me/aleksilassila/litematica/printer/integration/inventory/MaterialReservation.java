@@ -3,7 +3,6 @@ package me.aleksilassila.litematica.printer.integration.inventory;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
-/** Provider response bound to the request token that created it. */
 public record MaterialReservation(long token, State state, @Nullable Item selectedItem) {
     public MaterialReservation(long token, State state) {
         this(token, state, null);

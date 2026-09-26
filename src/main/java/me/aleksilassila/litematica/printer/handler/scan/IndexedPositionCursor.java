@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Distance-ordered cursor over the sparse non-air schematic index. */
 final class IndexedPositionCursor implements PositionCursor {
     private final List<BlockPos> positions;
     private final int centerX;

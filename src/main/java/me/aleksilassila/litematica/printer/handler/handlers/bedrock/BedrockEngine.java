@@ -13,7 +13,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.LongSupplier;
 
-/** Runtime-owned orchestration for bedrock admission, execution and cleanup. */
 public final class BedrockEngine implements RuntimeComponent {
     private final Minecraft client;
     private final BedrockTargetRegistry targets = new BedrockTargetRegistry();

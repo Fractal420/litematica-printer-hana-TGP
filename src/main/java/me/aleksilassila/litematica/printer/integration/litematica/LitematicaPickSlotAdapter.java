@@ -3,7 +3,6 @@ package me.aleksilassila.litematica.printer.integration.litematica;
 import me.aleksilassila.litematica.printer.mixin.printer.litematica.InventoryUtilsAccessor;
 import net.minecraft.world.entity.player.Player;
 
-/** Project-scoped pick-slot policy; it does not replace Litematica's global implementation. */
 public final class LitematicaPickSlotAdapter {
     private LitematicaPickSlotAdapter() {
     }

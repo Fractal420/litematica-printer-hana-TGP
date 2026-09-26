@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 
 import java.util.List;
 
-/** Cached machine plan for one bedrock candidate and its local world revision. */
 record BedrockCandidatePlan(
         BlockPos pos,
         BedrockMachineLayout layout,

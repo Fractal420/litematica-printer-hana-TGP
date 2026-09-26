@@ -3,7 +3,6 @@ package me.aleksilassila.litematica.printer.handler.handlers.bedrock;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Owns the bounded exposure deferral and one-use retry bypass for target admission. */
 final class BedrockExposureGate<K> {
     private final int maxDeferrals;
     private final Map<K, Integer> deferrals = new HashMap<>();

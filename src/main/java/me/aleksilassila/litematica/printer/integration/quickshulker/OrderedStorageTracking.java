@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Reconciles borrowed-stack identities with inventory slot movement. */
 final class OrderedStorageTracking {
     private OrderedStorageTracking() {
     }

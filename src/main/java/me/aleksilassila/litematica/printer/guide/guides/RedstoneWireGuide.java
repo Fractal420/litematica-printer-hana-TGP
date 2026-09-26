@@ -9,9 +9,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.RedstoneSide;
 
-/**
- * 红石线
- */
 public class RedstoneWireGuide extends Guide {
     public RedstoneWireGuide(SchematicBlockContext context) {
         super(context);

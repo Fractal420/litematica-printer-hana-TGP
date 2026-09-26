@@ -7,16 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.LongSupplier;
 
-/**
- * Owns the time slice used while one feature source is producing candidates.
- *
- * <p>This is deliberately an owner-local guard.  The previous implementation kept a global
- * accumulator and divided the configured budget by every owner ever seen in the runtime.  That
- * made a feature's available time depend on unrelated modules and caused later modules to be
- * starved after an earlier source consumed the shared total.  The feature iteration runner still
- * owns the outer per-feature tick budget; this class only prevents a slow candidate lookup from
- * monopolising that iteration.</p>
- */
 final class ScanBudget {
     private final LongSupplier nanoClock;
     private final LongSupplier budgetNanosSupplier;

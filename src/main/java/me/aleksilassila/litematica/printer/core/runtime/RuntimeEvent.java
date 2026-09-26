@@ -4,7 +4,6 @@ public sealed interface RuntimeEvent permits RuntimeEvent.EpochChanged, RuntimeE
     record EpochChanged(RuntimeEpoch previous, RuntimeEpoch current, String reason) implements RuntimeEvent {
     }
 
-    /** Exact server world update. Consumers may also wake immediate neighbours when required. */
     record BlockUpdated(int x, int y, int z) implements RuntimeEvent {
     }
 }

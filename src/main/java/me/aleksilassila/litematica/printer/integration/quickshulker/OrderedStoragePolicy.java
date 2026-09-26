@@ -6,7 +6,6 @@ import net.minecraft.world.item.Item;
 import java.util.List;
 import java.util.Set;
 
-/** Candidate ordering and pressure measurements independent of container interaction. */
 final class OrderedStoragePolicy {
     private OrderedStoragePolicy() {
     }

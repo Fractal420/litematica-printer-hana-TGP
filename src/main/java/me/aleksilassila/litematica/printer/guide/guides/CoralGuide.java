@@ -15,9 +15,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 死珊瑚
- */
 public class CoralGuide extends Guide {
 
     private final Identifier blockId;

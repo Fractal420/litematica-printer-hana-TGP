@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Incremental occupancy index used while admitting a same-tick bedrock batch. */
 final class BedrockCandidateConflictIndex {
     private final Set<BlockPos> structural = new HashSet<>();
     private final Set<BlockPos> power = new HashSet<>();

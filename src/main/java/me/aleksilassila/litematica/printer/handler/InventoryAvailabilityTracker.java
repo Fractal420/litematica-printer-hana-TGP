@@ -21,7 +21,6 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-/** Tracks material gains once per client tick without treating normal consumption as a rescan event. */
 public final class InventoryAvailabilityTracker implements RuntimeComponent {
     private final Map<Item, Integer> previousCounts = new IdentityHashMap<>();
     private final Map<Item, Integer> currentCounts = new IdentityHashMap<>();
@@ -62,15 +61,11 @@ public final class InventoryAvailabilityTracker implements RuntimeComponent {
             }
         }
         if (trackAvailability) {
-            // Take It Out throttles this request internally (500 ms and one in-flight payload),
-            // so polling here keeps the render-only view fresh without sending a packet every tick.
+
             TakeItOutUtils.requestAvailableItemsRefresh();
-            // Quick Shulker and Take It Out may have accepted the material request while the
-            // resulting stack is still travelling through their external inventory flow.
+
             this.availableItems.addAll(RuntimeAccess.get().materialRequests().activeItems());
-            // Take It Out keeps linked-container contents outside the player inventory. Include
-            // its positive-count cache entries so Render Only Holding Items reflects material that
-            // can actually be fetched through the enabled integration.
+
             this.availableItems.addAll(TakeItOutUtils.getAvailableItems());
         }
         if (this.initialized) {
@@ -119,7 +114,7 @@ public final class InventoryAvailabilityTracker implements RuntimeComponent {
                 }
             }
         } catch (Exception ignored) {
-            // Contents unreadable for this stack - keep the outer shulker item available.
+
         }
     }
 

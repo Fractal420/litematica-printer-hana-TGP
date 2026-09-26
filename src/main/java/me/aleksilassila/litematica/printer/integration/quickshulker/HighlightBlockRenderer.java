@@ -15,14 +15,12 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.profiling.ProfilerFiller;
 
-
 import java.util.*;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 //#if MC <= 260100
 import com.mojang.blaze3d.vertex.Tesselator;
 //#endif
-
 
 //#if MC <= 12104
 //$$ import net.minecraft.client.Minecraft;
@@ -95,7 +93,6 @@ public class HighlightBlockRenderer implements IRenderer {
         }
     }
 
-    //如果不注册无法渲染，
     public static void init() {
         RenderEventHandler.getInstance().registerWorldLastRenderer(instance);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client1) -> {
@@ -107,7 +104,6 @@ public class HighlightBlockRenderer implements IRenderer {
         });
     }
 
-    // @formatter:off
     //#if MC > 260100
     public void test3(Matrix4fc matrices, Color4f color4f, Set<BlockPos> posSet) {
     //#elseif MC > 12004
@@ -198,8 +194,6 @@ public class HighlightBlockRenderer implements IRenderer {
         //$$ RenderSystem.disableBlend();
         //#endif
 
-
-//        fi.dy.masa.litematica.render.RenderUtils.renderAreaSides(pos, pos, color4f, matrices, client);
     }
 
     @Override
@@ -212,7 +206,7 @@ public class HighlightBlockRenderer implements IRenderer {
     //#endif
         List<HighlightRenderSnapshot> snapshots = new ArrayList<>();
         synchronized (HIGHLIGHT_LOCK) {
-            //更改渲染
+
             setMap.forEach((k, v) -> {
                 HighlightTheProject highlightTheProject = highlightTheProjectMap.get(k);
                 if (highlightTheProject != null) {
@@ -255,8 +249,6 @@ public class HighlightBlockRenderer implements IRenderer {
             Reference.LOGGER.warn("潜影盒高亮渲染失败，已跳过本次渲染", exception);
         }
     }
-
-    // @formatter:on
 
     public record HighlightTheProject(ConfigColor color4f, Set<BlockPos> pos) {
     }

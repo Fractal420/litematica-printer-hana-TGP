@@ -19,19 +19,12 @@ import net.minecraft.client.renderer.RenderPipelines;
 //$$ import net.minecraft.client.gui.GuiComponent;
 //#endif
 
-
 import java.awt.*;
 
-/**
- * 封装了原版 GUI 渲染的底层工具类，兼容多版本：
- * 1.18.x / 1.19.x / 1.20.x / 1.21.1 / 1.21.3+
- */
 public class Render2DUtils {
     public static final Minecraft client = Minecraft.getInstance();
     private static PoseStack poseStack;
     private static GuiGraphicsExtractor guiGraphics;
-
-    // ==================== 初始化 ====================
 
     public static void initMatrix(PoseStack poseStack) {
         Render2DUtils.poseStack = poseStack;
@@ -52,8 +45,6 @@ public class Render2DUtils {
         //$$ }
         //#endif
     }
-
-    // ==================== 文字与矩形 ====================
 
     public static void drawString(String text, int x, int y, Color color, boolean withShadow) {
         drawString(text, x, y, color, withShadow, false);
@@ -142,18 +133,10 @@ public class Render2DUtils {
         //#endif
     }
 
-    // ==================== 纹理绘制 ====================
-
-    /**
-     * 绘制完整纹理（纹理文件整体宽高与绘制区域一致）
-     */
     public static void drawTexture(Identifier texture, int x, int y, int width, int height) {
         drawTexture(texture, x, y, 0, 0, width, height, width, height);
     }
 
-    /**
-     * 绘制纹理的指定区域（支持 UV 裁剪）
-     */
     public static void drawTexture(Identifier texture, int x, int y,
                                    int u, int v, int regionWidth, int regionHeight,
                                    int textureWidth, int textureHeight) {
@@ -187,11 +170,6 @@ public class Render2DUtils {
         //#endif
     }
 
-    // ==================== 物品绘制 ====================
-
-    /**
-     * 绘制物品图标（不依赖玩家实体，纯图标渲染）
-     */
     public static void drawItem(ItemStack stack, int x, int y) {
         ensureInitialized();
         //#if MC > 12111
@@ -205,9 +183,6 @@ public class Render2DUtils {
         //#endif
     }
 
-    /**
-     * 绘制物品图标及其装饰（数量、耐久条等）
-     */
     public static void drawItemWithDecorations(ItemStack stack, int x, int y) {
         drawItem(stack, x, y);
         //#if MC > 12111
@@ -221,19 +196,11 @@ public class Render2DUtils {
         //#endif
     }
 
-    // ==================== 组合绘制 ====================
-
-    /**
-     * 物品图标 + 右侧文字
-     */
     public static void drawItemWithLabel(ItemStack stack, int x, int y, String text, Color color, boolean shadow) {
         drawItem(stack, x, y);
         drawString(text, x + 20, y + 5, color, shadow);
     }
 
-    /**
-     * 纹理图标 + 右侧文字（可指定图标尺寸）
-     */
     public static void drawIconWithLabel(Identifier texture, int x, int y,
                                          int iconWidth, int iconHeight,
                                          String text, Color color, boolean shadow) {

@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-/** Owns temporary machine residue and its retry/cooldown policy. */
 final class BedrockCleanupCoordinator {
     private static final String RETRY_COOLDOWN_KEY = "cleanup_retry";
     private static final int MAX_QUEUE_SIZE = 512;

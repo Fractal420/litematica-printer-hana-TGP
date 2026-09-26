@@ -3,7 +3,6 @@ package me.aleksilassila.litematica.printer.printer;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Tracks only printer-owned sign and anvil screen responses. */
 final class InteractionScreenSessions {
     private static final long PRINT_SIGN_EDIT_ARM_TIMEOUT_NANOS = 30_000_000_000L;
     private static final long PRINT_SIGN_EDIT_RESPONSE_TIMEOUT_NANOS = 5_000_000_000L;

@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.LongSupplier;
 
-/** Owns one water/ice workflow independently from the full selection scan. */
 public final class WaterPrintTask implements PrintTask {
     private static final int STALL_PADDING_TICKS = 8;
     private static final int MIN_STALL_TICKS = 12;

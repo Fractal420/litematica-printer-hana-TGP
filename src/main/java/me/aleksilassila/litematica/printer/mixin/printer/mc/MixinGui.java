@@ -33,7 +33,7 @@ import net.minecraft.client.DeltaTracker;
 @Mixin(Gui.class)
 //#endif
 public abstract class MixinGui {
-    // @formatter:off
+
     //#if MC >= 260200
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     //#elseif MC >= 260100
@@ -59,7 +59,6 @@ public abstract class MixinGui {
             return;
         }
 
-        // 初始化渲染矩阵
         //#if MC > 11904
         Render2DUtils.initGuiGraphics(guiGraphics);
         //#else
@@ -70,5 +69,5 @@ public abstract class MixinGui {
         float scaledHeight = mc.getWindow().getGuiScaledHeight();
         Render2D.INSTANCE.render(scaledWidth, scaledHeight);
     }
-    // @formatter:on
+
 }

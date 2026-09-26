@@ -16,6 +16,9 @@ import me.aleksilassila.litematica.printer.printer.MissingMaterialTracker;
 import me.aleksilassila.litematica.printer.printer.action.ActionBroker;
 import me.aleksilassila.litematica.printer.utils.CooldownUtils;
 import me.aleksilassila.litematica.printer.utils.InteractionUtils;
+import me.aleksilassila.litematica.printer.mixin_extension.MultiPlayerGameModeExtension;
+import me.aleksilassila.litematica.printer.utils.EmptyShulkerDropper;
+import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import me.aleksilassila.litematica.printer.utils.InventorySwitchGuard;
 import me.aleksilassila.litematica.printer.utils.InventoryMessageCooldown;
 import me.aleksilassila.litematica.printer.utils.mods.QuickShulkerBridge;
@@ -25,6 +28,8 @@ import me.aleksilassila.litematica.printer.integration.inventory.ChestTrackerAda
 import me.aleksilassila.litematica.printer.integration.inventory.TakeItOutAdapter;
 import me.aleksilassila.litematica.printer.integration.litematica.LitematicaAdapter;
 import me.aleksilassila.litematica.printer.integration.quickshulker.QuickShulkerAdapter;
+import me.aleksilassila.litematica.printer.integration.vanilla_refill.ManualVanillaRefillController;
+import me.aleksilassila.litematica.printer.integration.vanilla_refill.ManualVanillaRefillAdapter;
 import me.aleksilassila.litematica.printer.integration.tweakeroo.TweakerooAdapter;
 import me.aleksilassila.litematica.printer.handler.handlers.bedrock.BedrockEngine;
 import me.aleksilassila.litematica.printer.interaction.ToolSwitchService;
@@ -33,10 +38,6 @@ import me.aleksilassila.litematica.printer.integration.inventory.StrippableBlock
 import net.minecraft.client.Minecraft;
 import java.util.List;
 
-/**
- * Owns the active client runtime and is the only platform tick entry point.
- * Existing handlers remain behind the legacy facade while they are migrated.
- */
 public final class PrinterRuntime {
     private final RuntimeEventBus events = new RuntimeEventBus();
     private final RuntimeScope scope = new RuntimeScope();
@@ -58,6 +59,7 @@ public final class PrinterRuntime {
     private final MissingMaterialTracker missingMaterials;
     private final HudStatsManager hudStats;
     private final QuickShulkerAdapter quickShulkerAdapter;
+    private final ManualVanillaRefillController manualVanillaRefill;
     private final ChestTrackerAdapter chestTrackerAdapter;
     private final InventorySwitchGuard inventorySwitchGuard;
     private final InventoryMessageCooldown inventoryMessageCooldown;
@@ -100,6 +102,8 @@ public final class PrinterRuntime {
         this.scope.register(this.hudStats);
         this.quickShulkerAdapter = new QuickShulkerAdapter(this.actionBroker);
         this.scope.register(this.quickShulkerAdapter);
+        this.manualVanillaRefill = new ManualVanillaRefillController(client);
+        this.scope.register(this.manualVanillaRefill);
         this.chestTrackerAdapter = new ChestTrackerAdapter(this.actionBroker);
         this.scope.register(this.chestTrackerAdapter);
         this.modules = new FeatureModuleSet(this);
@@ -165,6 +169,10 @@ public final class PrinterRuntime {
         return this.quickShulkerAdapter;
     }
 
+    public ManualVanillaRefillController manualVanillaRefill() {
+        return this.manualVanillaRefill;
+    }
+
     public ChestTrackerAdapter chestTrackerAdapter() {
         return this.chestTrackerAdapter;
     }
@@ -203,12 +211,12 @@ public final class PrinterRuntime {
 
     public MaterialRequestCoordinator materialRequests() {
         if (this.materialRequests == null) {
-            // Behavioral contract: one request walks this list once and stops at the first
-            // AVAILABLE/PENDING provider. Changing the order changes user-visible pickup priority.
+
             this.materialRequests = new MaterialRequestCoordinator(List.of(
                     new PlayerInventoryProvider(Minecraft.getInstance()),
                     new TakeItOutAdapter(this.actionBroker),
                     this.quickShulkerAdapter,
+                    new ManualVanillaRefillAdapter(),
                     this.chestTrackerAdapter
             ));
             this.scope.register(this.materialRequests);
@@ -228,6 +236,20 @@ public final class PrinterRuntime {
 
         this.cooldownUtils.tick();
         QuickShulkerBridge.onTick();
+        this.manualVanillaRefill.tick();
+        EmptyShulkerDropper.tick(client);
+        if (this.manualVanillaRefill.shouldPause()) {
+            this.actionBroker.cancelQueue();
+            this.inventorySwitchGuard.reset();
+            if (this.manualVanillaRefill.shouldBlockExternalBreaking()) {
+                this.interactionUtils.resetRuntime();
+                if (client.gameMode instanceof MultiPlayerGameModeExtension extension) {
+                    extension.litematica_printer$resetRuntime();
+                }
+            }
+            this.modules.tick();
+            return;
+        }
         this.chestTrackerAdapter.tick();
         if (this.materialRequests != null) {
             this.materialRequests.tick();

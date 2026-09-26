@@ -19,6 +19,8 @@
     "printer.mc.MixinClientPacketListener",
     "printer.mc.MixinGui",
     "printer.mc.MixinLocalPlayer",
+    "printer.mc.MixinKeyboardInput",
+    "printer.mc.ClientInputAccessor",
     ${chesttracker_client_mixins}
     "printer.mc.MixinMultiPlayerGameMode"
   ],

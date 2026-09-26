@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.minecraft.world.phys.BlockHitResult;
 
 @Environment(EnvType.CLIENT)
+
 // Priority rationale: Printer must serialize a missing-item pick request before Take It Out's
 // default-priority HEAD hook can independently dispatch the same request a second time.
 @Mixin(value = Minecraft.class, priority = 1100)

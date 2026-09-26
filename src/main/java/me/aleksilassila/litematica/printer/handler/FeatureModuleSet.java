@@ -10,7 +10,6 @@ import me.aleksilassila.litematica.printer.handler.handlers.MineHandler;
 import me.aleksilassila.litematica.printer.handler.handlers.PrintHandler;
 import me.aleksilassila.litematica.printer.runtime.PrinterRuntime;
 
-/** Runtime-owned feature graph and its stable execution order. */
 public final class FeatureModuleSet {
     private final GuiHandler gui;
     private final PrintHandler print;

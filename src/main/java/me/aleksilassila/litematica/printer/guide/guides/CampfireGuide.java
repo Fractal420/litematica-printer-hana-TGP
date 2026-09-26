@@ -10,9 +10,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.item.Items;
 
-/**
- * 篝火
- */
 public class CampfireGuide extends Guide {
 
     public CampfireGuide(SchematicBlockContext context) {

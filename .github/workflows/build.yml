@@ -1,8 +1,6 @@
 name: build
 
 on:
-  # Automatic builds are limited to files that can change the produced JARs.
-  # CI and release workflow changes can still be verified with workflow_dispatch.
   push:
     branches: [master]
     paths:
@@ -36,8 +34,6 @@ on:
 env:
   IS_THIS_RELEASE: false
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # Java 25 warns when legacy Guava/JOML code uses Unsafe during remapping.
-  # This is a third-party compatibility path, not Printer code.
   GRADLE_OPTS: --sun-misc-unsafe-memory-access=allow
 
 permissions:

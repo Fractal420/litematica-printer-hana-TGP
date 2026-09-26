@@ -14,9 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * 雪层
- */
 public class SnowGuide extends Guide {
 
     public SnowGuide(SchematicBlockContext context) {

@@ -14,9 +14,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import java.util.List;
 
-/**
- * 告示牌
- */
 public class SignGuide extends Guide {
 
     public SignGuide(SchematicBlockContext context) {
@@ -27,7 +24,6 @@ public class SignGuide extends Guide {
     protected Result onBuildActionMissingBlock(BlockMatchResult state) {
         Direction facing = getProperty(requiredState, HorizontalDirectionalBlock.FACING).orElse(null);
 
-        // 站立告示牌
         if (requiredBlock instanceof StandingSignBlock) {
             int rotation = getProperty(requiredState, StandingSignBlock.ROTATION).orElseThrow();
             return Result.success(new Action()
@@ -36,7 +32,6 @@ public class SignGuide extends Guide {
                     .setRequiresSupport());
         }
 
-        // 墙壁告示牌
         if (requiredBlock instanceof WallSignBlock && facing != null) {
             return Result.success(new Action()
                     .setSides(facing.getOpposite())
@@ -45,7 +40,7 @@ public class SignGuide extends Guide {
         }
 
         //#if MC >= 12002
-        // 墙壁悬挂告示牌（WallHangingSignBlock）
+
         if (requiredBlock instanceof WallHangingSignBlock && facing != null) {
             List<Direction> sides = facing.getAxis() == Direction.Axis.X
                     ? List.of(Direction.NORTH, Direction.SOUTH)
@@ -56,7 +51,6 @@ public class SignGuide extends Guide {
                     .setRequiresSupport());
         }
 
-        // 天花板悬挂告示牌（CeilingHangingSignBlock）
         if (requiredBlock instanceof CeilingHangingSignBlock) {
             int rotation = getProperty(requiredState, CeilingHangingSignBlock.ROTATION).orElse((int) 0);
             boolean attached = getProperty(requiredState, BlockStateProperties.ATTACHED).orElse(false);

@@ -6,8 +6,6 @@ import me.aleksilassila.litematica.printer.gui.ConfigUi;
 import me.aleksilassila.litematica.printer.utils.mods.ChestTrackerBridge;
 import net.minecraft.client.Minecraft;
 
-
-//监听按键
 public class HotkeysCallback {
     private static final Minecraft client = Minecraft.getInstance();
 

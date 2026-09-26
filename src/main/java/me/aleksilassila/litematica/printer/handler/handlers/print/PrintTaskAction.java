@@ -5,7 +5,7 @@ import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.world.level.block.state.BlockState;
 
 public interface PrintTaskAction {
-    /** State expected from this individual workflow action, not necessarily the schematic final state. */
+
     default BlockState expectedBlockState(SchematicBlockContext context, Action action) {
         return context.requiredState;
     }

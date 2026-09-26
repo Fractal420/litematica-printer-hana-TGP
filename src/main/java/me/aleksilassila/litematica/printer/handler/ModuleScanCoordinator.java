@@ -16,7 +16,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Owns scan wake-up, lazy/partial/full transitions and dirty-region ordering for one feature. */
 final class ModuleScanCoordinator {
     interface Host {
         List<PrinterBox> scanSourceBoxes(PrinterBox interactionBox);
@@ -99,9 +98,7 @@ final class ModuleScanCoordinator {
         this.updateExternalBox(sourceBox);
         this.updateSource(sourceBox, sourceBoxes);
         if (this.host.hasRunnableTargets()) {
-            // A buffered feature queue is real work even when its iteration source is intentionally
-            // empty. MineHandler pauses scanning while candidates are being executed; treating that
-            // empty source as idle incorrectly promoted the coordinator to LAZY after a few ticks.
+
             this.lifecycle.setState(ScanState.FULL);
             return this.runFull(playerInteractionBox, true);
         }
@@ -183,8 +180,7 @@ final class ModuleScanCoordinator {
             FeatureModuleBase.IterationOutcome outcome = this.host.runIteration(interactionBox);
             this.pendingDirtyRegionCount = 0;
             if (outcome.scanPaused()) {
-                // A time-budget pause keeps the same cursor. It is not a new world/selection
-                // revision and must not promote a completed lazy feature into a fresh full pass.
+
                 this.lifecycle.setState(ScanState.LAZY);
                 return true;
             }

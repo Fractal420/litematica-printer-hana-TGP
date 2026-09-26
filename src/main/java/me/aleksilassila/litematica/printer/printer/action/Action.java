@@ -40,7 +40,7 @@ public class Action {
     @Getter
     protected PlayerLook playerLook = null;
     @Nullable
-    protected Item[] clickItems; // null == 空手
+    protected Item[] clickItems;
     protected boolean requiresSupport = false;
     @Getter
     @Nullable
@@ -159,7 +159,7 @@ public class Action {
                 if (firstValidSide == null) {
                     firstValidSide = side;
                 }
-                // 选择一个不需要潜行放置的面
+
                 if (!Implementation.isInteractive(neighborState.getBlock()) && currentState.canSurvive(world, pos)) {
                     return side;
                 }

@@ -7,13 +7,6 @@ import net.minecraft.world.item.Item;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Serializes external material acquisition through one tokenized provider chain.
- *
- * <p>Repeated requests for the same item poll the active token. Requests for another item wait
- * behind it, preventing pick-block, printing and third-party integrations from retrieving the
- * same stack twice.</p>
- */
 public final class MaterialRequestCoordinator implements RuntimeComponent {
     private final List<InventoryProvider> providers;
     private long nextToken = 1L;
@@ -136,9 +129,7 @@ public final class MaterialRequestCoordinator implements RuntimeComponent {
                 return result;
             }
             if (result.state() == MaterialReservation.State.PENDING) {
-                // A timed-out provider may still own inventory/main-hand leases. Release its
-                // operation before advancing, otherwise an unavailable material can permanently
-                // block printing even though the coordinator itself is no longer busy.
+
                 provider.reset();
             }
             this.active = this.active.nextProvider(this.tick);

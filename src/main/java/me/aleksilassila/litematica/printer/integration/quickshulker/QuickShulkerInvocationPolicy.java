@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.integration.quickshulker;
 
-/** Timing rules shared by the Easy Place hook and the hidden container screen. */
 public final class QuickShulkerInvocationPolicy {
     private QuickShulkerInvocationPolicy() {
     }

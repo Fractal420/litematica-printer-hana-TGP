@@ -93,47 +93,46 @@ public class DirectionUtils {
         return Direction.fromYRot(yaw);
     }
 
-
     public static float rotationToPlayerYaw(int rotation) {
-        // 防范性处理：确保rotation在0-15范围内（即使传入非法值也能修正）
+
         rotation = clampRotation(rotation);
         float blockFrontYaw = rotation * ROTATION_TO_YAW_FACTOR;
         float playerLookYaw = blockFrontYaw + 180.0F;
-        // 强制归一化到[-180, 180]（核心防范逻辑）
+
         playerLookYaw = normalizeYaw(playerLookYaw);
         return playerLookYaw;
     }
 
     public static int getOppositeRotation(int rotation) {
-        // 先修正输入的Rotation范围
+
         rotation = clampRotation(rotation);
         float playerYaw = rotationToPlayerYaw(rotation);
         float oppositeYaw = getOppositeYaw(playerYaw);
-        // 转换回Rotation前，先归一化Yaw，再计算
+
         float normalizedYaw = oppositeYaw < 0.0F ? oppositeYaw + 360.0F : oppositeYaw;
         float blockFrontYaw = normalizedYaw - 180.0F;
         if (blockFrontYaw < 0.0F) {
             blockFrontYaw += 360.0F;
         }
         int oppositeRotation = Math.round(blockFrontYaw / ROTATION_TO_YAW_FACTOR);
-        // 最后再修正Rotation范围，双重保障
+
         oppositeRotation = clampRotation(oppositeRotation);
         return oppositeRotation;
     }
 
     public static float getOppositeYaw(float playerLookYaw) {
-        // 先归一化输入的Yaw（即使传入非法值，比如500、-400也能修正）
+
         playerLookYaw = normalizeYaw(playerLookYaw);
         float oppositeYaw = playerLookYaw + 180.0F;
-        // 再次归一化，确保输出在[-180, 180]
+
         oppositeYaw = normalizeYaw(oppositeYaw);
         return oppositeYaw;
     }
 
     private static float normalizeYaw(float yaw) {
-        // 先取模360，将值约束到[-360, 360]
+
         yaw = yaw % 360.0F;
-        // 再调整到[-180, 180]
+
         if (yaw > YAW_MAX) {
             yaw -= 360.0F;
         } else if (yaw < YAW_MIN) {
@@ -143,9 +142,9 @@ public class DirectionUtils {
     }
 
     private static int clampRotation(int rotation) {
-        // 取模16，将值约束到[-15, 15]
+
         rotation = rotation % (ROTATION_MAX + 1);
-        // 处理负数，修正到0-15
+
         if (rotation < ROTATION_MIN) {
             rotation += (ROTATION_MAX + 1);
         }

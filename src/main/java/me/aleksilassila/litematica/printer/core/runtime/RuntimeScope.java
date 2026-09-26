@@ -3,7 +3,6 @@ package me.aleksilassila.litematica.printer.core.runtime;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** Owns epoch-scoped components; components register themselves when constructed. */
 public final class RuntimeScope implements AutoCloseable {
     private final List<RuntimeComponent> components = new CopyOnWriteArrayList<>();
 

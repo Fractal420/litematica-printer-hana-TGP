@@ -8,9 +8,6 @@ import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.AmethystClusterBlock;
 
-/**
- * 紫水晶芽
- */
 public class AmethystGuide extends Guide {
 
     public AmethystGuide(SchematicBlockContext context) {

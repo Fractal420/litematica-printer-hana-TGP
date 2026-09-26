@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 import java.util.HashMap;
 import java.util.Map;
 
-/** One-tick handoff from candidate planning to target creation. */
 final class BedrockSubmissionPlanCache {
     private final Map<BlockPos, Plan> plans = new HashMap<>();
 

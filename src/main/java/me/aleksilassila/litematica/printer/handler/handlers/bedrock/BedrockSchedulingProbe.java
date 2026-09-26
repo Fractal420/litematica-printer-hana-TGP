@@ -4,7 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 
-/** Computes candidate hot-spot cost without changing admission state. */
 final class BedrockSchedulingProbe {
     private static final Direction[] HORIZONTAL_DIRECTIONS = {
             Direction.NORTH,

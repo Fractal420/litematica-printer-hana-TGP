@@ -6,7 +6,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.world.item.ItemStack;
 
-/** Minimal Minecraft state bridge needed by the mining state machine. */
 public interface MiningInteractionPort {
     Minecraft client();
 
@@ -30,7 +29,6 @@ public interface MiningInteractionPort {
 
     boolean matchesDestroyTarget(BlockPos pos);
 
-    /** Whether a client-side inventory/tool switch must settle before mining continues. */
     boolean isInventorySwitchPending();
 
     void ensureCarriedItemSent();

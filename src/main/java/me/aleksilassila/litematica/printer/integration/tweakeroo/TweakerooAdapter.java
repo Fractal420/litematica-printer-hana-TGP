@@ -10,7 +10,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import net.minecraft.core.BlockPos;
 
-/** Optional Tweakeroo capability boundary used by mining. */
 public final class TweakerooAdapter implements TweakerooToolSwitchPort {
     private final UsageRestrictionCache restrictionCache = new UsageRestrictionCache();
 

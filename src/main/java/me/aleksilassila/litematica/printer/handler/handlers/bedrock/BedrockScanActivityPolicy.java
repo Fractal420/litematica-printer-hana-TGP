@@ -1,9 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.handlers.bedrock;
 
-/**
- * Tracks whether the bedrock scanner still has controller work to revisit.
- * Retry activity is represented by one deadline, so memory use remains constant.
- */
 final class BedrockScanActivityPolicy {
     private long retryWakeUntilTick = Long.MIN_VALUE;
 

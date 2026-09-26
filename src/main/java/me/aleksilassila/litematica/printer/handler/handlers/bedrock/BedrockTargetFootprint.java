@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/** Builds target reservation and cleanup views from one owned position set. */
 final class BedrockTargetFootprint {
     private final ClientLevel level;
     private final BlockPos bedrockPos;

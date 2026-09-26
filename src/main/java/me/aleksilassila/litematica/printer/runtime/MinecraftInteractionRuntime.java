@@ -6,7 +6,6 @@ import me.aleksilassila.litematica.printer.mixin_extension.MultiPlayerGameModeEx
 import me.aleksilassila.litematica.printer.utils.minecraft.NetworkUtils;
 import net.minecraft.client.Minecraft;
 
-/** Lifecycle owner for transient Minecraft interaction state exposed by thin mixin ports. */
 final class MinecraftInteractionRuntime implements RuntimeComponent {
     private final Minecraft client;
 

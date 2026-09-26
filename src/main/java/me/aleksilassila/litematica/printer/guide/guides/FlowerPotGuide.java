@@ -11,9 +11,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraft.world.item.Items;
 
-/**
- * 花盆
- */
 public class FlowerPotGuide extends Guide {
 
     public FlowerPotGuide(SchematicBlockContext context) {

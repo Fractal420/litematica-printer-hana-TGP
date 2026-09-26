@@ -9,7 +9,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Spawn checks shared by features that need to cover hostile-mob spawn spaces. */
 public final class SpawnCheckUtils {
     private static final EntityType<?> SUPPORT_ENTITY = resolveEntityType("minecraft:creeper");
     private static final EntityType<?> WITHER_SKELETON_ENTITY = resolveEntityType("minecraft:wither_skeleton");
@@ -17,10 +16,6 @@ public final class SpawnCheckUtils {
     private SpawnCheckUtils() {
     }
 
-    /**
-     * Mirrors MiniHUD's light-level spawnability test for a Wither Skeleton.
-     * The position is the lower of the two entity-space blocks.
-     */
     public static boolean canWitherSkeletonSpawn(Level level, BlockPos spawnPos) {
         BlockPos belowPos = spawnPos.below();
         BlockState below = level.getBlockState(belowPos);
@@ -39,8 +34,7 @@ public final class SpawnCheckUtils {
     }
 
     private static EntityType<?> resolveEntityType(String id) {
-        // Direct field references are remapped by Loom. Reflection by named field string is not,
-        // which made the production 1.21.1 jar look for a non-existent "CREEPER" field.
+
         return switch (id) {
             //#if MC > 260100
             //$$ case "minecraft:creeper" -> EntityTypes.CREEPER;

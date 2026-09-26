@@ -17,9 +17,6 @@ import net.minecraft.world.item.Items;
 
 import java.util.Optional;
 
-/**
- * 炼药锅
- */
 public class CauldronGuide extends Guide {
 
     public CauldronGuide(SchematicBlockContext context) {

@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * 铁轨。
- */
 public class RailGuide extends Guide {
     private static final int MAX_REPAIR_ATTEMPTS = 3;
     private static final int PENDING_REPAIR_TICKS = 40;

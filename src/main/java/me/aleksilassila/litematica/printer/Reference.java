@@ -12,10 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * 模组核心常量引用类
- * 集中管理模组的全局固定值，避免硬编码和拼写错误
- */
 public class Reference {
     public static final Minecraft MINECRAFT = Minecraft.getInstance();
     public static final String MOD_ID = "litematica-printer";

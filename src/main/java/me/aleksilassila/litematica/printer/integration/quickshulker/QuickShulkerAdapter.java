@@ -15,7 +15,6 @@ import net.minecraft.world.item.Item;
 
 import java.util.Collection;
 
-/** Public adapter around the Quick Shulker request and ordered-restore controllers. */
 public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComponent {
     private static final String LEASE_OWNER = "quick_shulker";
     private final ActionPort actionBroker;
@@ -46,11 +45,7 @@ public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComp
         }
         this.requests.requestItems(request.acceptedItems());
         this.attemptedToken = request.token();
-        // Resolve the queued lookup immediately. A non-empty requested-item set only means that
-        // we still need to search the carried shulker boxes; it does not mean that an inventory
-        // operation has actually started. Treating that transient set as PENDING makes one absent
-        // material hold MAIN_HAND/INVENTORY until the next tick, so printing never reaches the
-        // other schematic targets that the player does carry.
+
         boolean operationStarted = this.requests.switchItem();
         MaterialReservation.State state = operationStarted && this.requests.hasPendingSwitchRequest()
                 ? MaterialReservation.State.PENDING : MaterialReservation.State.UNAVAILABLE;
@@ -91,7 +86,6 @@ public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComp
                 && this.requests.hasPendingSwitchRequest();
     }
 
-    /** Starts a nested-container extraction requested by another material provider. */
     public boolean requestItemsDirect(Collection<Item> items) {
         if (!Configs.Placement.QUICK_SHULKER.getBooleanValue() || items == null || items.isEmpty()) {
             return false;
@@ -139,8 +133,7 @@ public final class QuickShulkerAdapter implements InventoryProvider, RuntimeComp
 
     @Override
     public void tick() {
-        // A manual container must never be affected after the printer has been disabled.
-        // Clear the automation session before the screen guard can observe stale state.
+
         if (!Configs.Placement.QUICK_SHULKER.getBooleanValue()
                 || (!Configs.Core.WORK_SWITCH.getBooleanValue() && !this.externalRequestActive)) {
             this.reset();

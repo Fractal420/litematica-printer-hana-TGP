@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import java.util.List;
 import java.util.function.Predicate;
 
-/** Connects a feature's predicates to the shared scan engine. */
 final class ModuleCandidateSource {
     private ModuleCandidateSource() {
     }

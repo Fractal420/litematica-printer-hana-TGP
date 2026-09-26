@@ -33,6 +33,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
     private boolean hasMoreSource;
     private long lastFillTick = Long.MIN_VALUE;
     private long lastDirtyVersion = Long.MIN_VALUE;
+    private BlockPos lastServedPos;
 
     public SortedSchematicTargetQueue(ScanEngine scanEngine) {
         this.scanEngine = scanEngine;
@@ -45,6 +46,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
         this.hasMoreSource = false;
         this.lastFillTick = Long.MIN_VALUE;
         this.lastDirtyVersion = Long.MIN_VALUE;
+        this.lastServedPos = null;
     }
 
     public Iterable<BlockPos> iterable(List<PrinterBox> sourceBoxes, ClientLevel level, WorldSchematic schematic, LocalPlayer player, int scanGuardLimit) {
@@ -138,7 +140,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
                 break;
             }
             if (this.queuedKeys.add(ScanEngine.key(candidate))) {
-                targets.add(scoreTarget(schematic, heldItem, eye, view, candidate));
+                targets.add(scoreTarget(schematic, heldItem, eye, view, candidate, this.lastServedPos));
             }
         }
         if (candidates instanceof ScanCandidateIterable scanSource
@@ -172,9 +174,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
     @Override
     public Iterator<BlockPos> iterator() {
         return new Iterator<>() {
-            // Retry insertions belong to the next iteration pass. Reading the live queue until it
-            // becomes empty lets a failed target remove and requeue itself forever, especially
-            // when placeBlocksPerTick=0 disables the effective-execution limit.
+
             private int remaining = queue.size();
 
             @Override
@@ -188,6 +188,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
                     this.remaining--;
                     BlockPos result = queue.removeFirst();
                     queuedKeys.remove(ScanEngine.key(result));
+                    lastServedPos = result;
                     return result;
                 }
                 throw new java.util.NoSuchElementException("sorted schematic target queue is exhausted");
@@ -200,12 +201,16 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
             Item heldItem,
             Vec3 eye,
             Vec3 view,
-            BlockPos pos
+            BlockPos pos,
+            BlockPos anchor
     ) {
         double dx = pos.getX() + 0.5D - eye.x;
         double dy = pos.getY() + 0.5D - eye.y;
         double dz = pos.getZ() + 0.5D - eye.z;
         double distanceSqr = dx * dx + dy * dy + dz * dz;
+        double localitySqr = anchor == null
+                ? distanceSqr
+                : pos.distSqr(anchor);
         double viewAngleScore = distanceSqr < 1.0E-6D
                 ? 0.0D
                 : -(view.x * dx + view.y * dy + view.z * dz) / Math.sqrt(distanceSqr);
@@ -215,7 +220,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
                 requiredState.getBlock().asItem() != heldItem,
                 requiredState.getBlock() instanceof FallingBlock,
                 pos.getY(),
-                distanceSqr,
+                localitySqr,
                 viewAngleScore
         );
     }
@@ -228,16 +233,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
             double distanceSqr,
             double viewAngleScore
     ) {
-        /**
-         * A strict total order is required here: TimSort is allowed to reject a comparator whose
-         * ordering changes depending on the pair being compared.  In particular, comparing two
-         * falling blocks by Y but a falling/non-falling pair by distance is not transitive.
-         *
-         * <p>Let ordinary placements make progress before falling dependencies. Falling targets
-         * must then be ordered bottom-up before material locality; otherwise a held upper anvil
-         * can outrank a lower sand support and repeatedly fail the support check. Coordinates are
-         * the deterministic final tie-breaker so incremental batches produce the same order.</p>
-         */
+
         static final Comparator<TargetScore> COMPARATOR = Comparator
                 .comparing(TargetScore::fallingBlock)
                 .thenComparingInt(score -> score.fallingBlock ? score.y : 0)

@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.handlers.bedrock;
 
-/** Owns the per-attempt state that survives between target ticks. */
 final class BedrockTargetState {
     private int tickTimes;
     private boolean hasTried;

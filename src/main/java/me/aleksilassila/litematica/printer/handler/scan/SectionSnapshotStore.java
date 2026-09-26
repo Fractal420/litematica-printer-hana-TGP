@@ -4,13 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-/**
- * Compact incremental classification cache.
- *
- * <p>The scanner only consumes classification flags. Retaining two 4096-entry BlockState arrays
- * per visited section made large schematic selections retain hundreds of megabytes, so this
- * store keeps one byte per observed position and intent plus an observed bitset.</p>
- */
 final class SectionSnapshotStore {
     private static final Direction[] DIRECTIONS = Direction.values();
 

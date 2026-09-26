@@ -12,7 +12,6 @@ import fi.dy.masa.malilib.config.options.ConfigString;
 import fi.dy.masa.malilib.config.options.ConfigStringList;
 import fi.dy.masa.malilib.hotkeys.KeybindSettings;
 
-/** MaLiLib option subclasses whose presentation behavior is scoped to this mod only. */
 public final class PrinterConfigOptions {
     private PrinterConfigOptions() {
     }

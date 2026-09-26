@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-/** Thread-safe, lifecycle-owned event boundary. */
 public final class RuntimeEventBus {
     private final List<Consumer<RuntimeEvent>> listeners = new CopyOnWriteArrayList<>();
 

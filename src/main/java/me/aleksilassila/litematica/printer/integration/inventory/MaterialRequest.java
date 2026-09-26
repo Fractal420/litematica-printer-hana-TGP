@@ -5,7 +5,6 @@ import net.minecraft.world.item.Item;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-/** Immutable, tokenized request for one logical material requirement. */
 public record MaterialRequest(
         long token,
         List<Item> acceptedItems,

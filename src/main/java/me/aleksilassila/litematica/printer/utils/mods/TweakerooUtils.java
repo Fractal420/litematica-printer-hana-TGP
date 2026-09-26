@@ -133,10 +133,6 @@ public class TweakerooUtils {
         }
     }
 
-    /**
-     * 检查 Tweakeroo 的 TWEAK_TOOL_SWITCH 选项是否启用。
-     * @return 如果 Tweakeroo 存在且选项启用，则返回 true，否则返回 false。
-     */
     public static boolean isToolSwitchEnabled() {
         return readBoolean(tweakToolSwitchEnum);
     }
@@ -149,11 +145,6 @@ public class TweakerooUtils {
         return readBoolean(disableBlockBreakCooldownConfig);
     }
 
-    /**
-     * 调用 Tweakeroo 的 InventoryUtils.trySwitchToEffectiveTool(BlockPos pos) 静态方法。
-     * 只有在 Tweakeroo 存在且方法被成功加载时才执行。
-     * @param pos 要挖掘的方块位置
-     */
     public static void trySwitchToEffectiveTool(BlockPos pos) {
         if (trySwitchToEffectiveToolMethod == null) {
             return;

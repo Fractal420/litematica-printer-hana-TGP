@@ -14,27 +14,20 @@ public class I18n {
     public static final I18n AUTO_DISABLE_NOTICE = of("auto_disable_notice");
     public static final I18n FREE_NOTICE = of("free_notice");
 
-
-    // 下落方块检查提示
     public static final I18n FALLING_BLOCK_NO_SUPPORT = of("message.falling_block.no_support");
     public static final I18n FALLING_BLOCK_MISMATCH = of("message.falling_block.mismatch");
 
-    // 破基岩模式提示
     public static final I18n BEDROCK_CREATIVE_MODE = of("message.bedrock.creative_mode");
 
-    // 快捷潜影盒提示
     public static final I18n SHULKER_MOD_NOT_LOADED = of("message.shulker.mod_not_loaded");
 
-    // 关闭全部模式提示
     public static final I18n CLOSE_ALL_MODE_NOTICE = of("message.close_all_mode");
 
-    // 库存提示
     public static final I18n INVENTORY_FULL = of("message.inventory.full");
     public static final I18n INVENTORY_RESTORE_FAILED = of("message.inventory.restore_failed");
     public static final I18n INVENTORY_SHULKER_OCCUPIED = of("message.inventory.shulker_occupied");
     public static final I18n RESERVE_ITEM_SKIP = of("message.reserve_item.skip");
 
-    // 缺少材料 HUD
     public static final I18n MISSING_MATERIAL_TITLE = of("hud.missing.title");
     public static final I18n MISSING_MATERIAL_OVERFLOW = of("hud.missing.overflow");
 
@@ -66,47 +59,38 @@ public class I18n {
         return new I18n(Reference.MOD_ID, key);
     }
 
-    /*** 获取键名 ***/
     public MutableComponent getName() {
         return StringUtils.translatable(this.withPrefixNameKey);
     }
 
-    /*** 获取键名(带参数) ***/
     public MutableComponent getName(Object... objects) {
         return StringUtils.translatable(this.withPrefixNameKey, objects);
     }
 
-    /*** 获取描述 ***/
     public MutableComponent getDesc() {
         return StringUtils.translatable(this.descKey);
     }
 
-    /*** 获取描述(带参数) ***/
     public MutableComponent getDesc(Object... objects) {
         return StringUtils.translatable(this.descKey, objects);
     }
 
-    /*** 获取配置键名 ***/
     public MutableComponent getConfigName() {
         return StringUtils.translatable(this.configNameKey);
     }
 
-    /*** 获取配置键名(带参数) ***/
     public MutableComponent getConfigName(Object... objects) {
         return StringUtils.translatable(this.configNameKey, objects);
     }
 
-    /*** 获取配置描述 ***/
     public MutableComponent getConfigDesc() {
         return StringUtils.translatable(this.configDescKey);
     }
 
-    /*** 获取配置描述(带参数) ***/
     public MutableComponent getConfigDesc(Object... objects) {
         return StringUtils.translatable(this.configDescKey, objects);
     }
 
-    /*** 获取简易键名(一般用于枚举, 会取 "." 最后的文本) ***/
     public String getSimpleKey() {
         if (nameKey == null || nameKey.isEmpty()) {
             return nameKey == null ? "" : nameKey;

@@ -10,9 +10,6 @@ import net.minecraft.world.level.block.BannerBlock;
 import net.minecraft.world.level.block.WallBannerBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 
-/**
- * 旗帜。
- */
 public class BannerGuide extends Guide {
 
     public BannerGuide(SchematicBlockContext context) {

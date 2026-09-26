@@ -8,9 +8,6 @@ import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.AnvilBlock;
 
-/**
- * 铁砧。
- */
 public class AnvilGuide extends Guide {
 
     public AnvilGuide(SchematicBlockContext context) {

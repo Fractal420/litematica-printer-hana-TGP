@@ -110,10 +110,6 @@ final class OrderedStorageController {
         }
     }
 
-    /**
-     * Keep enough free inventory slots while printing, then return every
-     * tracked stack after the printer has been idle for a short period.
-     */
     public boolean maintainOrderlyStorage() {
         LocalPlayer player = client.player;
         if (player == null || client.level == null || client.gameMode == null
@@ -185,9 +181,6 @@ final class OrderedStorageController {
         return this.restoreSession.isWaitingForContainer();
     }
 
-    /**
-     * Restore to the original inner slot first, then matching partial stacks, then empty slots.
-     */
     public void restorePendingItem() {
         if (!this.isWaitingForRestoreContainer() || client.player == null || client.gameMode == null) {
             return;

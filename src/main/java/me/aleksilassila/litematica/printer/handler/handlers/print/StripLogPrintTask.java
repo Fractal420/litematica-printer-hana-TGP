@@ -18,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.LongSupplier;
 
-/** Owns the place-log then strip-log transaction for one schematic position. */
 final class StripLogPrintTask implements PrintTask {
     private static final int CONFIRM_TIMEOUT_TICKS = 20;
     private final BlockPos pos;

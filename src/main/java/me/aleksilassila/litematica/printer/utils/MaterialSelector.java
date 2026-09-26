@@ -1,5 +1,6 @@
 package me.aleksilassila.litematica.printer.utils;
 
+import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.integration.inventory.MaterialRequest;
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import me.aleksilassila.litematica.printer.utils.mods.QuickShulkerBridge;
@@ -14,7 +15,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-/** Selects, reserves and requests material stacks without owning inventory transport state. */
 public final class MaterialSelector {
     private static final int MAIN_INVENTORY_SLOT_COUNT = 36;
 
@@ -22,11 +22,23 @@ public final class MaterialSelector {
     }
 
     public static boolean switchToItems(LocalPlayer player, Item[] items, int reserveCount) {
-        if (player == null || RuntimeAccess.get().inventorySwitchGuard().isWaiting()) {
+        if (player == null
+                || RuntimeAccess.get().inventorySwitchGuard().isWaiting()
+                || CarriedItemUtils.hasCarriedItem(player)) {
             return false;
         }
         if (items == null || items.length == 0) {
             items = new Item[]{Items.AIR};
+        }
+        if (Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()) {
+            int emergency = Configs.Print.PRINT_RESERVE_ITEM_COUNT.getIntegerValue();
+            for (Item item : items) {
+                if (item != null && item != Items.AIR
+                        && countMatchingMainInventory(player, candidate -> candidate.is(item)) <= emergency) {
+                    QuickShulkerBridge.requestItems(items, MaterialRequest.Source.PRINT);
+                    break;
+                }
+            }
         }
         Inventory inventory = player.getInventory();
         ItemStack mainHandStack = player.getMainHandItem();
@@ -45,10 +57,12 @@ public final class MaterialSelector {
                 ItemStack itemStack = inventory.getItem(slot);
                 if (itemStack.getItem().equals(item)
                         && getConsumableSurplus(player, itemStack, null, reserveCount) > 0) {
-                    boolean needsInventoryConfirmation = !Inventory.isHotbarSlot(slot);
                     if (InventoryUtils.setPickedItemToHand(slot, itemStack, client)) {
-                        return !needsInventoryConfirmation
-                                || !RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(item);
+                        if (!InventoryUtils.isHoldingAnyItem(player, new Item[]{item})) {
+                            RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(item);
+                            return false;
+                        }
+                        return true;
                     }
                     return false;
                 }
@@ -64,7 +78,10 @@ public final class MaterialSelector {
             ItemStack creativeFallback,
             int reserveCount
     ) {
-        if (player == null || predicate == null || RuntimeAccess.get().inventorySwitchGuard().isWaiting()) {
+        if (player == null
+                || predicate == null
+                || RuntimeAccess.get().inventorySwitchGuard().isWaiting()
+                || CarriedItemUtils.hasCarriedItem(player)) {
             return false;
         }
         ItemStack mainHandStack = player.getMainHandItem();
@@ -81,10 +98,12 @@ public final class MaterialSelector {
                     || getConsumableSurplus(player, stack, predicate, reserveCount) <= 0) {
                 continue;
             }
-            boolean needsInventoryConfirmation = !Inventory.isHotbarSlot(slot);
             if (InventoryUtils.setPickedItemToHand(slot, stack, client)) {
-                return !needsInventoryConfirmation
-                        || !RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(stack.getItem());
+                if (!predicate.test(player.getMainHandItem())) {
+                    RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(stack);
+                    return false;
+                }
+                return true;
             }
             return false;
         }

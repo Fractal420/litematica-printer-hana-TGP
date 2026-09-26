@@ -6,7 +6,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
 
-/** First provider in the chain; it never mutates inventory state. */
 public final class PlayerInventoryProvider implements InventoryProvider {
     private final Minecraft client;
 

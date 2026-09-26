@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Mutable tracking record for one stack borrowed from a shulker box. */
 final class OrderedStorageEntry {
     final ItemStack itemStack;
     final ItemStack shulkerStack;

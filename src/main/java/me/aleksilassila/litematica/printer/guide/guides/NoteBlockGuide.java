@@ -8,9 +8,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
 import net.minecraft.world.level.block.NoteBlock;
 
-/**
- * 音符盒
- */
 public class NoteBlockGuide extends Guide {
 
     public NoteBlockGuide(SchematicBlockContext context) {

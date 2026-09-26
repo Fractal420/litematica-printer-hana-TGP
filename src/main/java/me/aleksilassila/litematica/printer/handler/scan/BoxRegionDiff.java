@@ -5,7 +5,6 @@ import me.aleksilassila.litematica.printer.printer.PrinterBox;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Computes the non-overlapping slabs newly exposed when a scan box moves. */
 public final class BoxRegionDiff {
     private BoxRegionDiff() {
     }

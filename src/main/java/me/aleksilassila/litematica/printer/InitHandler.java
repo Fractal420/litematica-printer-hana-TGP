@@ -21,7 +21,7 @@ public class InitHandler implements IInitializationHandler {
         Configs.init();
         initModConfig();
         initConfigCallback();
-        HighlightBlockRenderer.init();  // 高亮显示方块渲染器
+        HighlightBlockRenderer.init();
     }
 
     private void initConfigCallback() {
@@ -36,7 +36,6 @@ public class InitHandler implements IInitializationHandler {
             return true;
         });
 
-        // 工作开关
         Core.WORK_SWITCH.setValueChangeCallback(b -> {
             if (!b.getBooleanValue()) {
                 RuntimeAccess.get().reset("work_switch_off");
@@ -50,14 +49,12 @@ public class InitHandler implements IInitializationHandler {
             Configs.saveToFile();
         });
 
-        // 切换模式时, 关闭破基岩
         Core.WORK_MODE_TYPE.setValueChangeCallback(b -> {
             if (!b.getOptionListValue().equals(PrintModeType.BEDROCK)) {
                 BedrockController.reset();
             }
         });
 
-        // 特殊设置时，自动刷新界面
         Core.WORK_MODE.setValueChangeCallback(b -> ConfigUi.refresh());
         Print.FILL_COMPOSTER.setValueChangeCallback(b -> ConfigUi.refresh());
         Print.PRINT_RESERVE_ITEMS.setValueChangeCallback(b -> ConfigUi.refresh());

@@ -4,13 +4,6 @@ import me.aleksilassila.litematica.printer.core.runtime.RuntimeEpoch;
 
 import java.util.Objects;
 
-/**
- * Pure lifecycle for one admitted action.
- *
- * <p>The transaction owns retry and confirmation state, while the platform adapter owns the
- * actual Minecraft interaction. Every transition checks the runtime epoch so a result from a
- * disconnected world cannot become valid in the next connection.</p>
- */
 public final class ActionTransaction {
     private final ActionTicket ticket;
     private ActionResult state = ActionResult.ADMITTED;

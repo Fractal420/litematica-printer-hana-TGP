@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.integration.quickshulker;
 
-/** Pure lifecycle state for one orderly-storage restore transaction. */
 final class RestoreSession<T> {
     private T pending;
     private boolean waitingForContainer;

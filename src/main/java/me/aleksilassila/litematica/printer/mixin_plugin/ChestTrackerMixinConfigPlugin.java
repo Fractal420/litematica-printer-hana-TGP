@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 
-/** Applies Chest Tracker mixins only when the optional mod is installed. */
 public final class ChestTrackerMixinConfigPlugin implements IMixinConfigPlugin {
     private static final Logger LOGGER = LoggerFactory.getLogger("litematica-printer");
     private static final String PREFIX =

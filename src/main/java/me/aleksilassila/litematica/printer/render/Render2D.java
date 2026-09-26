@@ -18,10 +18,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 统一的 2D 渲染管理器，负责 HUD 的绘制。
- * 由 MixinGui 在每帧调用 render() 方法触发。
- */
 public class Render2D {
     public static final Render2D INSTANCE = new Render2D();
 
@@ -39,33 +35,9 @@ public class Render2D {
     private Render2D() {
     }
 
-    /**
-     * 主渲染入口，由 Mixin 每帧调用。
-     * 注意：调用前必须已通过 Render2DUtils.initGuiGraphics 或 initMatrix 设置好渲染上下文。
-     */
     public void render(float scaledWidth, float scaledHeight) {
-        // 确保底层渲染工具已初始化
+
         Render2DUtils.ensureInitialized();
-
-//        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
-//        sword.setDamageValue(100);
-//        sword.setCount(64);
-
-//        int y = 50;
-//        // 绘制物品图标 + 装饰
-//        Render2DUtils.drawItemWithDecorations(sword, 100, y);
-//        y += 24;
-//        // 如果你只想绘制物品图标本身（不显示数量、耐久条）
-//        Render2DUtils.drawItem(sword, 100, y);
-//        y += 24;
-//        // 绘制方块图标本身
-//        Render2DUtils.drawBlock(Blocks.DIAMOND_BLOCK, 100, y);
-//        y += 24;
-//        // 绘制方块图标，并自动显示数量、耐久条等装饰
-//        Render2DUtils.drawBlockWithDecorations(Blocks.CHEST, 100, y);
-//        y += 24;
-//        // 组合方法
-//        Render2DUtils.drawItemWithLabel(sword, 100, y, sword.getItemName().getString(), Color.WHITE, true);
 
         if (Configs.Core.RENDER_HUD.getBooleanValue()) {
             drawHudInfo(scaledWidth, scaledHeight);
@@ -103,8 +75,6 @@ public class Render2D {
         drawHudInfo(scaledWidth, scaledHeight, true);
     }
 
-    // ==================== HUD 进度条等信息绘制 ====================
-
     private void drawHudInfo(float scaledWidth, float scaledHeight) {
         this.drawHudInfo(scaledWidth, scaledHeight, false);
     }
@@ -113,7 +83,6 @@ public class Render2D {
         int centerX = (int) (scaledWidth / 2);
         int centerY = (int) (scaledHeight / 2);
 
-        // 延迟过大警告
         if (Configs.Core.LAG_CHECK.getBooleanValue() &&
                 RuntimeAccess.get().modules().packetTick() > Configs.Core.LAG_CHECK_MAX.getIntegerValue()) {
             Render2DUtils.drawString(hud("warning.lag_paused"), centerX, centerY - 22, Color.ORANGE, true, true);

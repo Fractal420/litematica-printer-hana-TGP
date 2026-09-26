@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.world.item.Items;
 
-/**
- * 攀爬植物
- */
 public class ClimbingPlantGuide extends Guide {
 
     public ClimbingPlantGuide(SchematicBlockContext context) {

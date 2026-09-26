@@ -10,9 +10,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.SeaPickleBlock;
 import net.minecraft.world.item.Items;
 
-/**
- * 海泡菜
- */
 public class SeaPickleGuide extends Guide {
 
     public SeaPickleGuide(SchematicBlockContext context) {
@@ -21,7 +18,7 @@ public class SeaPickleGuide extends Guide {
 
     @Override
     protected Result onBuildActionMissingBlock(BlockMatchResult state) {
-        // 海泡菜只能放在支撑方块上（珊瑚块/海晶石等），需要从下方点击放置
+
         return Result.success(new Action()
                 .setSides(Direction.DOWN)
                 .setRequiresSupport());

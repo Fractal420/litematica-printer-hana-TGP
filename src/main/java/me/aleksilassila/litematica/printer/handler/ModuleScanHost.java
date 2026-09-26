@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/** Adapts a feature module to the scan coordinator without making the module the scan engine. */
 final class ModuleScanHost implements ModuleScanCoordinator.Host {
     private final FeatureModuleBase module;
 

@@ -2,7 +2,6 @@ package me.aleksilassila.litematica.printer.handler.scan;
 
 import net.minecraft.core.BlockPos;
 
-/** A dirty block ordered by the current player-distance wavefront. */
 record ScanDirtyPosition(BlockPos pos, long distanceSqr) implements Comparable<ScanDirtyPosition> {
     @Override
     public int compareTo(ScanDirtyPosition other) {

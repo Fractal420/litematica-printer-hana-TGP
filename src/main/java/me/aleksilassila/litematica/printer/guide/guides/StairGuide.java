@@ -13,9 +13,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 楼梯
- */
 public class StairGuide extends Guide {
 
     public StairGuide(SchematicBlockContext context) {

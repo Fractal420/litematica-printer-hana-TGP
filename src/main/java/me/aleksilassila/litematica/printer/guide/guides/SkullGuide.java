@@ -11,9 +11,6 @@ import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.WallSkullBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/**
- * 头颅
- */
 public class SkullGuide extends Guide {
 
     public SkullGuide(SchematicBlockContext context) {

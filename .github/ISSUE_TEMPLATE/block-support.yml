@@ -1,0 +1,124 @@
+name: Block Placement and State Issue
+description: Report vanilla blocks being skipped, placed with the wrong direction or state, or broken incorrectly
+title: "[Block Support] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for problems with vanilla block placement rules or block-state handling. One Issue may include multiple blocks from the same family or with the same root cause; unrelated blocks should be reported separately.
+
+        If all blocks stop printing, the scanner does not wake up, or material switching is broken, use the **Bug Report** template instead.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing Issues and found no report for the same block or block-state problem.
+          required: true
+        - label: I tested with the latest applicable Alpha or Beta version.
+          required: true
+        - label: I retested with a conservative work interval and ruled out obvious server anti-cheat or high-latency effects.
+          required: true
+        - label: This is a vanilla block; dedicated support for non-vanilla content is not guaranteed.
+          required: true
+
+  - type: dropdown
+    id: problem_type
+    attributes:
+      label: Problem type
+      options:
+        - Block skipped
+        - Cannot place
+        - Wrong facing
+        - Wrong block state
+        - Wrong waterlogged/fluid state
+        - Incorrectly added to a breaking task
+        - GUI opened incorrectly during placement
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: block_name
+    attributes:
+      label: Block name
+      placeholder: "Example: Observer"
+    validations:
+      required: true
+
+  - type: input
+    id: block_id
+    attributes:
+      label: Block namespace ID
+      placeholder: "Example: minecraft:observer"
+    validations:
+      required: true
+
+  - type: textarea
+    id: target_state
+    attributes:
+      label: Target block state in the schematic
+      description: Provide facing, slab type, waterlogged state, connection state, and other relevant properties. F3 debug information or screenshots are welcome.
+      placeholder: "Example: facing=north,powered=false"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_state
+    attributes:
+      label: Actual result
+      description: Describe the actual state in the world, or explain whether the block was skipped, broken, opened a GUI, or showed another unexpected behavior.
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Minecraft and Printer versions
+      placeholder: "Example: Minecraft 26.2, 0.7.2.1-Hana-dev377"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Test environment
+      description: State whether this is single-player or a server. For servers, include the server software, anti-cheat, and approximate latency.
+      placeholder: "Example: Single-player; or Paper server, no anti-cheat, 45 ms"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce_steps
+    attributes:
+      label: Minimal reproduction steps
+      description: Prefer a small schematic containing only the relevant blocks and include the printing mode and important configuration.
+      placeholder: |
+        1. Create a small schematic containing ...
+        2. Set the block state to ...
+        3. Start printing with ... mode
+        4. The result is ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Screenshots, video, or minimal schematic
+      description: Drag and drop screenshots showing the target and actual states. A short video is especially useful for facing changes, same-tick state changes, or incorrect breaking.
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Include the block class, relevant placement rules, BlockState, neighboring block conditions, or comparable vanilla behavior.
+
+  - type: checkboxes
+    id: final_confirmation
+    attributes:
+      label: Final confirmation
+      options:
+        - label: I have provided enough information to distinguish the schematic target state from the actual world state.
+          required: true

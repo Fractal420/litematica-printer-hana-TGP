@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Resolves observed target state while keeping recovery effects explicit on the host. */
 final class BedrockTargetStatusResolver {
     private static final int INITIALIZE_SYNC_GRACE_TICKS = 2;
     private static final int INITIALIZE_SYNC_TIMEOUT_TICKS = 40;

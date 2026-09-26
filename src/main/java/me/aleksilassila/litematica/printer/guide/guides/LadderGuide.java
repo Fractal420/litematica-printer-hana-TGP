@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.world.level.block.LadderBlock;
 
-/**
- * 梯子
- */
 public class LadderGuide extends Guide {
 
     public LadderGuide(SchematicBlockContext context) {

@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiPredicate;
 
-/** Tracks in-flight falling placements without blocking unrelated columns. */
 public final class FallingPlacementTracker {
     private final Map<BlockPos, Pending> pending = new LinkedHashMap<>();
 
@@ -37,11 +36,7 @@ public final class FallingPlacementTracker {
         Iterator<Pending> iterator = this.pending.values().iterator();
         while (iterator.hasNext()) {
             Pending entry = iterator.next();
-            // A placement may be client-predicted into the source position during the send tick.
-            // Real placements are only a same-tick column barrier: on the next tick the source
-            // either contains the supported falling block or has already spawned a falling
-            // entity. Keeping a supported block pending while it still matches expectedState
-            // permanently blocks every higher target in that column.
+
             boolean released = entry.originalState != null
                     ? currentTick > entry.sentTick
                     : stateMatches.test(entry.pos, entry.expectedState);

@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
 import net.minecraft.world.level.block.ComparatorBlock;
 
-/**
- * 红石比较器
- */
 public class ComparatorGuide extends Guide {
 
     public ComparatorGuide(SchematicBlockContext context) {

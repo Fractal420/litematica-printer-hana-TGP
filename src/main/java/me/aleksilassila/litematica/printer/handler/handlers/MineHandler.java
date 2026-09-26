@@ -1,5 +1,7 @@
 package me.aleksilassila.litematica.printer.handler.handlers;
 
+import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
+
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.enums.ExcavateListMode;
 import me.aleksilassila.litematica.printer.enums.PrintModeType;
@@ -38,7 +40,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-
 public class MineHandler extends FeatureModuleBase {
     public static final String NAME = "mine";
     private final MineBreakExecutor analyzer;
@@ -75,6 +76,9 @@ public class MineHandler extends FeatureModuleBase {
 
     @Override
     public void tick(TickContext context) {
+        if (RuntimeAccess.get().manualVanillaRefill().shouldPause()) {
+            return;
+        }
         if (!ConfigUtils.isEnable() || !ConfigUtils.isMineMode()) {
             this.analyzer.reset();
             this.activeMinePos = null;
@@ -157,7 +161,7 @@ public class MineHandler extends FeatureModuleBase {
         }
         Predicate<BlockPos> selectionPredicate = this.createSelectionRangePredicate();
         Predicate<BlockPos> reachPredicate = this.createScanReachPredicate();
-        
+
         return this.scanEngine.iterable(
                 NAME,
                 scanSourceBoxes,
@@ -190,6 +194,10 @@ public class MineHandler extends FeatureModuleBase {
         return this.activeMinePos != null || this.hasTrenchFillWork();
     }
 
+    public boolean hasActiveBreakingWork() {
+        return this.activeMinePos != null;
+    }
+
     @Override
     protected void onRuntimeReset() {
         this.candidates.clear();
@@ -214,6 +222,9 @@ public class MineHandler extends FeatureModuleBase {
 
     @Override
     protected boolean canIterate() {
+        if (this.runtime.modules().print().isPlacementBusy()) {
+            return false;
+        }
         return this.activeMinePos == null && !InteractionUtils.getRuntime().hasActiveDestroyTarget();
     }
 
@@ -267,6 +278,9 @@ public class MineHandler extends FeatureModuleBase {
 
     @Override
     protected void stopIteration(boolean interrupt) {
+        if (this.runtime.modules().print().isPlacementBusy()) {
+            return;
+        }
         if (this.actionBroker.isWaitingForLook() || this.activeMinePos != null || this.candidates.isEmpty()) {
             return;
         }
@@ -362,10 +376,7 @@ public class MineHandler extends FeatureModuleBase {
         if (!this.toolSession.ensureHandToolProtected(this.player, firstTarget)) {
             return;
         }
-        // Batch dispatch: the per-tick budget lives on the session (BREAK_BLOCKS_PER_TICK,
-        // 0 = unlimited). The controller has no per-call fast budget — delta>=0.7 blocks always
-        // take the same-tick START+STOP path, throttled only by the session budget and the
-        // durability guard.
+
         BlockBreakResult result = this.executeSessionTarget(firstTarget, !this.analyzer.isCurrentToolEffective(firstTarget));
         if (this.toolSession.shouldStop(result, this.activeMinePos != null)) {
             return;
@@ -398,8 +409,7 @@ public class MineHandler extends FeatureModuleBase {
             this.setBlockPosCooldown(target.pos(), ConfigUtils.getBreakCooldown());
         }
         if (result == BlockBreakResult.COMPLETED || result == BlockBreakResult.COMPLETED_WAIT) {
-            // Batch dispatch: each same-tick START+STOP is an independent server judgment, so the
-            // budget ticks down per dispatched block, not per server slot.
+
             this.toolSession.consumeInstantBudget();
         }
         this.toolSession.onTargetResolved(result, target.pos());
@@ -453,8 +463,7 @@ public class MineHandler extends FeatureModuleBase {
             this.trenchFillRetryAt.clear();
         }
         this.discoverTrenchBoundary(sourceBoxes, discovered, waterlogged);
-        // The trench scope is the selected volume plus exactly one horizontal boundary block.
-        // Do not retain old targets: those could be distant sea grass from the same water body.
+
         this.trenchWaterloggedTargets.removeIf(pos -> !waterlogged.contains(pos));
         this.trenchWaterloggedTargets.addAll(waterlogged);
         this.trenchFillTargets.removeIf(pos -> !discovered.contains(pos)

@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.integration.quickshulker;
 
-/** Stable lexicographic priority for selecting the box that originally supplied an item. */
 final class ShulkerSelectionPolicy {
     private ShulkerSelectionPolicy() {
     }

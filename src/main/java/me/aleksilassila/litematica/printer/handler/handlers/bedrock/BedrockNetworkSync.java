@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.function.IntSupplier;
 import java.util.function.LongSupplier;
 
-/** Tracks authoritative block updates without delaying the first critical packet bundle. */
 final class BedrockNetworkSync {
     static final int DEFAULT_CONFIRMATION_TIMEOUT_TICKS = 16;
     static final int MAX_CONFIRMATION_TIMEOUT_TICKS = 56;

@@ -5,7 +5,6 @@ import me.aleksilassila.litematica.printer.core.runtime.RuntimeEvent;
 import me.aleksilassila.litematica.printer.utils.InventorySwitchGuard;
 import me.aleksilassila.litematica.printer.utils.mods.TakeItOutUtils;
 
-/** Epoch boundary for inventory transitions that still originate in external APIs. */
 final class InventorySwitchRuntime implements RuntimeComponent {
     private final InventorySwitchGuard guard;
 

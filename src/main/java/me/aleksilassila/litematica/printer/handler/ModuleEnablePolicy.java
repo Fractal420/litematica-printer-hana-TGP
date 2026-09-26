@@ -4,7 +4,6 @@ import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.enums.WorkingModeType;
 import me.aleksilassila.litematica.printer.utils.ConfigUtils;
 
-/** Resolves global, single-mode and multi-mode enable settings for a feature. */
 final class ModuleEnablePolicy {
     private ModuleEnablePolicy() {
     }

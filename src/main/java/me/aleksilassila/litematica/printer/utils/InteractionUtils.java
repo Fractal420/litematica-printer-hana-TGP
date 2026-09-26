@@ -82,6 +82,9 @@ public final class InteractionUtils implements RuntimeComponent {
     }
 
     public void add(BlockPos pos) {
+        if (RuntimeAccess.get().manualVanillaRefill().shouldPause()) {
+            return;
+        }
         this.breakState.add(pos);
     }
 
@@ -111,8 +114,10 @@ public final class InteractionUtils implements RuntimeComponent {
         if (player == null || level == null) {
             return;
         }
-        if (EatingYieldUtils.shouldYield(player)) {
+        if (EatingYieldUtils.shouldYield(player)
+                || RuntimeAccess.get().manualVanillaRefill().shouldBlockExternalBreaking()) {
             this.breakState.clearActive();
+            this.breakState.reset();
             return;
         }
         if (this.breakState.isLocked()) {
@@ -122,7 +127,15 @@ public final class InteractionUtils implements RuntimeComponent {
             return;
         }
         if (this.breakState.activePos() == null) {
+            if (RuntimeAccess.get().modules().print().isPlacementBusy()) {
+                return;
+            }
+            int budget = Configs.Break.BREAK_BLOCKS_PER_TICK.getIntegerValue();
+            int completed = 0;
             while (this.breakState.hasQueued()) {
+                if (budget > 0 && completed >= budget) {
+                    break;
+                }
                 BlockPos pos = this.breakState.pollQueued();
                 if (pos == null) {
                     continue;
@@ -140,11 +153,12 @@ public final class InteractionUtils implements RuntimeComponent {
                     if (result == BlockBreakResult.COMPLETED_WAIT) {
                         this.markPendingBroken(pos, ConfigUtils.getBreakCooldown());
                     }
+                    completed++;
                 }
             }
         } else {
             BlockPos activePos = this.breakState.activePos();
-            // 检查当前目标是否仍可破坏（如冰挖掘后生成水/流体，流体不可破坏）
+
             if (!canBreakBlock(activePos)) {
                 this.breakState.clearActive();
                 onTick();

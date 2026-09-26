@@ -6,9 +6,6 @@ import me.aleksilassila.litematica.printer.guide.Result;
 import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 
-/**
- * 花
- */
 public class FlowerGuide extends Guide {
 
     public FlowerGuide(SchematicBlockContext context) {

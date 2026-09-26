@@ -78,16 +78,29 @@ public class PrintHandler extends FeatureModuleBase {
     }
 
     @Override
-    protected int getTickInterval() {
-        if (this.printTasks.hasActiveWorkflow()) {
-            return 0;
+    protected boolean canIterate() {
+        return !InteractionUtils.getRuntime().hasActiveDestroyTarget()
+                && !this.runtime.modules().mine().hasActiveBreakingWork();
+    }
+
+    public boolean isPlacementBusy() {
+        if (this.printTasks.hasActiveWorkflow() || this.actionBroker.isWaitingForLook()) {
+            return true;
         }
-        return this.placementRateController.effectiveIntervalTicks();
+        long lastSent = this.placementRateController.lastSentTick();
+        return this.level != null
+                && lastSent != Long.MIN_VALUE
+                && this.level.getGameTime() - lastSent <= 1L;
+    }
+
+    @Override
+    protected int getTickInterval() {
+        return 0;
     }
 
     @Override
     protected int getMaxEffectiveExecutionsPerTick() {
-        return Configs.Placement.PLACE_BLOCKS_PER_TICK.getIntegerValue();
+        return this.placementRateController.maxSendsPerWindow();
     }
 
     @Override
@@ -107,9 +120,7 @@ public class PrintHandler extends FeatureModuleBase {
 
     @Override
     protected void onInventoryAvailabilityChanged() {
-        // A completed PRINT scan is invalidation-only, and inventory changes do not dirty world
-        // positions. Rebuild the candidate source so targets skipped for missing material become
-        // eligible again when the player receives any item.
+
         this.printTasks.onInventoryAvailabilityChanged();
         this.retryTargets.clear();
         this.sortedTargets.clear();
@@ -263,7 +274,7 @@ public class PrintHandler extends FeatureModuleBase {
             this.printTaskAction = taskResult.actionHandle();
             return true;
         }
-//        Action action = guide.getAction(ctx);
+
         Optional<Action> action = this.guides.buildAction(ctx);
         if (action.isEmpty())
             return false;
@@ -352,7 +363,7 @@ public class PrintHandler extends FeatureModuleBase {
             case CANCELLED -> this.printTasks.onActionCancelled(taskAction, this.ctx, this.action);
             case MATERIAL_UNAVAILABLE -> this.printTasks.onMaterialUnavailable(this.ctx);
             case WORLD_BLOCKED -> {
-                // Falling blocks are ordinary targets, not multi-stage workflow actions.
+
             }
             case FAILURE -> this.printTasks.onActionFailure(taskAction, this.ctx, this.action);
         }

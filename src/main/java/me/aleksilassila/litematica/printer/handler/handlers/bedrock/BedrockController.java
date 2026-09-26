@@ -3,10 +3,6 @@ package me.aleksilassila.litematica.printer.handler.handlers.bedrock;
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import net.minecraft.core.BlockPos;
 
-/**
- * Compatibility facade for callers that have not yet received the runtime-owned bedrock engine.
- * All mutable state lives in the current {@link PrinterRuntime} component.
- */
 public final class BedrockController {
     private BedrockController() {
     }

@@ -9,9 +9,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.level.block.state.properties.BellAttachType;
 
-/**
- * 钟
- */
 public class BellGuide extends Guide {
     public BellGuide(SchematicBlockContext context) {
         super(context);

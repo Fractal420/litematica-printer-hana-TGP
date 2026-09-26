@@ -23,10 +23,6 @@ public final class UsageRestrictionCache {
         return true;
     }
 
-    /**
-     * 便捷重载:根据 listType 自动在黑名单/白名单/空列表之间选择过滤列表。
-     * 消除 InteractionUtils / MineHandler 中重复的 "listType ? blacklist : whitelist : empty" 三元判断。
-     */
     public boolean allows(String source, UsageRestriction.ListType listType, List<String> blacklist, List<String> whitelist, BlockState blockState) {
         return this.allows(source, listType, selectFilters(listType, blacklist, whitelist), blockState);
     }

@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 
-/** Pure resource arbitration for feature actions. */
 public final class ActionCoordinator {
     private final Map<ResourceLease, ActionTicket> leases = new EnumMap<>(ResourceLease.class);
     private long nextTicketId;

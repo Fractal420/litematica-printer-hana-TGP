@@ -74,7 +74,6 @@ public class PrinterBox implements Iterable<BlockPos> {
         return this.expand(value, value, value);
     }
 
-
     @Override
     public @NotNull Iterator<BlockPos> iterator() {
         return new BoxIterator();
@@ -111,7 +110,6 @@ public class PrinterBox implements Iterable<BlockPos> {
                 throw new NoSuchElementException();
             }
 
-            // 初始化起始位置
             if (currPos == null) {
                 currPos = new BlockPos(
                         minX,

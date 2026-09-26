@@ -12,7 +12,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Coordinates Printer's ordinary effective-tool selection with Tweakeroo's own tool policies. */
 public final class ToolSwitchService {
     private final Minecraft client;
     private final TweakerooToolSwitchPort tweakeroo;
@@ -28,10 +27,6 @@ public final class ToolSwitchService {
         this.switchGuard = switchGuard;
     }
 
-    /**
-     * Prepares the hand for one damage-producing break packet. Printer may select an effective
-     * tool, but only Tweakeroo decides whether a nearly-broken tool should be replaced.
-     */
     public ToolPreparationResult prepareForBreak(BlockPos pos, BlockState state, boolean allowEffectiveSwitch) {
         LocalPlayer player = this.client.player;
         if (player == null || player.getAbilities().instabuild || pos == null || state == null

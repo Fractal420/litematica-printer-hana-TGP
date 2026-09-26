@@ -5,6 +5,7 @@ import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.mixin_extension.BlockBreakResult;
 import me.aleksilassila.litematica.printer.utils.minecraft.NetworkUtils;
 import me.aleksilassila.litematica.printer.utils.ConfigUtils;
+import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -18,7 +19,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Stateful mining protocol. The Mixin only exposes Minecraft fields through {@link MiningInteractionPort}. */
 public final class MiningInteractionController {
     private static final int MIN_PENDING_DESTROY_TICKS = 8;
     private static final int MAX_PENDING_DESTROY_TICKS = 200;
@@ -76,6 +76,10 @@ public final class MiningInteractionController {
     }
 
     public void tick() {
+        if (RuntimeAccess.get().manualVanillaRefill().shouldBlockExternalBreaking()) {
+            this.reset();
+            return;
+        }
         LocalPlayer player = this.port.client().player;
         ClientLevel level = this.port.client().level;
         if (player == null || level == null) return;
@@ -135,10 +139,7 @@ public final class MiningInteractionController {
         }
         this.port.ensureCarriedItemSent();
         float progress = state.getDestroyProgress(player, level, pos);
-        // The server breaks on STOP when delta * (elapsed + 1) >= 0.7 regardless of any config.
-        // Gating the fast path on the configurable threshold made blocks whose delta sits just below
-        // the threshold (e.g. 0.777 < 0.78) fall into the slow path and get capped at 10/s.
-        // Use the server's own 0.7 rule so mining speed no longer depends on the threshold value.
+
         boolean fast = player.getAbilities().instabuild
                 || progress >= 0.7F;
         if (fast && !player.getAbilities().instabuild && this.toolSwitchService.isDurabilityGuardActive()) {
@@ -147,7 +148,7 @@ public final class MiningInteractionController {
                 int remaining = held.getMaxDamage() - held.getDamageValue();
                 if (remaining - this.projectedDurabilityCost <= SAFETY_MARGIN) {
                     fast = false;
-                    // Hold the downgrade through continueDestroy so its fast gate doesn't re-enable it.
+
                     this.suppressFastBreak = true;
                 }
             }
@@ -208,6 +209,11 @@ public final class MiningInteractionController {
             boolean allowToolSwitch,
             boolean miningFeedback
     ) {
+        if (RuntimeAccess.get().manualVanillaRefill().shouldBlockExternalBreaking()
+                && !RuntimeAccess.get().manualVanillaRefill().isAllowedBreakTarget(pos)) {
+            return BlockBreakResult.FAILED;
+        }
+
         LocalPlayer player = this.port.client().player;
         ClientLevel level = this.port.client().level;
         if (player == null || level == null || this.port.client().gameMode == null) return BlockBreakResult.FAILED;
@@ -253,9 +259,7 @@ public final class MiningInteractionController {
             this.port.destroyProgress(this.port.destroyProgress() + state.getDestroyProgress(player, level, pos));
             if (manualSound) this.feedback.playHitSound(player, level, state, pos, false);
             if (localEffects) level.destroyBlockProgress(player.getId(), pos, this.destroyStage());
-            // Hold START open until the server-side elapsed makes delta*(elapsed+1) >= 0.7, then STOP
-            // breaks immediately. This is normal mining (accumulation), not the same-tick exploit that
-            // the old useDelayed branch used (which always failed to failedToMine for delta < 0.7 → 10/s).
+
             if (this.port.destroyProgress() >= completionThreshold(forceDelayedDestroy)) {
                 if (miningFeedback || !localRemoval) this.feedback.playBreakSound(pos, state);
                 NetworkUtils.sendPacket(sequence -> {
@@ -275,12 +279,7 @@ public final class MiningInteractionController {
         if (this.port.destroyProgress() == 0.0F && localEffects) state.attack(level, pos, player);
         if (manualSound) this.feedback.playHitSound(player, level, state, pos, true);
         float progress = state.getDestroyProgress(player, level, pos);
-        // Server breaks on same-tick START+STOP whenever delta >= 0.7, independent of the
-        // configurable threshold. Keep this fast path so delta>=0.7 blocks are never dragged
-        // down to the hold path (and don't pay a per-tick packet cost either). The session-level
-        // The session-level BREAK_BLOCKS_PER_TICK budget (MineToolSession) is the per-tick batch
-        // ceiling; here only suppressFastBreak propagates the durability downgrade from
-        // continueForMine so the Tweakeroo near-broken-tool protection is never punched through.
+
         if (!this.suppressFastBreak && progress >= completionThreshold(forceDelayedDestroy)) {
             if (miningFeedback || !localRemoval) this.feedback.playBreakSound(pos, state);
             this.send(Action.START_DESTROY_BLOCK, pos, direction);
@@ -295,12 +294,7 @@ public final class MiningInteractionController {
             return BlockBreakResult.COMPLETED;
         }
         if (!localPrediction) {
-            // Server-authoritative callers (e.g. bedrock cleanup): send same-tick START+STOP and let
-            // the server's failedToMine slot auto-break. The client never removes locally and waits
-            // for the server S2C update. Re-sends on the same pos do NOT reset the failedToMine
-            // timer (server sets it once), so the retry loop converges. This must stay out of the
-            // hold-OPEN path: cleanup processes several positions per tick and would otherwise abort
-            // its own hold.
+
             long startTick = this.clientTick();
             NetworkUtils.sendPacket(sequence -> {
                 this.pendingDelayedDestroys.put(pos.immutable(),
@@ -313,10 +307,7 @@ public final class MiningInteractionController {
             this.feedback.resetHitSound();
             return BlockBreakResult.COMPLETED_WAIT;
         }
-        // delta < 0.7 with local prediction: open a hold-OPEN session (single server mining slot).
-        // Each subsequent call on the same pos advances destroyProgress by delta until >= 0.7, then a
-        // STOP breaks it through the server's accumulated elapsed. This is the only path that avoids
-        // the failedToMine queue, which auto-breaks at progress>=1.0 → the 10/s single-slot dead end.
+
         this.send(Action.START_DESTROY_BLOCK, pos, direction);
         this.port.isDestroying(true);
         this.port.destroyPos(pos);

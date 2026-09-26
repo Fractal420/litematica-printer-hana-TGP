@@ -99,7 +99,7 @@ public class FillHandler extends FeatureModuleBase {
         FillBlockModeType fillMode = (FillBlockModeType) Configs.Fill.FILL_BLOCK_MODE.getOptionListValue();
         switch (fillMode) {
             case BLOCKLIST:
-                // 每次去MC注册表中获取会造成大量卡顿, 所以仅在玩家修改了填充列表, 再去读取以便注册表
+
                 List<String> strings = Configs.Fill.FILL_BLOCK_LIST.getStrings();
                 if (!strings.equals(fillCacheBlocklist)) {
                     fillCacheBlocklist = new ArrayList<>(strings);
@@ -112,9 +112,9 @@ public class FillHandler extends FeatureModuleBase {
                     fillModeItemList = items.toArray(new Item[0]);
                 }
                 break;
-            case HANDHELD:  // 手持物品
+            case HANDHELD:
                 if (Configs.Fill.FILL_BLOCK_MODE.getOptionListValue() == FillBlockModeType.HANDHELD) {
-                    ItemStack heldStack = player.getMainHandItem(); // 获取主手物品
+                    ItemStack heldStack = player.getMainHandItem();
                     if (!heldStack.isEmpty() && heldStack.getCount() > 0) {
                         fillModeItemList = new Item[]{player.getMainHandItem().getItem()};
                         this.hudStats.recordStatus(HudStatsManager.Mode.FILL, HudStatus.RUNNING);
@@ -237,8 +237,6 @@ public class FillHandler extends FeatureModuleBase {
             this.fillScanBoxes = List.copyOf(fullScanSourceBoxes);
         }
 
-        // ScanEngine already exposes a resumable candidate iterable and its explicit pause
-        // state. A second look-ahead iterator would hide budget pauses from the coordinator.
         Iterable<BlockPos> source = this.createSourceIterator(scanSourceBoxes, reachPredicate, selectionPredicate);
         return retainedTargets.isEmpty()
                 ? source
@@ -310,7 +308,7 @@ public class FillHandler extends FeatureModuleBase {
     @Override
     public boolean canIterationBlockPos(BlockPos blockPos) {
         if (Configs.Fill.FILL_BLOCK_MODE.getOptionListValue() == FillBlockModeType.HANDHELD) {
-            ItemStack heldStack = player.getMainHandItem(); // 获取主手物品
+            ItemStack heldStack = player.getMainHandItem();
             return !heldStack.isEmpty() && heldStack.getCount() > 0 && this.isFillTarget(blockPos);
         }
         return this.isFillTarget(blockPos);

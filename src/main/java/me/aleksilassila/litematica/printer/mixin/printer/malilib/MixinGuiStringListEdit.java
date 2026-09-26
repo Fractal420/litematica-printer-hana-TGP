@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// 字符串列表标题I18n修复
 @Mixin(value = GuiStringListEdit.class, remap = false)
 public abstract class MixinGuiStringListEdit extends GuiListBase<String, WidgetStringListEditEntry, WidgetListStringListEdit> {
     protected MixinGuiStringListEdit(int listX, int listY) {

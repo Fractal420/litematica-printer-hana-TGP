@@ -8,9 +8,6 @@ import me.aleksilassila.litematica.printer.printer.action.Action;
 import me.aleksilassila.litematica.printer.printer.PrinterUtils;
 import net.minecraft.core.Direction;
 
-/**
- * 藤蔓/发光地衣
- */
 public class VineGuide extends Guide {
 
     public VineGuide(SchematicBlockContext context) {

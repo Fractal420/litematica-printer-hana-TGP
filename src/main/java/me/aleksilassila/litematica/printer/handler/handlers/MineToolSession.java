@@ -29,17 +29,24 @@ final class MineToolSession {
 
     void beginTick() {
         int configuredBudget = Configs.Break.BREAK_BLOCKS_PER_TICK.getIntegerValue();
-        // 0 = unlimited: batch-dispatch the whole candidate set per tick. Durability protection,
-        // when enabled, is handled by the Tweakeroo adapter rather than this batch budget.
+
         this.remainingInstantBudget = configuredBudget <= 0 ? -1 : configuredBudget;
     }
 
     Comparator<MineBreakExecutor.Target> comparator(LocalPlayer player) {
+        BlockPos anchor = this.lastSessionPos;
         return Comparator
-                .comparingDouble((MineBreakExecutor.Target target) -> distanceScore(player, target))
+                .comparingDouble((MineBreakExecutor.Target target) -> localityScore(player, anchor, target))
                 .thenComparingInt(target -> target.pos().getY())
                 .thenComparingInt(target -> target.pos().getX())
                 .thenComparingInt(target -> target.pos().getZ());
+    }
+
+    private static double localityScore(LocalPlayer player, BlockPos anchor, MineBreakExecutor.Target target) {
+        if (anchor != null) {
+            return target.pos().distSqr(anchor);
+        }
+        return distanceScore(player, target);
     }
 
     MineBreakExecutor.Target selectTarget(List<MineBreakExecutor.Target> candidates, MineBreakExecutor analyzer, LocalPlayer player) {
@@ -103,10 +110,6 @@ final class MineToolSession {
         return protectedTool;
     }
 
-    /**
-     * 当一个破坏目标已破掉(或服务端已确认完成)时,释放单目标黏性,允许 selectTarget 选下一个目标。
-     * 块破掉后会自动离开候选集,黏性循环本就找不到它而失效;这里显式清除以覆盖「同位置被掉落方块/流体重新占据」等边缘情况。
-     */
     void onTargetResolved(BlockBreakResult result, BlockPos pos) {
         if ((result == BlockBreakResult.COMPLETED || result == BlockBreakResult.COMPLETED_WAIT)
                 && pos.equals(this.lastSessionPos)) {

@@ -17,9 +17,6 @@ import net.minecraft.world.level.block.state.properties.Property;
 
 import java.util.*;
 
-/**
- * 侦测器
- */
 public class ObserverGuide extends Guide {
 
     public ObserverGuide(SchematicBlockContext context) {
@@ -36,11 +33,9 @@ public class ObserverGuide extends Guide {
                     .setNeedWaitModifyLook());
         }
 
-        // 安全放置模式
-        SchematicBlockContext input = context.offset(facing);          // 输入端（侦测面）
-        SchematicBlockContext output = context.offset(facing.getOpposite()); // 输出端（红点面）
+        SchematicBlockContext input = context.offset(facing);
+        SchematicBlockContext output = context.offset(facing.getOpposite());
 
-        // 获取输入端方块需要忽略的属性
         List<Property<?>> inputPropertiesToIgnore = new ArrayList<>();
         if (input.requiredState.getBlock() instanceof WallBlock) {
             BlockStateUtils.getWallFacingProperty(facing.getOpposite()).ifPresent(inputPropertiesToIgnore::add);
@@ -52,7 +47,6 @@ public class ObserverGuide extends Guide {
         BlockMatchResult inputState = BlockMatchResult.compare(input, inputPropertiesToIgnore.toArray(new Property<?>[0]));
         BlockMatchResult outputState = BlockMatchResult.compare(output);
 
-        // 输入端与输出端均正确
         if (inputState == BlockMatchResult.CORRECT && outputState == BlockMatchResult.CORRECT) {
             if (!isObserverInputChainReady(input)) {
                 return Result.SKIP;
@@ -60,9 +54,8 @@ public class ObserverGuide extends Guide {
             return Result.success(placementAction(facing));
         }
 
-        // 输入端正确但输出端有问题
         if (inputState == BlockMatchResult.CORRECT) {
-            // 检查输入端后面的落地方块链
+
             SchematicBlockContext temp = input;
             while (temp.requiredState.getBlock() instanceof net.minecraft.world.level.block.FallingBlock) {
                 SchematicBlockContext offset = temp.offset(Direction.DOWN);
@@ -75,7 +68,6 @@ public class ObserverGuide extends Guide {
                 return Result.SKIP;
             }
 
-            // 侦测器隔空激活活塞检查
             for (Direction direction : Direction.values()) {
                 SchematicBlockContext offset = output.offset(direction);
                 if (offset.blockPos.equals(output.blockPos)) continue;
@@ -96,8 +88,7 @@ public class ObserverGuide extends Guide {
                 }
                 return Result.SKIP;
             } else {
-                // 输出端为空不代表输入端已经安全。安全模式必须等侦测面链条就绪，
-                // 否则放置瞬间仍可能产生非原理图预期的更新脉冲。
+
                 return Result.SKIP;
             }
         }

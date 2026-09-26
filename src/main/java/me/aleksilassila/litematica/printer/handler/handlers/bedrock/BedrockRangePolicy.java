@@ -7,7 +7,6 @@ import me.aleksilassila.litematica.printer.utils.minecraft.PlayerUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.client.player.LocalPlayer;
 
-/** Centralizes bedrock work-range and interaction-range policy. */
 final class BedrockRangePolicy {
     private static final double INTERACTION_GRACE = 1.0D;
 

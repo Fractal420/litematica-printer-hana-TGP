@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-/** Converts Litematica selections and render layers into a cached scan scope. */
 final class ModuleSelectionScope {
     private final FeatureModuleBase owner;
     @Nullable private final ConfigOptionList selectionConfig;

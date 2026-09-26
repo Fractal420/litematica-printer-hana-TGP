@@ -6,14 +6,6 @@ import net.minecraft.core.BlockPos;
 import java.util.List;
 import java.util.PriorityQueue;
 
-/**
- * Merges distance-ordered box cursors while removing positions claimed by earlier boxes.
- *
- * <p>Each source box contributes its own exact-distance-ordered cursor, and the heap picks
- * the globally nearest current position. The comparator uses the exact squared distance so
- * the merged stream stays a smooth distance wavefront; a coarser band-first ordering here
- * re-introduces the ring-by-ring stepping the box cursors were fixed to avoid.</p>
- */
 final class PlayerDistanceCursor {
     private final List<PrinterBox> boxes;
     private final PriorityQueue<BoxCursorNode> cursors = new PriorityQueue<>();

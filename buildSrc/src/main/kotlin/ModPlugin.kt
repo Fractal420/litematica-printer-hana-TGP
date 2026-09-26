@@ -82,7 +82,7 @@ abstract class ModPlugin : Plugin<Project> {
         extensions.configure<JavaPluginExtension> {
             sourceCompatibility = javaVersion
             targetCompatibility = javaVersion
-            // withSourcesJar()
+
         }
     }
 
@@ -116,9 +116,7 @@ abstract class ModPlugin : Plugin<Project> {
 
     private fun Project.configureTestWorkers() {
         tasks.withType<Test>().configureEach {
-            // Java 25 warns when legacy Guava/JOML code uses Unsafe. Keep the
-            // compatibility access enabled only on runtimes that support this
-            // switch; older Java versions must not receive an unknown option.
+
             if (Runtime.version().feature() >= 23) {
                 jvmArgs("--sun-misc-unsafe-memory-access=allow")
             }
@@ -185,9 +183,6 @@ abstract class ModPlugin : Plugin<Project> {
                                     }
                                 }
 
-                                // The runtime bridge is the only permitted process-wide mutable
-                                // reference. Core/runtime services keep mutable collections and
-                                // lifecycle state on instances so epoch reset remains explicit.
                                 if ((relative.contains("/core/") || relative.contains("/runtime/"))
                                     && !relative.endsWith("/runtime/RuntimeAccess.java")
                                     && Regex("\\bstatic\\s+(?:volatile\\s+)?(?:Map|Set|List|Deque|Queue|Collection)\\b")
@@ -208,9 +203,6 @@ abstract class ModPlugin : Plugin<Project> {
                                     violations += "$relative: feature handler must use an integration/interaction port"
                                 }
 
-                                // Blank lines are formatting, not orchestration complexity. Count
-                                // actual source lines so the size gate measures responsibilities
-                                // rather than whether a class uses generous spacing.
                                 val lineCount = text.lineSequence().count { it.isNotBlank() }
                                 if (relative.contains("/mixin/") && lineCount > 150) {
                                     violations += "$relative: mixin has $lineCount lines (maximum 150)"

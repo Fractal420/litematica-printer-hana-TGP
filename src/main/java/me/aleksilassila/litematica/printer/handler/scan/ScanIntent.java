@@ -20,7 +20,7 @@ public enum ScanIntent {
                     && !ScanFlags.has(flags, ScanFlags.WORLD_FLUID);
         }
     },
-    /** Bedrock planning needs the same non-fluid world candidates as mining. */
+
     BEDROCK {
         @Override
         public boolean shouldConsider(byte flags) {

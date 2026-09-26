@@ -1,9 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.scan;
 
-/**
- * Owns the counters that decide when a full scanner may sleep and when a lazy scanner must probe.
- * This class deliberately contains no Minecraft state so wake-up behavior can be regression tested.
- */
 public final class ScanIdlePolicy {
     private int idleTicks;
     private int lazyProbeTicks;

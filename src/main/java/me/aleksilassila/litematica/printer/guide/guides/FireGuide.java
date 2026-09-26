@@ -11,9 +11,6 @@ import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.SoulFireBlock;
 import net.minecraft.world.item.Items;
 
-/**
- * 火焰
- */
 public class FireGuide extends Guide {
 
     public FireGuide(SchematicBlockContext context) {
@@ -30,24 +27,18 @@ public class FireGuide extends Guide {
 
     @Override
     protected Result onBuildActionWrongState(BlockMatchResult state) {
-        // AGE 不同 → 环境决定，无法修正，跳过
+
         if (!getProperty(requiredState, FireBlock.AGE).equals(getProperty(currentState, FireBlock.AGE))) {
             return Result.SKIP;
         }
-        // SoulFire 没有方向属性，AGE 相同即可
+
         if (requiredBlock instanceof SoulFireBlock) {
             return Result.SKIP;
         }
 
-        // 方向属性不对 → 放置性错误，破坏重放
         return Result.PASS;
     }
 
-    /**
-     * 根据 requiredState 的方向属性确定火焰放置面。
-     * 火焰有六个方向属性（east/north/south/west/up），表示火焰可以向该方向蔓延。
-     * 选择第一个为 true 的水平方向；若无则默认 DOWN。
-     */
     private Direction findFireDirection() {
         for (Direction direction : Direction.values()) {
             if (direction == Direction.DOWN) continue;

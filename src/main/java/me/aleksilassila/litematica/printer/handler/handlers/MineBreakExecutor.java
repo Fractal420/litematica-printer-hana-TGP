@@ -193,8 +193,7 @@ final class MineBreakExecutor {
         if (!this.tweakeroo.isCurrentToolUsable(stack)) {
             return 0.0F;
         }
-        // Use the live state hardness, not Block.defaultDestroyTime(). The latter is only the
-        // block's registered default and becomes stale for state-aware/custom implementations.
+
         float hardness = state.getDestroySpeed(level, pos);
         if (hardness < 0.0F) {
             return 0.0F;
@@ -222,11 +221,6 @@ final class MineBreakExecutor {
         return progress;
     }
 
-    /**
-     * A tool can be changed after a target was analyzed in the same client tick. The old caches
-     * were keyed only by BlockState, so the next target reused the broken tool's speed and best
-     * tool choice until the following tick, producing an avoidable pause at tool exhaustion.
-     */
     private void refreshInventoryCaches(LocalPlayer player) {
         int signature = InventoryUtils.getSelectedSlot(player.getInventory());
         for (ItemStack stack : InventoryUtils.getMainStacks(player.getInventory())) {

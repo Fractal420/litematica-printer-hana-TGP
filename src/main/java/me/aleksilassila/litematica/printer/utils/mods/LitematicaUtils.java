@@ -43,7 +43,7 @@ public class LitematicaUtils {
                 return fi.dy.masa.litematica.util.WorldUtils.applyPlacementProtocolV3(pos, stateSchematic, hitPos);
                 //#endif
             } else if (protocol == EasyPlaceProtocol.V2) {
-                // Carpet Accurate Block placements protocol support, plus slab support
+
                 //#if MC > 260100
                 //$$ return fi.dy.masa.litematica.util.EasyPlaceUtils.applyCarpetProtocolHitVec(pos, stateSchematic, hitPos);
                 //#else
@@ -53,12 +53,7 @@ public class LitematicaUtils {
         }
         return null;
     }
-    /**
-     * 判断位置是否位于当前加载的投影范围内。
-     *
-     * @param pos 要检测的方块位置
-     * @return 如果位置属于图纸结构的一部分，则返回 true，否则返回 false
-     */
+
     public static boolean isSchematicBlock(BlockPos pos) {
         SchematicPlacementManager schematicPlacementManager = DataManager.getSchematicPlacementManager();
         //#if MC < 11900

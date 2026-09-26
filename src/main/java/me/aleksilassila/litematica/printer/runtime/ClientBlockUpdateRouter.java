@@ -4,7 +4,6 @@ import me.aleksilassila.litematica.printer.core.runtime.RuntimeEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Routes authoritative client block updates through every interested runtime component. */
 public final class ClientBlockUpdateRouter {
     private ClientBlockUpdateRouter() {
     }

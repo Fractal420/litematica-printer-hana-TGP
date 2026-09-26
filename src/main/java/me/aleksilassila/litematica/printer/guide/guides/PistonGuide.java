@@ -14,9 +14,6 @@ import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * 活塞放置
- */
 public class PistonGuide extends Guide {
 
     public PistonGuide(SchematicBlockContext context) {

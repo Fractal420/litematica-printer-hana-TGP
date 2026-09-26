@@ -15,9 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 堆肥桶
- */
 public class ComposterGuide extends Guide {
     private static List<String> compostWhitelistCache = new ArrayList<>();
     private static Item[] whitelistItemsCache = new Item[0];

@@ -2,7 +2,6 @@ package me.aleksilassila.litematica.printer.core.scan;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Cancellation and stale-result boundary shared by one producer and one consumer. */
 public final class ScanHandle implements AutoCloseable {
     private final ScanGeneration generation;
     private final AtomicBoolean cancelled = new AtomicBoolean();

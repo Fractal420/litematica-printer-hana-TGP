@@ -9,9 +9,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.FrontAndTop;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/**
- * 合成器
- */
 public class CrafterGuide extends Guide {
     public CrafterGuide(SchematicBlockContext context) {
         super(context);

@@ -10,9 +10,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.NetherPortalBlock;
 
-/**
- * 下界传送门
- */
 public class NetherPortalGuide extends Guide {
 
     public NetherPortalGuide(SchematicBlockContext context) {

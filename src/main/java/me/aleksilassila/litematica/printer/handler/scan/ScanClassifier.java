@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 
 import static me.aleksilassila.litematica.printer.utils.minecraft.BlockUtils.isReplaceable;
 
-/** Pure candidate classification; it does not read Minecraft or scheduler state. */
 final class ScanClassifier {
     private ScanClassifier() {
     }

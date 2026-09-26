@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.world.level.block.TripWireHookBlock;
 
-/**
- * 绊线钩
- */
 public class TripWireHookGuide extends Guide {
 
     public TripWireHookGuide(SchematicBlockContext context) {

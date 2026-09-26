@@ -20,19 +20,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 门放置
- */
 public class DoorGuide extends Guide {
 
-    /**
-     * 门的铰链侧：DOOR_HINGE
-     */
     private final @Nullable DoorHingeSide doorHinge;
 
-    /**
-     * 门/床的上/下段：DOUBLE_BLOCK_HALF
-     */
     private final @Nullable DoubleBlockHalf doubleBlockHalf;
 
     public DoorGuide(SchematicBlockContext context) {
@@ -46,12 +37,10 @@ public class DoorGuide extends Guide {
         Direction facing = getProperty(requiredState, DoorBlock.FACING).orElse(null);
         if (facing == null || doorHinge == null || doubleBlockHalf == null) return Result.PASS;
 
-        // 只放置门的下半，上半由游戏自动生成
         if (doubleBlockHalf == DoubleBlockHalf.UPPER) return Result.PASS;
 
         BlockPos upperPos = blockPos.above();
 
-        // 铰链侧
         Direction hingeSide = facing.getCounterClockWise();
         double offset = doorHinge == DoorHingeSide.RIGHT ? 0.25 : -0.25;
         Vec3 hingeVec = facing.getAxis() == Direction.Axis.X
@@ -63,7 +52,6 @@ public class DoorGuide extends Guide {
         sides.put(Direction.DOWN, hingeVec);
         sides.put(facing, hingeVec);
 
-        // 检查左右方块占用情况，决定是否可以放置
         Direction left = facing.getCounterClockWise();
         Direction right = facing.getClockWise();
         BlockState leftState = level.getBlockState(blockPos.relative(left));
@@ -91,11 +79,11 @@ public class DoorGuide extends Guide {
 
     @Override
     protected Result onBuildActionWrongState(BlockMatchResult state) {
-        // 铁门 / 铁活板门无法手动交互
+
         if (requiredState.is(Blocks.IRON_DOOR) || requiredState.is(Blocks.IRON_TRAPDOOR)) {
             return Result.SKIP;
         }
-        // 开关状态不一致 → 右键点击切换
+
         if (!getProperty(requiredState, BlockStateProperties.OPEN).equals(getProperty(currentState, BlockStateProperties.OPEN))) {
             return Result.success(new ClickAction());
         }

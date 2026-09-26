@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.handlers.print;
 
-/** Explicit lifecycle for one ice-to-water print target. */
 public enum WaterTaskStage {
     RESERVED,
     REMOVE_EXISTING,

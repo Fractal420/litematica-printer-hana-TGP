@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 import net.minecraft.world.level.block.HopperBlock;
 
-/**
- * 漏斗
- */
 public class HopperGuide extends Guide {
 
     public HopperGuide(SchematicBlockContext context) {

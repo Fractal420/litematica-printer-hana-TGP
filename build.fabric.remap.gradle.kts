@@ -32,14 +32,14 @@ repositories {
     strictMaven("https://api.modrinth.com/maven", "maven.modrinth")
 
     if (mcVersionInt <= 12006) {
-        strictMaven("https://maven.kyrptonaught.dev", "net.kyrptonaught")  // KyrptConfig依赖
+        strictMaven("https://maven.kyrptonaught.dev", "net.kyrptonaught")
     }
 
-    strictMaven("https://maven.terraformersmc.com/releases", "com.terraformersmc")  // ModMenu
-    strictMaven("https://maven.nucleoid.xyz", "eu.pb4") // ModMenu依赖TextPlaceholderAPI
-    strictMaven("https://repo.maven.apache.org/maven2", "blue.endless", "io.github.juuxel") // Jankson / LibNinePatch
-    strictMaven("https://staging.alexiil.uk/maven/", "io.github.cottonmc") // LibGui 依赖
-    strictMaven("https://maven.shedaniel.me")  // Cloth API/Config 官方源
+    strictMaven("https://maven.terraformersmc.com/releases", "com.terraformersmc")
+    strictMaven("https://maven.nucleoid.xyz", "eu.pb4")
+    strictMaven("https://repo.maven.apache.org/maven2", "blue.endless", "io.github.juuxel")
+    strictMaven("https://staging.alexiil.uk/maven/", "io.github.cottonmc")
+    strictMaven("https://maven.shedaniel.me")
     strictMaven("https://jitpack.io")
 }
 
@@ -54,7 +54,6 @@ val litematicaDependency = masaDependency("litematica")
 val tweakerooDependency = masaDependency("tweakeroo")
 val modMenuDependency = "maven.modrinth:modmenu:${prop("modmenu")}"
 
-// https://github.com/FabricMC/fabric-loader/issues/783
 configurations.all {
     resolutionStrategy {
         dependencySubstitution {
@@ -107,7 +106,6 @@ dependencies {
         exclude(group = "fi.dy.masa.malilib")
     }
 
-    // 快捷潜影盒
     if (mcVersionInt >= 12006) {
         val quickshulkerUrl = prop("quickshulker").toString()
         if (quickshulkerUrl.isNotEmpty()) {
@@ -116,7 +114,7 @@ dependencies {
                 modImplementation(files(quickshulkerFile))
             }
         }
-        if (mcVersionInt == 12006) {  // 1.20.6 是 Haocen2004/quickshulker 分支, 所以还是使用之前老版本的依赖
+        if (mcVersionInt == 12006) {
             run {
                 val kv = prop("kyrptconfig").toString()
                 val kyrptUrl = "https://maven.kyrptonaught.dev/net/kyrptonaught/kyrptconfig/$kv/kyrptconfig-$kv.jar"

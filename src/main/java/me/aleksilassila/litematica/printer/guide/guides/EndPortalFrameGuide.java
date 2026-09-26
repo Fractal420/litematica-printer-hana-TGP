@@ -8,9 +8,6 @@ import me.aleksilassila.litematica.printer.printer.action.ClickAction;
 import net.minecraft.world.level.block.EndPortalFrameBlock;
 import net.minecraft.world.item.Items;
 
-/**
- * 末地传送门框架
- */
 public class EndPortalFrameGuide extends Guide {
 
     public EndPortalFrameGuide(SchematicBlockContext context) {

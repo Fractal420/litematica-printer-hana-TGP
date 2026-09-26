@@ -40,7 +40,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-/** Places a configured block in the two-block spaces where Wither Skeletons can spawn. */
 public final class CoverHandler extends FeatureModuleBase {
     public static final String NAME = "cover";
 
@@ -82,7 +81,7 @@ public final class CoverHandler extends FeatureModuleBase {
         FillBlockModeType mode = (FillBlockModeType) Configs.Cover.COVER_BLOCK_MODE.getOptionListValue();
         if (mode == FillBlockModeType.HANDHELD) {
             this.missingMaterials.resolve(this.coverItems, null);
-            // The handheld singleton must never be reused as a resolved block list.
+
             this.blockListCache = List.of();
             ItemStack held = this.player == null ? ItemStack.EMPTY : this.player.getMainHandItem();
             this.coverItems = held.getItem() instanceof BlockItem && !held.isEmpty() && held.getCount() > 0

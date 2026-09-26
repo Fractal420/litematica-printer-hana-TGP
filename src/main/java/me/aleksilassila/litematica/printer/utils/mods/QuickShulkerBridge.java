@@ -13,12 +13,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/**
- * Compatibility boundary for pick-block and the historical quick-shulker implementation.
- *
- * <p>User pick requests enter the shared material coordinator here. The class name is retained
- * because existing printer code also uses it for Quick Shulker lifecycle callbacks.</p>
- */
 public final class QuickShulkerBridge {
     private QuickShulkerBridge() {
     }
@@ -43,7 +37,6 @@ public final class QuickShulkerBridge {
         return RuntimeAccess.get().materialRequests().request(items, source);
     }
 
-    /** Submits one ordered provider request for vanilla or Litematica pick-block. */
     public static boolean handlePickBlock(LocalPlayer player, Item item) {
         return handleMissingPickBlock(player, item);
     }

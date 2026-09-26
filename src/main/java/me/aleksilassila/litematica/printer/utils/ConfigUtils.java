@@ -110,11 +110,6 @@ public class ConfigUtils {
         return true;
     }
 
-    /**
-     * Captures the player/range values once for a scan pass. The regular
-     * canInteracted() path is still used immediately before an action so a
-     * queued target is always validated against the latest player position.
-     */
     public static Predicate<BlockPos> createCanInteractPredicate() {
         LocalPlayer player = client.player;
         if (player == null) {

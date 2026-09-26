@@ -101,7 +101,7 @@ public final class BedrockPlacer {
         }
         PlayerLook look = new PlayerLook(clickedFace.getOpposite());
         NetworkUtils.sendLookPacketIgnoringQueuedLook(player, look);
-        // Use center of the support block for more reliable interaction
+
         BlockHitResult hitResult = new BlockHitResult(Vec3.atCenterOf(supportPos), clickedFace, supportPos, false);
         boolean accepted = placeBlockAggressively(player, hitResult, true);
         return accepted;
@@ -132,8 +132,6 @@ public final class BedrockPlacer {
             return false;
         }
 
-        // Pistons face opposite to the direction the player is looking when placed.
-        // We want the resulting piston facing to match `facing`, so look at the opposite side.
         PlayerLook look = new PlayerLook(facing.getOpposite());
         if (ensureHorizontalLookSettled(player, pistonPos, facing, look, true)) {
             return false;
@@ -214,9 +212,7 @@ public final class BedrockPlacer {
 
     private boolean isHorizontalLookReady(PendingHorizontalPlacement pendingPlacement) {
         long now = RuntimeAccess.get().currentTick();
-        // Movement and interaction packets share the ordered game connection.  Sending the
-        // placement on the following client tick is sufficient and keeps the original safety
-        // boundary without treating an unrelated inbound packet as an acknowledgement.
+
         return now > pendingPlacement.sentTick();
     }
 

@@ -5,7 +5,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-/** Optional Tweakeroo tool-switch capability. The printer never reimplements its durability policy. */
 public interface TweakerooToolSwitchPort {
     boolean isEffectiveToolSwitchEnabled();
 

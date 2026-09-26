@@ -26,14 +26,6 @@ import java.util.function.Predicate;
 import java.util.EnumSet;
 import java.util.Optional;
 
-/**
- * Feature-facing action middleware.
- *
- * <p>Feature handlers submit actions through this boundary. Minecraft and
- * third-party integration mixins may continue to observe ActionManager, but
- * feature code no longer needs to know which queue implementation owns the
- * action or how it is reset.</p>
- */
 public final class ActionBroker implements RuntimeComponent, ActionPort {
     private static final long ACTION_LEASE_TIMEOUT_NANOS = 10_000_000_000L;
 

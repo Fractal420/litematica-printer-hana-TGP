@@ -26,7 +26,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Thin Minecraft field bridge. Mining policy and state transitions live outside the Mixin. */
 // Priority rationale: the port must observe Tweakeroo/Litematica's final interaction decision;
 // it delegates policy and only replaces behavior while an explicit printer mining session runs.
 @Mixin(value = MultiPlayerGameMode.class, priority = 1020)

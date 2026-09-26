@@ -7,7 +7,6 @@ import me.aleksilassila.litematica.printer.utils.ConfigUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.PlayerUtils;
 import net.minecraft.client.player.LocalPlayer;
 
-/** Immutable geometry and distance limits for one player-centered scan request. */
 record ScanRegion(
         int centerX,
         int centerY,

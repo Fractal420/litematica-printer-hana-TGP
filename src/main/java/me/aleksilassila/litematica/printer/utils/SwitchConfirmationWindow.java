@@ -1,12 +1,5 @@
 package me.aleksilassila.litematica.printer.utils;
 
-/**
- * Packet-order barrier for a client-predicted inventory switch.
- *
- * <p>A matching local stack in the same tick proves only client prediction, not that the click or
- * carried-item packet precedes the next interaction packet on the server.  One tick boundary is
- * therefore mandatory; after that, a matching hand can release immediately.</p>
- */
 final class SwitchConfirmationWindow {
     private final int maxSettleTicks;
     private long startedTick = Long.MIN_VALUE;

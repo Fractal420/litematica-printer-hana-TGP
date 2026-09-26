@@ -8,7 +8,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 
-/** Stable no-op boundary for the optional Chest Tracker integration. */
 public final class ChestTrackerBridge {
     private ChestTrackerBridge() {
     }
@@ -17,7 +16,6 @@ public final class ChestTrackerBridge {
         return ModLoadUtils.isChestTrackerLoaded();
     }
 
-    /** Standalone Chest Tracker pick-block path used when Printer's work switch is off. */
     public static boolean handlePickBlock(LocalPlayer player, Item item) {
         Minecraft client = Minecraft.getInstance();
         if (Configs.Core.WORK_SWITCH.getBooleanValue()

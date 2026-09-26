@@ -7,9 +7,6 @@ import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/**
- * 花簇
- */
 //#if MC >= 11904
 public class FlowerBedGuide extends Guide {
 

@@ -11,7 +11,6 @@ import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Slot mapping, stack identity and destination planning for ordered restore. */
 final class OrderedStorageStacks {
     private OrderedStorageStacks() {
     }

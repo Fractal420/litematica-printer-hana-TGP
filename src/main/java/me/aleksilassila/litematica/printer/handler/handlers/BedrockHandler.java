@@ -56,10 +56,7 @@ public class BedrockHandler extends FeatureModuleBase {
     @Override
     protected boolean canIterate() {
         BedrockController.tick();
-        // A full active-target lane may temporarily reject new submissions, but it must not
-        // prevent already discovered candidates from reaching the controller. Previously this
-        // gate made the last cached bedrock positions wait until player movement rebuilt the
-        // interaction window and invoked the scanner again.
+
         if (!BedrockController.canSubmitInCurrentWindow()) {
             return false;
         }
@@ -130,7 +127,7 @@ public class BedrockHandler extends FeatureModuleBase {
         this.candidatePlanner.recordSubmissionResult(blockPos, submitted);
         setIterationConsumedEffectiveExecution(submitted);
         if (submitted) {
-            // Allow a second same-tick submit when the controller still has safe capacity.
+
             skipIteration.set(!BedrockController.canScanForTargets());
         }
     }

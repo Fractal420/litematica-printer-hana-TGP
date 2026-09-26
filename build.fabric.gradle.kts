@@ -36,8 +36,8 @@ repositories {
     strictMaven("https://www.cursemaven.com", "curse.maven")
     strictMaven("https://api.modrinth.com/maven", "maven.modrinth")
 
-    strictMaven("https://maven.terraformersmc.com/releases", "com.terraformersmc")  // ModMenu
-    strictMaven("https://maven.nucleoid.xyz", "eu.pb4") // ModMenu依赖TextPlaceholderAPI
+    strictMaven("https://maven.terraformersmc.com/releases", "com.terraformersmc")
+    strictMaven("https://maven.nucleoid.xyz", "eu.pb4")
     strictMaven("https://jitpack.io")
 }
 
@@ -52,7 +52,6 @@ val litematicaDependency = masaDependency("litematica")
 val tweakerooDependency = masaDependency("tweakeroo")
 val modMenuDependency = "maven.modrinth:modmenu:${prop("modmenu")}"
 
-// https://github.com/FabricMC/fabric-loader/issues/783
 configurations.all {
     resolutionStrategy {
         dependencySubstitution {
@@ -95,7 +94,6 @@ dependencies {
 
     implementation(modMenuDependency)
 
-    // masa
     implementation(malilibDependency)
     implementation(litematicaDependency)
     implementation(tweakerooDependency) {
@@ -104,7 +102,6 @@ dependencies {
         exclude(group = "fi.dy.masa.malilib")
     }
 
-    // 快捷潜影盒
     val quickshulkerUrl = prop("quickshulker").toString()
     if (quickshulkerUrl.isNotEmpty()) {
         val quickshulkerFile = downloadDependencyMod(quickshulkerUrl)

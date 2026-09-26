@@ -9,13 +9,6 @@ import net.minecraft.world.level.block.piston.PistonBaseBlock;
 
 import java.util.Set;
 
-/**
- * Owns the indivisible packet bundle used by the piston bedrock exploit.
- *
- * <p>Once the first break packet is sent, the remaining packets must follow without
- * waiting for client or server state. Server state is observed by {@link BedrockTarget}
- * on later ticks; it is deliberately not used as a mid-bundle acknowledgement.</p>
- */
 final class BedrockCriticalExecutor {
     private long currentTick = Long.MIN_VALUE;
     private int reservedPistons;
@@ -72,8 +65,6 @@ final class BedrockCriticalExecutor {
             return false;
         }
 
-        // Reserve before the first packet. Placement has no local prediction, so the
-        // client stack count may remain unchanged while several bundles are submitted.
         reservedPistons++;
 
         if (ownedTorchPositions != null) {
@@ -82,8 +73,6 @@ final class BedrockCriticalExecutor {
             }
         }
 
-        // Do not branch on packet results from this point onward. The exploit is the
-        // ordering of this break immediately followed by the reverse piston placement.
         BedrockBreaker.sendCriticalBreakPackets(pistonPos, executeFacing);
         boolean accepted = this.placer.placePiston(pistonPos, executeFacing);
         if (accepted) {

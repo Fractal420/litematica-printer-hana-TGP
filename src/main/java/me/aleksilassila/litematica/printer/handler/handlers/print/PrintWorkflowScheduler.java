@@ -18,12 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
 
-/**
- * Owns multi-stage print workflows independently from selection scan progress.
- *
- * <p>Server updates wake only the affected target and its neighbours. A deadline remains as a
- * fallback for missed packets, so a workflow can never depend on player movement or a full scan.</p>
- */
 public final class PrintWorkflowScheduler {
     private final LongSupplier tickClock;
     private final StrippableBlockPort strippableBlocks;
@@ -146,17 +140,12 @@ public final class PrintWorkflowScheduler {
         this.afterAction(context);
     }
 
-    /**
-     * Inventory and look synchronization did not submit the stage action. Keep the exact target
-     * runnable so it is retried without waiting for the selection scanner to encounter it again.
-     */
     public void onActionDeferred(SchematicBlockContext context) {
         PrintTask task = this.tasks.get(context.blockPos);
         if (task == null) return;
         this.updateReady(task, context.level, context.schematic);
     }
 
-    /** Pauses only the affected workflow until an inventory gain wakes material-bound tasks. */
     public void onMaterialUnavailable(SchematicBlockContext context) {
         PrintTask task = this.tasks.get(context.blockPos);
         if (task == null) return;

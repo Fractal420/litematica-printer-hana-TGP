@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.Blocks;
 
 import java.util.Set;
 
-/** Executes one target's actions after its observed status has been resolved. */
 final class BedrockTargetActionExecutor {
     private static final int POWERED_STALL_RECOVERY_TICKS = 2;
 
@@ -82,8 +81,7 @@ final class BedrockTargetActionExecutor {
         for (int offset = 1; offset < 6; offset++) {
             this.host.recordTemporary(this.host.pistonPos().relative(layout.getPistonOffset(), offset));
         }
-        // The critical START -> STOP -> placement bundle above is intentionally complete
-        // before network tracking starts; tracking is observation only and never gates it.
+
         this.host.recordNetworkAttempt();
         this.host.setHasTried(true);
         this.host.setExecuteTick(this.host.tickTimes());

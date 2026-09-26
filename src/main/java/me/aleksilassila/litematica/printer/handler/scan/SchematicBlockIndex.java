@@ -15,13 +15,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Sparse index of non-air positions in one schematic world.
- *
- * <p>The PRINT scanner only needs schematic non-air positions. Keeping those positions in chunk
- * buckets avoids walking the air volume of a large, sparse placement. The index is deliberately
- * isolated from world intents: MINE, FILL and FLUID must continue to inspect live world state.</p>
- */
 final class SchematicBlockIndex {
     private static final int SECTION_SIZE = 16;
 
@@ -46,9 +39,7 @@ final class SchematicBlockIndex {
         //#if MC >= 12111
         return this.ensureBuiltWithStableChunkStates(schematic);
         //#else
-        // Litematica versions before 1.21.11 do not expose the LOADED -> FILLED transition.
-        // Their chunk identity and non-empty flag can become stable before population completes,
-        // so sparse indexing cannot prove that its snapshot is complete. Keep the dense cursor.
+
         //$$ return this.waitForDenseFallback(schematic);
         //#endif
     }
@@ -166,8 +157,7 @@ final class SchematicBlockIndex {
             //#if MC >= 12111
             boolean filled = chunk.getState().atLeast(ChunkSchematicState.FILLED);
             //#else
-            // Older versions never call the sparse build path; keep this false as a defensive
-            // fallback if the capture helper is reused by future code.
+
             //$$ boolean filled = false;
             //#endif
             chunks.add(chunk);

@@ -18,13 +18,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * Explicit allow-list for remote container retrieval.
- *
- * <p>Chest Tracker owns the remembered contents; this class only persists the
- * positions the player explicitly opted into. That keeps remote retrieval
- * bounded to one world/dimension instead of the global MemoryBank.</p>
- */
 final class SelectedContainerCache {
     private static final Path FILE = Paths.get("config", "litematica-printer-container-cache.json");
     private final Set<Entry> entries = new LinkedHashSet<>();
@@ -77,7 +70,7 @@ final class SelectedContainerCache {
                 new GsonBuilder().setPrettyPrinting().create().toJson(root, writer);
             }
         } catch (Exception ignored) {
-            // A cache write failure must never stop printing or material retrieval.
+
         }
     }
 
@@ -90,8 +83,7 @@ final class SelectedContainerCache {
             address = String.valueOf(client.getConnection().getConnection().getRemoteAddress());
         }
         if (address != null) return "multiplayer:" + address;
-        // If mappings hide the server identity, prefer a session-scoped key over
-        // accidentally sharing coordinates between unrelated worlds.
+
         return "session:" + System.identityHashCode(client.level);
     }
 

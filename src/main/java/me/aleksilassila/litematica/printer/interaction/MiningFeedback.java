@@ -15,7 +15,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Delayed-destroy observations and local mining sounds, separate from packet sequencing. */
 final class MiningFeedback {
     private final Minecraft client;
     private final Map<BlockPos, Long> pendingDelayedDestroys = new LinkedHashMap<>();

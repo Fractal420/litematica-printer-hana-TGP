@@ -11,7 +11,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.LongSupplier;
 
-/** Owns bedrock candidate admission, retry and capacity policy. */
 final class BedrockAdmissionController {
     private static final String RETRY_COOLDOWN_KEY = "bedrock_retry";
     private static final int SUBMIT_RETRY_COOLDOWN_TICKS = 6;

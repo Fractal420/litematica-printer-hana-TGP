@@ -1,4 +1,4 @@
-# 构建工具缓存 (Gradle/Kotlin)
+# Build tool caches (Gradle/Kotlin)
 **/.gradle/
 .kotlin
 build.number
@@ -7,7 +7,7 @@ gradle-app.setting
 !gradle-wrapper.properties
 .gradletasknamecache
 
-# 编译输出/打包/二进制文件
+# Build output, packages, and binaries
 *.class
 *.log
 *.ctxt
@@ -21,12 +21,12 @@ gradle-app.setting
 *.rar
 bin/
 
-# JVM 相关日志 (崩溃日志+业务日志)
+# JVM logs (crash logs and application logs)
 hs_err_pid*
 replay_pid*
 **/logs/
 
-# Eclipse 专属配置&输出
+# Eclipse-specific configuration and output
 .settings/
 .classpath
 .project
@@ -34,7 +34,7 @@ eclipse/
 .cproject
 .loadpath
 
-# IntelliJ IDEA 专属配置&输出
+# IntelliJ IDEA-specific configuration and output
 .idea/
 .idea_modules/
 *.iws
@@ -49,19 +49,19 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-# VS Code 专属配置 (忽略个人配置，保留团队共享项)
+# VS Code-specific configuration (ignore personal settings, keep shared settings)
 .vscode/
 !.vscode/extensions.json
 !.vscode/launch.json
 !.vscode/settings.json
 !.vscode/tasks.json
 
-# 项目构建/运行/依赖目录 - 推荐**/ 全层级匹配，合并等效项
+# Project build, runtime, and dependency directories - use **/ for all levels
 **/build/
 **/run/
 **/libs/
 
-# 跨平台系统临时文件
+# Cross-platform system temporary files
 # macOS
 .DS_Store
 .DS_Store?
@@ -74,14 +74,14 @@ Thumbs.db
 Thumbs.db:encryptable
 $RECYCLE.BIN/
 
-# 通用编辑器/工具临时文件
+# Generic editor and tool temporary files
 *.swp
 *.swo
 *~
 *.bak
 *.tmp
 
-# 环境变量文件 (敏感配置忽略，保留示例文件)
+# Environment variable files (ignore sensitive files, keep examples)
 .env
 .env.*
 !.env.example

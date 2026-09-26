@@ -48,7 +48,7 @@ public class StringListConfigBuilder extends BaseConfigBuilder<ConfigStringList,
     private ImmutableList<String> convertToImmutableStringList(Stream<?> stream) {
         return stream
                 .map(this::convertObjectToString)
-                .filter(s -> s != null && !s.isEmpty()) // 过滤空值
+                .filter(s -> s != null && !s.isEmpty())
                 .collect(ImmutableList.toImmutableList());
     }
 

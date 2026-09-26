@@ -3,7 +3,6 @@ package me.aleksilassila.litematica.printer.handler.handlers.bedrock;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 
-/** Resolves one target's lifecycle state before its action executor runs. */
 final class BedrockTargetLifecycle {
     private final BedrockTarget owner;
     private final ClientLevel level;

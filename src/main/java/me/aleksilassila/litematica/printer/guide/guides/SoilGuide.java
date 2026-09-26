@@ -11,9 +11,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Items;
 
-/**
- * 耕地/土径
- */
 public class SoilGuide extends Guide {
 
     public SoilGuide(SchematicBlockContext context) {

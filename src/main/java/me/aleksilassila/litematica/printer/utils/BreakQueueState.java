@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-/** Owns queued break targets and their short-lived client prediction markers. */
 final class BreakQueueState {
     private final Queue<BlockPos> breakQueue = new LinkedList<>();
     private final Set<BlockPos> queuedBreaks = new HashSet<>();

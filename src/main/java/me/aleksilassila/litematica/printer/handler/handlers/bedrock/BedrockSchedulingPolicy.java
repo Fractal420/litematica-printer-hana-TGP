@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.handlers.bedrock;
 
-/** Pure limits and status classification used by {@link BedrockController}. */
 final class BedrockSchedulingPolicy {
     private BedrockSchedulingPolicy() {
     }
@@ -33,9 +32,7 @@ final class BedrockSchedulingPolicy {
     }
 
     static boolean countsTowardsActiveCap(BedrockTarget.Status status) {
-        // A waiting/retracting target still owns its piston, head and power footprint until the
-        // server confirms the outcome. Excluding these states lets admission reuse the same
-        // coordinates while packets are in flight, which corrupts the next machine.
+
         return status != null
                 && status != BedrockTarget.Status.FAILED
                 && status != BedrockTarget.Status.STUCK

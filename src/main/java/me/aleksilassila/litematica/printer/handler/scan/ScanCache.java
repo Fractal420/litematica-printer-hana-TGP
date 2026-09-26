@@ -227,9 +227,7 @@ public final class ScanCache {
         }
         if (intent == ScanIntent.PRINT && !Configs.Print.BREAK_EXTRA_BLOCK.getBooleanValue()) {
             if (this.schematicIndex.ensureBuilt(schematic)) {
-                // Existing PRINT sessions may still hold a cursor built from the previous set of
-                // loaded schematic chunks. Recreate only this owner so newly loaded chunks cannot
-                // be omitted while unrelated scan intents keep their progress.
+
                 this.sessions.resetOwner(ownerKey);
             }
         }

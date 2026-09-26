@@ -12,9 +12,6 @@ import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
 
-/**
- * 活板门
- */
 public class TrapDoorGuide extends Guide {
 
     public TrapDoorGuide(SchematicBlockContext context) {
@@ -35,11 +32,11 @@ public class TrapDoorGuide extends Guide {
 
     @Override
     protected Result onBuildActionWrongState(BlockMatchResult state) {
-        // 铁活板门无法手动交互
+
         if (requiredState.is(Blocks.IRON_TRAPDOOR)) {
             return Result.SKIP;
         }
-        // 开关状态不一致 → 右键点击切换
+
         if (!getProperty(requiredState, TrapDoorBlock.OPEN)
                 .equals(getProperty(currentState, BlockStateProperties.OPEN))) {
             return Result.success(new ClickAction());

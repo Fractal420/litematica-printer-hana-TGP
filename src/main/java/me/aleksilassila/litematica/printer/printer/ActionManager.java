@@ -298,10 +298,6 @@ public class ActionManager {
         return result;
     }
 
-    /**
-     * Cancel a queued action and complete its task callback. Inventory/container workflows use
-     * this instead of silently dropping an action that may already have entered a queued state.
-     */
     public void cancelQueue() {
         QueuedClick click = this.queuedClick;
         if (click == null) {

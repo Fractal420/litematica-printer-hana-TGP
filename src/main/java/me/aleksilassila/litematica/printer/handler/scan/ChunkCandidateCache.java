@@ -4,7 +4,6 @@ import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 
 import java.util.function.BooleanSupplier;
 
-/** Per-session cache for the expensive schematic-chunk candidate lookup. */
 final class ChunkCandidateCache {
     private final Long2ByteOpenHashMap values = new Long2ByteOpenHashMap();
 

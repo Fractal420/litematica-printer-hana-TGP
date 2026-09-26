@@ -9,9 +9,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.properties.BedPart;
 
-/**
- * 床
- */
 public class BedGuide extends Guide {
     public BedGuide(SchematicBlockContext context) {
         super(context);
@@ -21,7 +18,7 @@ public class BedGuide extends Guide {
     protected Result onBuildActionMissingBlock(BlockMatchResult state) {
         Direction facing = getProperty(requiredState, BedBlock.FACING).orElseThrow();
         BedPart bedPart = getProperty(requiredState, BedBlock.PART).orElseThrow();
-        // 只放置床尾，床头自动生成
+
         if (bedPart == BedPart.HEAD) {
             return Result.SKIP;
         }

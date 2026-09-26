@@ -18,7 +18,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientPacketListener.class)
 public abstract class MixinClientPacketListener {
 
-    /*** 玩家死亡后自动关闭打印机(避免持续执行打印发送数据包) ***/
     @Inject(method = "handleSetHealth", at = @At("RETURN"))
     private void injectHealthUpdate(ClientboundSetHealthPacket packet, CallbackInfo ci) {
         LocalPlayer player = Minecraft.getInstance().player;

@@ -1,6 +1,5 @@
 package me.aleksilassila.litematica.printer.handler.handlers.bedrock;
 
-/** Mutable counters owned by one runtime epoch. */
 final class BedrockRunStats {
     int acceptedThisTick;
     int rejectedThisTick;

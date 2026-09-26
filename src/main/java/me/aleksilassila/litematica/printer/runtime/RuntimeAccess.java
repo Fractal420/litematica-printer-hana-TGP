@@ -2,10 +2,6 @@ package me.aleksilassila.litematica.printer.runtime;
 
 import java.util.Objects;
 
-/**
- * Thin client bridge used only where Minecraft callbacks cannot receive the runtime instance.
- * Business state remains owned by {@link PrinterRuntime}; this holder never creates or resets it.
- */
 public final class RuntimeAccess {
     private static volatile PrinterRuntime current;
 

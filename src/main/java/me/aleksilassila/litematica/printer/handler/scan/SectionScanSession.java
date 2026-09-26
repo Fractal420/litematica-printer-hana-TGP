@@ -17,12 +17,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.LongSupplier;
 
-/**
- * Owns one resumable, player-distance ordered scan pass.
- *
- * <p>The cache decides when a session may run and how much time it receives. This class only
- * owns traversal progress, invalidated positions and live world/schematic classification.</p>
- */
 final class SectionScanSession {
     private static final int BUDGET_CHECK_INTERVAL = 8;
     private static final Direction[] DIRECTIONS = Direction.values();
@@ -88,11 +82,7 @@ final class SectionScanSession {
 
     void updateRegion(ScanRegion region, List<PrinterBox> sourceBoxes) {
         boolean boxesChanged = !this.sourceBoxes.equals(sourceBoxes);
-        // Compare the section window (16-block granularity), not the exact center. The center
-        // follows the player's block position; bumping the revision for every single block of
-        // movement made finishPass() rebuild the cursor from scratch on every pass, which
-        // showed up as a permanent full rescan in the HUD. Within a section the in-flight
-        // cursor is reused and fine center movement only shifts the reach shape slightly.
+
         boolean windowChanged = !this.region.sameSectionWindow(region);
         this.region = region;
         if (boxesChanged) {
@@ -101,10 +91,7 @@ final class SectionScanSession {
         if (boxesChanged || windowChanged) {
             this.sourceRevision++;
         }
-        // Keep the active cursor while the section window remains stable. Rebuilding it for every
-        // block of player movement repeatedly walks the already-scanned prefix and starves the
-        // edge of large ranges. A revision check at the end of this pass schedules exactly one
-        // follow-up pass over the latest center and boxes before completion is reported.
+
     }
 
     boolean canScan(long tickTime) {
@@ -181,10 +168,7 @@ final class SectionScanSession {
         if (this.intent == ScanIntent.FILL
                 || this.intent == ScanIntent.PRINT
                 || this.intent == ScanIntent.BEDROCK) {
-            // Support, waterlogging and bedrock-machine exposure are neighbor-dependent.
-            // Revisit exactly the six affected targets rather than restarting the selection.
-            // Fluid does not need this expansion because flowing liquid already produces the
-            // neighboring updates it needs.
+
             for (Direction direction : DIRECTIONS) {
                 this.addDirtyPosition(pos.relative(direction));
             }
@@ -331,8 +315,7 @@ final class SectionScanSession {
             this.rebuildDistanceCursor();
             return false;
         }
-        // Restart on the next client tick. Lazy admission is owned by the feature runtime and must count
-        // real empty passes instead of coupling availability to the lazy admission window.
+
         this.exhaustedUntilTick = tickTime + 1;
         this.metrics.completedPasses++;
         return true;

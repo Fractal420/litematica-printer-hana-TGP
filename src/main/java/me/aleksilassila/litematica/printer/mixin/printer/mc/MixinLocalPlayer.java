@@ -111,4 +111,23 @@ public class MixinLocalPlayer extends AbstractClientPlayer {
         }
         return Optional.empty();
     }
+
+    @Inject(method = "aiStep", at = @At("TAIL"))
+    private void litematica_printer$blockMovementDuringVanillaRefill(CallbackInfo ci) {
+        if (!RuntimeAccess.get().manualVanillaRefill().shouldPause()) {
+            return;
+        }
+        LocalPlayer self = (LocalPlayer) (Object) this;
+        if (self.input != null) {
+            //#if MC >= 12103
+            self.input.keyPresses = new net.minecraft.world.entity.player.Input(false, false, false, false, false, false, false);
+            //#else
+            //$$ self.input.forwardImpulse = 0.0F;
+            //$$ self.input.leftImpulse = 0.0F;
+            //$$ self.input.jumping = false;
+            //#endif
+        }
+        self.setDeltaMovement(0.0, self.getDeltaMovement().y, 0.0);
+    }
+
 }

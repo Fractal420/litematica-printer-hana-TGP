@@ -76,14 +76,12 @@ public class PlayerUtils {
         //#endif
     }
 
-    // 球面（欧几里得距离）
     public static boolean isWithinWorkInteractedEuclideanRange(BlockPos blockPos, double range) {
         LocalPlayer player = client.player;
         if (player == null || blockPos == null) return false;
         return player.getEyePosition().distanceToSqr(Vec3.atCenterOf(blockPos)) <= range * range;
     }
 
-    // 八面体（曼哈顿距离）
     public static boolean isWithinWorkInteractedManhattanRange(BlockPos blockPos, double range) {
         LocalPlayer player = client.player;
         if (player == null || blockPos == null) return false;
@@ -94,7 +92,6 @@ public class PlayerUtils {
         return dx + dy + dz <= range;
     }
 
-    // 立方体（CUBE）：以玩家方块位置为中心
     public static boolean isWithinWorkInteractedCubeRange(BlockPos blockPos, double range) {
         LocalPlayer player = client.player;
         if (player == null || blockPos == null) return false;
@@ -104,7 +101,6 @@ public class PlayerUtils {
         int dz = Math.abs(blockPos.getZ() - center.getZ());
         return dx <= range && dy <= range && dz <= range;
     }
-
 
     public static float getDestroyProgress(LocalPlayer player, BlockState state, ItemStack itemStack) {
         float hardness = state.getBlock().defaultDestroyTime();
@@ -124,13 +120,6 @@ public class PlayerUtils {
         return getDestroyProgress(player, state, true);
     }
 
-    /**
-     * 获取当前物品能够破坏指定方块的破坏速度.
-     *
-     * @param blockState 要破坏的方块状态
-     * @param itemStack  使用工具/物品破坏方块
-     * @return 当前物品破坏该方块所需的时间（单位为 tick）
-     */
     public static float getBlockBreakingSpeed(LocalPlayer player, BlockState blockState, ItemStack itemStack) {
         float f = itemStack.getDestroySpeed(blockState);
         //#if MC > 12006

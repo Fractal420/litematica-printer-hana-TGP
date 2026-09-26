@@ -64,15 +64,12 @@ class SortedSchematicTargetQueueTest {
             ));
         }
 
-        // This is the production failure mode: TimSort throws when the comparator contract is
-        // violated by a sufficiently large mixed batch.
         scores.sort(SortedSchematicTargetQueue.TargetScore.COMPARATOR);
         for (int index = 1; index < scores.size(); index++) {
             assertTrue(SortedSchematicTargetQueue.TargetScore.COMPARATOR.compare(
                     scores.get(index - 1), scores.get(index)) <= 0);
         }
 
-        // One million deterministic triples cover mixed falling/non-falling and material groups.
         for (int index = 0; index < 1_000_000; index++) {
             var left = scores.get(random.nextInt(scores.size()));
             var middle = scores.get(random.nextInt(scores.size()));

@@ -34,10 +34,7 @@ public final class BedrockBreaker {
         if (state.isAir()) {
             return false;
         }
-        // MOVING_PISTON has destroySpeed -1: the server's calcBlockBreakingDelta is negative, so it
-        // can never reach the 0.7 STOP threshold nor the failedToMine 1.0 auto-break. Attempting it
-        // just spams hit sounds forever ("敲击声但没有回收"). Wait for it to settle into a PISTON /
-        // PISTON_HEAD / air and let the normal residue path handle it.
+
         if (state.is(Blocks.MOVING_PISTON)) {
             return false;
         }
