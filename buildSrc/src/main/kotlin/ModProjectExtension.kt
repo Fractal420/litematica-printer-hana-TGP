@@ -4,11 +4,11 @@ import org.gradle.api.Project
 import java.io.File
 
 fun Project.propOrNull(key: String) = findProperty(key)
-fun Project.prop(key: String) = propOrNull(key) ?: throw GradleException("buildSrc: 属性 $key 未配置/值为空")
+fun Project.prop(key: String) = propOrNull(key) ?: throw GradleException("buildSrc: property $key is not configured or is empty")
 
 fun Project.propStrOrNull(key: String): String? = propOrNull(key)?.toString()
 fun Project.propStr(key: String): String = propStrOrNull(key)
-    ?: throw GradleException("buildSrc: 属性 $key 未配置/值为空，或无法转换为字符串")
+    ?: throw GradleException("buildSrc: property $key is not configured or is empty, or cannot be converted to a string")
 
 fun Project.downloadDependencyMod(downloadUrl: String, fileName: String? = null): File? {
     return rootProject.downloadFile(

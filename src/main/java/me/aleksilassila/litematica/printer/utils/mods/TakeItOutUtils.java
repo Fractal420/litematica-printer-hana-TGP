@@ -41,7 +41,7 @@ public final class TakeItOutUtils {
             Field field = Class.forName(CLIENT_CLASS).getField("AUTOTAKEOUT");
             return field.getBoolean(null);
         } catch (ReflectiveOperationException | LinkageError exception) {
-            logApiFailure("读取自动取货配置", exception);
+            logApiFailure("read automatic retrieval configuration", exception);
             return false;
         }
     }
@@ -75,7 +75,7 @@ public final class TakeItOutUtils {
             }
             return items.isEmpty() ? Set.of() : Set.copyOf(items);
         } catch (ReflectiveOperationException | LinkageError exception) {
-            logApiFailure("读取远程容器材料", exception);
+            logApiFailure("read remote container materials", exception);
             return Set.of();
         }
     }
@@ -91,7 +91,7 @@ public final class TakeItOutUtils {
         } catch (ClassNotFoundException | NoSuchMethodException ignored) {
 
         } catch (ReflectiveOperationException | LinkageError exception) {
-            logApiFailure("刷新远程容器材料", exception);
+            logApiFailure("refresh remote container materials", exception);
         }
     }
 
@@ -164,7 +164,7 @@ public final class TakeItOutUtils {
 
             return false;
         } catch (ReflectiveOperationException | LinkageError exception) {
-            logApiFailure("请求世界容器", exception);
+            logApiFailure("request world container", exception);
             return false;
         }
     }
@@ -200,7 +200,7 @@ public final class TakeItOutUtils {
             sendPayload(payload);
             return true;
         } catch (ReflectiveOperationException | LinkageError exception) {
-            logApiFailure("请求背包潜影盒", exception);
+            logApiFailure("request inventory shulker box", exception);
             clearAwaitingStackIfSameItem(required);
             return false;
         }
@@ -240,7 +240,7 @@ public final class TakeItOutUtils {
                 return Boolean.TRUE.equals(result);
             }
         } catch (ReflectiveOperationException | LinkageError exception) {
-            logApiFailure("检查网络通道", exception);
+            logApiFailure("check network channel", exception);
             return false;
         }
         return false;
@@ -270,7 +270,7 @@ public final class TakeItOutUtils {
 
             return false;
         } catch (ReflectiveOperationException | LinkageError exception) {
-            logApiFailure("读取单物品模式", exception);
+            logApiFailure("read single-item mode", exception);
             return false;
         }
     }
@@ -283,7 +283,7 @@ public final class TakeItOutUtils {
             Object value = Class.forName(CLIENT_CLASS).getField("awaitingStack").get(null);
             return value instanceof ItemStack stack ? stack : ItemStack.EMPTY;
         } catch (ReflectiveOperationException | LinkageError exception) {
-            logApiFailure("读取等待物品", exception);
+            logApiFailure("read pending item", exception);
             return ItemStack.EMPTY;
         }
     }
@@ -332,6 +332,6 @@ public final class TakeItOutUtils {
             return;
         }
         apiFailureLogged = true;
-        Reference.LOGGER.warn("Take It Out API 调用异常，{}失败；已跳过该取货路径", operation, exception);
+        Reference.LOGGER.warn("Take It Out API call failed; {} operation skipped", operation, exception);
     }
 }

@@ -191,7 +191,7 @@ fun optimizeWrapperSubmoduleJars(jarsDir: File, sharedResourcePrefixes: Set<Stri
 tasks {
 
     register("collectSubModules") {
-        description = "收集所有子模块的 JAR 文件"
+        description = "Collect JAR files from all subprojects"
         outputs.upToDateWhen { false }
 
         val embeddedJarsDir = layout.buildDirectory.dir("tmp/submods/META-INF/jars")
@@ -250,13 +250,13 @@ tasks {
         doLast {
             if (rootIcon.exists()) {
                 if (!resourcesFile.exists()) {
-                    println("⚠ 子项目未找到图标文件，准备从根项目中复制图标")
+                    println("⚠ Icon not found in subproject; copying from root project")
                     buildIconFile.parentFile.mkdirs()
                     rootIcon.copyTo(buildIconFile, overwrite = true)
-                    println("✓ 图标复制成功: ${rootIcon.name} -> ${buildIconFile.name}")
+                    println("✓ Icon copied successfully: ${rootIcon.name} -> ${buildIconFile.name}")
                 }
             } else {
-                println("⚠ 根项目中未找到图标文件，跳过图标复制")
+                println("⚠ Icon not found in root project; skipping icon copy")
             }
         }
 
@@ -283,10 +283,10 @@ tasks {
                     val minecraftVersion = subproject.property("minecraft_dependency") as String
                     if (minecraftVersion.isNotBlank()) {
                         minecraftVersions.add(minecraftVersion)
-                        println("收集到 Minecraft 版本: $minecraftVersion")
+                        println("Collected Minecraft version: $minecraftVersion")
                     }
                 } catch (e: Exception) {
-                    println("⚠ 无法从子项目 ${subproject.name} 获取 Minecraft 版本")
+                    println("⚠ Unable to get Minecraft version from subproject ${subproject.name}")
                 }
             }
 
@@ -308,13 +308,13 @@ tasks {
                     writer.write(builder.toPrettyString())
                 }
 
-                println("- JAR 文件数量: ${jars.size}")
+                println("- JAR file count: ${jars.size}")
                 jars.forEach { jar ->
                     println("  - ${jar["file"]}")
                 }
-                println("✅ Minecraft 依赖已更新为: $minecraftVersions")
+                println("✅ Minecraft dependencies updated to: $minecraftVersions")
             } else {
-                println("警告: 找不到生成的 fabric.mod.json 文件: ${jsonFile.absolutePath}")
+                println("Warning: generated fabric.mod.json not found: ${jsonFile.absolutePath}")
             }
         }
     }

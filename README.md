@@ -1,6 +1,6 @@
 # Litematica Printer — Hana
 
-**English** | [简体中文](README.zh-CN.md)
+**English** | [Simplified Chinese](README.zh-CN.md)
 
 [![GitHub Actions](https://github.com/Yur1Ca/litematica-printer/actions/workflows/build.yml/badge.svg)](https://github.com/Yur1Ca/litematica-printer/actions/workflows/build.yml)
 [![Modrinth](https://img.shields.io/modrinth/dt/nriQwbvD?logo=modrinth&label=Modrinth)](https://modrinth.com/mod/litematica-printer-hana)
@@ -117,7 +117,7 @@ If a vanilla block is placed incorrectly even at a conservative work interval, s
 - The configured mode must match the mod or server behavior actually available.
 - Litematica's `pickBlockableSlots` must contain usable hotbar slots and should not be filled entirely with shulker boxes.
 
-![Recommended pick-block slots](预设位置.png)
+![Recommended pick-block slots](preset-position.png)
 
 ## Support and contributing
 

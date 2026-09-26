@@ -25,13 +25,13 @@ public class HotkeysCallback {
         if (key == Configs.Hotkeys.CACHE_SELECTION_CONTAINERS.getKeybind()) {
             int added = ChestTrackerBridge.addSelectionToCache();
             me.aleksilassila.litematica.printer.utils.minecraft.MessageUtils.setOverlayMessage(
-                    "Chest Tracker: 已加入 " + added + " 个选区容器");
+                    "Chest Tracker: added " + added + " containers to the selected-area cache");
             return true;
         }
         if (key == Configs.Hotkeys.CLEAR_CONTAINER_CACHE.getKeybind()) {
             int removed = ChestTrackerBridge.clearSelectionCache();
             me.aleksilassila.litematica.printer.utils.minecraft.MessageUtils.setOverlayMessage(
-                    "Chest Tracker: 已清除 " + removed + " 个容器缓存");
+                    "Chest Tracker: cleared " + removed + " containers from the cache");
             return true;
         }
 

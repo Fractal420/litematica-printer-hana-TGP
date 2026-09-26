@@ -155,7 +155,7 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
             finishUnavailable(item);
             return unavailable(request);
         }
-        MessageUtils.setOverlayMessage("Chest Tracker: 取物中 " + new ItemStack(item).getHoverName().getString());
+        MessageUtils.setOverlayMessage("Chest Tracker: retrieving " + new ItemStack(item).getHoverName().getString());
         return pending(request);
     }
 
@@ -204,7 +204,7 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
             return;
         }
         if (this.phase == Phase.RESTORE_WAIT_CONTENT && now >= this.openDeadline) {
-            failNestedRestore("归还超时");
+            failNestedRestore("restore timed out");
             return;
         }
         if (this.phase == Phase.WAITING_CONTENT && now >= this.openDeadline) {
@@ -229,9 +229,9 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
             boolean ownsCurrentMenu = this.client.player != null
                     && this.client.player.containerMenu.containerId == this.expectedContainerId;
             if (this.restoringNestedShulker) {
-                failNestedRestore("容器包不匹配", ownsCurrentMenu);
+                failNestedRestore("container bundle mismatch", ownsCurrentMenu);
             } else {
-                abortRequest("容器包不匹配", ownsCurrentMenu);
+                abortRequest("container bundle mismatch", ownsCurrentMenu);
             }
             return;
         }
@@ -470,7 +470,7 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
 
     private void failAndContinue() {
         if (this.restoringNestedShulker) {
-            failNestedRestore("归还阶段中止");
+            failNestedRestore("restore phase aborted");
             return;
         }
         if (this.targetPos != null) this.invalidCandidates.add(this.targetPos.immutable());
@@ -624,7 +624,7 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
         this.restoringNestedShulker = true;
         if (!open(this.nestedSourcePos)) {
             this.restoringNestedShulker = false;
-            MessageUtils.setOverlayMessage("Chest Tracker: 潜影盒未能归还，已保留在背包");
+            MessageUtils.setOverlayMessage("Chest Tracker: failed to restore shulker box; it remains in the inventory");
             finishAvailable();
             return;
         }
@@ -635,30 +635,30 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
 
     private void restoreNestedShulker(AbstractContainerMenu menu, int containerSize, LocalPlayer player) {
         if (this.nestedSourceSlot < 0 || this.nestedSourceSlot >= containerSize) {
-            failNestedRestore("源槽位无效");
+            failNestedRestore("source slot is invalid");
             return;
         }
         ItemStack source = menu.slots.get(this.nestedSourceSlot).getItem();
         if (!source.isEmpty()) {
-            failNestedRestore("源槽位已被占用");
+            failNestedRestore("source slot is already occupied");
             return;
         }
         int inventorySlot = this.nestedPlayerInventorySlot;
         if (inventorySlot < 0 || inventorySlot >= Math.min(36, player.getInventory().getContainerSize())
                 || !isSameShulkerType(player.getInventory().getItem(inventorySlot), this.nestedShulkerSnapshot)) {
-            failNestedRestore("背包中的潜影盒位置已变化");
+            failNestedRestore("the shulker box position in the inventory changed");
             return;
         }
         int playerSlot = findPlayerMenuSlot(menu, inventorySlot);
         if (playerSlot < 0) {
-            failNestedRestore("背包中找不到原潜影盒");
+            failNestedRestore("original shulker box not found in inventory");
             return;
         }
         pickup(menu, playerSlot, player);
         pickup(menu, this.nestedSourceSlot, player);
         if (!menu.getCarried().isEmpty()) {
             pickup(menu, playerSlot, player);
-            failNestedRestore("服务器拒绝归还");
+            failNestedRestore("server rejected the restore");
             return;
         }
         closeContainer();
@@ -671,14 +671,14 @@ public final class ChestTrackerAdapter implements InventoryProvider, RuntimeComp
     }
 
     private void failNestedRestore(String reason, boolean closeOwnedMenu) {
-        MessageUtils.setOverlayMessage("Chest Tracker: 潜影盒未能归还（" + reason + "），已保留在背包");
+        MessageUtils.setOverlayMessage("Chest Tracker: failed to restore shulker box (" + reason + "), it remains in the inventory");
         this.invalidCandidates.add(this.nestedSourcePos == null ? this.targetPos.immutable() : this.nestedSourcePos.immutable());
         this.restoringNestedShulker = false;
         finishAvailable(closeOwnedMenu);
     }
 
     private void abortRequest(String reason, boolean closeOwnedMenu) {
-        MessageUtils.setOverlayMessage("Chest Tracker: 取物已取消（" + reason + "）");
+        MessageUtils.setOverlayMessage("Chest Tracker: retrieval cancelled (" + reason + "）");
         if (closeOwnedMenu) closeContainer();
         else releaseResources();
         this.activeRequest = null;

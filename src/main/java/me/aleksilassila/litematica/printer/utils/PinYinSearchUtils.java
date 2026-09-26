@@ -67,7 +67,7 @@ public class PinYinSearchUtils {
             }
         } catch (BadHanyuPinyinOutputFormatCombination e) {
 
-            throw new RuntimeException("拼音格式配置错误，无法转换字符串：" + str, e);
+            throw new RuntimeException("invalid pinyin format configuration; unable to convert string: " + str, e);
         }
 
         ArrayList<String> result = generatePinyinCombinations(charPinyinList);

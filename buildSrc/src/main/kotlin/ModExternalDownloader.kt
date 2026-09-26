@@ -22,34 +22,34 @@ object ExternalModDownloader {
         fileName: String? = null
     ): File? {
         val trimmedUrl = downloadUrl.trim()
-        require(trimmedUrl.isNotBlank()) { "下载链接不能为空！" }
-        require(outputDir.isDirectory || outputDir.mkdirs()) { "无法创建输出目录：${outputDir.absolutePath}" }
+        require(trimmedUrl.isNotBlank()) { "Download URL cannot be blank!" }
+        require(outputDir.isDirectory || outputDir.mkdirs()) { "Unable to create output directory: ${outputDir.absolutePath}" }
         return try {
             val targetFileName = fileName ?: extractFileNameFromUrl(trimmedUrl)
-            ?: throw IOException("无法识别文件名，请手动指定 fileName 参数")
+            ?: throw IOException("Unable to determine the file name; please specify the fileName parameter manually")
             val targetFile = outputDir.resolve(targetFileName)
             if (targetFile.exists() && targetFile.length() > 0) {
 
                 return targetFile
             }
-            project.logger.log(LogLevel.LIFECYCLE, "开始下载：$trimmedUrl")
+            project.logger.log(LogLevel.LIFECYCLE, "Starting download: $trimmedUrl")
             val connection = createConnection(trimmedUrl)
             connection.connect()
             downloadFile(connection, targetFile)
             if (!targetFile.exists() || targetFile.length() == 0L) {
-                throw IOException("下载的文件为空或损坏")
+                throw IOException("Downloaded file is empty or corrupted")
             }
-            project.logger.log(LogLevel.LIFECYCLE, "下载成功：${targetFile.absolutePath}")
+            project.logger.log(LogLevel.LIFECYCLE, "Download successful: ${targetFile.absolutePath}")
             targetFile
 
         } catch (e: IllegalArgumentException) {
-            project.logger.log(LogLevel.ERROR, "下载参数错误：${e.message}")
+            project.logger.log(LogLevel.ERROR, "Invalid download parameters: ${e.message}")
             null
         } catch (e: IOException) {
-            project.logger.log(LogLevel.ERROR, "下载失败：${e.message}", e)
+            project.logger.log(LogLevel.ERROR, "Download failed: ${e.message}", e)
             null
         } catch (e: Exception) {
-            project.logger.log(LogLevel.ERROR, "未知错误：${e.message}", e)
+            project.logger.log(LogLevel.ERROR, "Unknown error: ${e.message}", e)
             null
         }
     }

@@ -33,7 +33,7 @@ public class ShulkerUtils {
                 } catch (LinkageError error) {
                     if (!apiFailureLogged) {
                         apiFailureLogged = true;
-                        Reference.LOGGER.warn("Quick Shulker API 不兼容，已停用调用模组路径", error);
+                        Reference.LOGGER.warn("Quick Shulker API is incompatible; mod invocation path disabled", error);
                     }
                     return false;
                 }

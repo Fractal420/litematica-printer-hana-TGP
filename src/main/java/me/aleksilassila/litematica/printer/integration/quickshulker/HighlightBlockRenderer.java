@@ -246,7 +246,7 @@ public class HighlightBlockRenderer implements IRenderer {
     private static void logRenderFailure(Throwable exception) {
         if (!renderFailureLogged) {
             renderFailureLogged = true;
-            Reference.LOGGER.warn("潜影盒高亮渲染失败，已跳过本次渲染", exception);
+            Reference.LOGGER.warn("Failed to render shulker box highlight; skipping this render", exception);
         }
     }
 

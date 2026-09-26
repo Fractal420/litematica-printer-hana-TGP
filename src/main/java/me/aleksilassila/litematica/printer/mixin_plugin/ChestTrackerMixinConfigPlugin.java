@@ -23,7 +23,7 @@ public final class ChestTrackerMixinConfigPlugin implements IMixinConfigPlugin {
         this.loaded = FabricLoader.getInstance().isModLoaded("chesttracker");
         this.compatible = this.loaded && hasItemListWidgetContract();
         if (this.loaded && !this.compatible) {
-            LOGGER.warn("Chest Tracker 已加载，但 ItemListWidget API 不匹配；已停用 Chest Tracker Mixin");
+            LOGGER.warn("Chest Tracker loaded, but the ItemListWidget API does not match; Chest Tracker mixin disabled");
         }
     }
 
@@ -44,7 +44,7 @@ public final class ChestTrackerMixinConfigPlugin implements IMixinConfigPlugin {
                     && "()Ljava/util/List;".equals(value.desc));
             return field && method;
         } catch (Exception | LinkageError exception) {
-            LOGGER.warn("检查 Chest Tracker ItemListWidget API 失败；已停用 Chest Tracker Mixin", exception);
+            LOGGER.warn("Failed to check the Chest Tracker ItemListWidget API; Chest Tracker mixin disabled", exception);
             return false;
         }
     }

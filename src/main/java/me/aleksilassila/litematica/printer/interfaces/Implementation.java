@@ -40,7 +40,7 @@ public class Implementation {
             GrindstoneBlock.class,
             StonecutterBlock.class,
             //#if MC < 12109
-            //$$ FletchingTableBlock.class, // 制箭台
+            //$$ FletchingTableBlock.class,
             //#endif
             SmokerBlock.class,
             BlastFurnaceBlock.class,

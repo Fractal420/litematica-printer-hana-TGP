@@ -117,7 +117,7 @@ Litematica Printer — Hana 是一个客户端 Fabric 模组，为 Litematica �
 - 打印机设置中的模式必须与实际安装的模组或服务器功能一致。
 - Litematica 的 `pickBlockableSlots` 必须包含可用快捷栏槽位，且不应全部放置潜影盒。
 
-![推荐的快捷选择栏位](预设位置.png)
+![推荐的快捷选择栏位](preset-position.png)
 
 ## 反馈与交流
 

@@ -22,7 +22,7 @@ object BuildToolUtils {
             return major * 10000 + minor * 100 + patch
         } catch (e: Exception) {
 
-            println("解析 Minecraft 版本失败：$mcVersionStr，异常：${e.message}")
+            println("Failed to parse Minecraft version: $mcVersionStr; exception: ${e.message}")
             return 0
         }
     }

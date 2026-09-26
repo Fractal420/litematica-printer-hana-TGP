@@ -232,7 +232,7 @@ public final class QuickShulkerRequestController {
                             clearSwitchRequest();
                             return;
                         } catch (Exception e) {
-                            Reference.LOGGER.warn("Quick Shulker 物品切换失败", e);
+                            Reference.LOGGER.warn("Quick Shulker item switch failed", e);
                         }
                     }
                 }

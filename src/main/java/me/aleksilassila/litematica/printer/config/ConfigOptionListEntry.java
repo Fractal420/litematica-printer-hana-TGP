@@ -22,7 +22,7 @@ public interface ConfigOptionListEntry<T extends Enum<T> & ConfigOptionListEntry
     @SuppressWarnings({"unchecked"})
     default IConfigOptionListEntry cycle(boolean forward) {
         if (!(this instanceof Enum<?> enumInstance)) {
-            throw new IllegalStateException("ConfigOptionListEntry 仅支持枚举实现！");
+            throw new IllegalStateException("ConfigOptionListEntry only supports enum implementations!");
         }
         Enum<?>[] allValues = enumInstance.getDeclaringClass().getEnumConstants();
         int currentOrdinal = enumInstance.ordinal();
@@ -36,7 +36,7 @@ public interface ConfigOptionListEntry<T extends Enum<T> & ConfigOptionListEntry
     @SuppressWarnings({"unchecked"})
     default T fromString(String name) {
         if (!(this instanceof Enum<?> enumInstance)) {
-            throw new IllegalStateException("ConfigOptionListEntry 仅支持枚举实现！");
+            throw new IllegalStateException("ConfigOptionListEntry only supports enum implementations!");
         }
         Class<T> enumClass = (Class<T>) enumInstance.getDeclaringClass();
         return Arrays.stream(enumClass.getEnumConstants())

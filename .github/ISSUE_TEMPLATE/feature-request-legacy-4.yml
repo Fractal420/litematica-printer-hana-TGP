@@ -1,0 +1,89 @@
+name: Feature Request
+description: Suggest a new feature directly related to schematic printing, building, or item management
+title: "[Feature Request] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the problem you want to solve rather than only describing a button or toggle. Early ideas can be discussed in [Discussions](https://github.com/Yur1Ca/litematica-printer/discussions) first.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing Issues and Discussions and found no duplicate request.
+          required: true
+        - label: This request is directly related to Litematica Printer's printing, scanning, building, or item-management goals.
+          required: true
+        - label: This is not simply a usage or configuration question.
+          required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Related feature
+      options:
+        - Printing/block placement
+        - Scanner/iterator/cache
+        - Mining/filling/fluid removal
+        - Bedrock breaking
+        - Quick Shulker/Take It Out
+        - HUD/interface
+        - Configuration/hotkeys
+        - Mod compatibility
+        - New feature module
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What is missing from the current workflow, and in what situation does it affect you?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the feature behavior, trigger, configuration options, and observable result for the user.
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: Give a concrete example showing the complete workflow that the feature would improve.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives tried
+      description: Can the goal be achieved with existing settings, another workflow, or a compatibility mod? Why are those options insufficient?
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Performance, compatibility, or safety considerations
+      description: If the request could affect scan performance, the main thread, server limits, item safety, or other functionality, describe the expected impact.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: You may attach screenshots, videos, related implementations, or protocol documentation. Explain what is relevant instead of leaving only a link.
+
+  - type: checkboxes
+    id: final_confirmation
+    attributes:
+      label: Final confirmation
+      options:
+        - label: I understand that submitting a feature request does not guarantee implementation and that the final design may change for performance or compatibility reasons.
+          required: true
