@@ -141,12 +141,9 @@ loom {
 tasks {
     register<Copy>("buildAndCollect") {
         group = "build"
-        val collectedJarDir = rootProject.layout.buildDirectory.dir("libs/$modVersion/${project.name}")
+        val collectedJarDir = rootProject.layout.buildDirectory.dir("libs/$modVersion")
         from(jar.map { it.archiveFile })
         into(collectedJarDir)
-        doFirst {
-            delete(collectedJarDir)
-        }
         dependsOn("build")
     }
 
