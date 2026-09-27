@@ -3,6 +3,7 @@ package me.aleksilassila.litematica.printer.integration.vanilla_refill;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.core.action.ResourceLease;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeComponent;
+import me.aleksilassila.litematica.printer.enums.EnderChestCountType;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeEvent;
 import me.aleksilassila.litematica.printer.mixin_extension.MultiPlayerGameModeExtension;
 import me.aleksilassila.litematica.printer.printer.PlayerLook;
@@ -29,6 +30,8 @@ import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.EnderChestBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
@@ -78,6 +81,11 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     private boolean takePhaseDone;
     private boolean placementCommitted;
     private Map<Item, Integer> inventorySnapshot = Map.of();
+    private boolean enderMode;
+    private int enderInvSlot = -1;
+    private final List<BlockPos> placedEnderPositions = new ArrayList<>();
+    private int enderPlaceIndex;
+    private int enderBreakIndex;
 
     public ManualVanillaRefillController(Minecraft client) {
         this.client = client;
@@ -105,6 +113,16 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         }
         int slot = findShulkerSlot(player, needed);
         if (slot < 0) {
+            if (!enderRefillEnabled() || findEnderChestSlot(player) < 0) {
+                return;
+            }
+            if (isNearAnyWater(player, this.client.level)) {
+                this.pendingNeeded.clear();
+                this.pendingNeeded.addAll(needed);
+                return;
+            }
+            this.pendingNeeded.clear();
+            beginEnder(player, needed);
             return;
         }
         if (isNearAnyWater(player, this.client.level)) {
@@ -131,22 +149,36 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     public boolean shouldBlockExternalBreaking() {
-        return shouldPause() && this.phase != Phase.BREAK && this.phase != Phase.WAIT_BREAK;
+        return shouldPause()
+                && this.phase != Phase.BREAK
+                && this.phase != Phase.WAIT_BREAK
+                && this.phase != Phase.BREAK_ENDER
+                && this.phase != Phase.WAIT_BREAK_ENDER;
     }
 
     public boolean isAllowedBreakTarget(BlockPos pos) {
-        return shouldPause()
-                && (this.phase == Phase.BREAK || this.phase == Phase.WAIT_BREAK)
-                && this.placedPos != null
-                && pos != null
-                && this.placedPos.equals(pos);
+        if (!shouldPause() || pos == null) {
+            return false;
+        }
+        if (this.phase == Phase.BREAK || this.phase == Phase.WAIT_BREAK) {
+            return this.placedPos != null && this.placedPos.equals(pos);
+        }
+        if (this.phase == Phase.BREAK_ENDER || this.phase == Phase.WAIT_BREAK_ENDER) {
+            return this.placedEnderPositions.contains(pos);
+        }
+        return false;
     }
 
     public void onContainerOpen(int containerId) {
         if (!isBusy()) {
             return;
         }
-        if (this.phase == Phase.OPEN || this.phase == Phase.WAIT_CONTENT || this.phase == Phase.TAKE) {
+        if (this.phase == Phase.OPEN
+                || this.phase == Phase.WAIT_CONTENT
+                || this.phase == Phase.TAKE
+                || this.phase == Phase.OPEN_ENDER
+                || this.phase == Phase.WAIT_CONTENT_ENDER
+                || this.phase == Phase.TAKE_SHULKER) {
             this.expectedContainerId = containerId;
         }
     }
@@ -155,7 +187,10 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (!isBusy()) {
             return;
         }
-        if (this.phase != Phase.WAIT_CONTENT && this.phase != Phase.TAKE) {
+        if (this.phase != Phase.WAIT_CONTENT
+                && this.phase != Phase.TAKE
+                && this.phase != Phase.WAIT_CONTENT_ENDER
+                && this.phase != Phase.TAKE_SHULKER) {
             return;
         }
         LocalPlayer player = this.client.player;
@@ -177,6 +212,10 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             this.phase = Phase.TAKE;
             this.settleTicks = 0;
             this.clickCooldown = CLICK_DELAY;
+        } else if (this.phase == Phase.WAIT_CONTENT_ENDER) {
+            this.phase = Phase.TAKE_SHULKER;
+            this.settleTicks = 0;
+            this.clickCooldown = CLICK_DELAY;
         }
     }
 
@@ -191,7 +230,12 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                 || this.phase == Phase.WAIT_CONTENT
                 || this.phase == Phase.TAKE
                 || this.phase == Phase.CLOSE
-                || this.phase == Phase.WAIT_CLOSE;
+                || this.phase == Phase.WAIT_CLOSE
+                || this.phase == Phase.OPEN_ENDER
+                || this.phase == Phase.WAIT_CONTENT_ENDER
+                || this.phase == Phase.TAKE_SHULKER
+                || this.phase == Phase.CLOSE_ENDER
+                || this.phase == Phase.WAIT_CLOSE_ENDER;
     }
 
     public void tick() {
@@ -242,6 +286,18 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             case WAIT_BREAK -> tickWaitBreak(player);
             case PICKUP -> tickPickup(player);
             case RESTORE -> tickRestore(player);
+            case EQUIP_ENDER -> tickEquipEnder(player);
+            case PLACE_ENDER -> tickPlaceEnder(player);
+            case SETTLE_ENDER -> tickSettleEnder(player);
+            case OPEN_ENDER -> tickOpenEnder(player);
+            case WAIT_CONTENT_ENDER -> tickWaitContentEnder(player);
+            case TAKE_SHULKER -> tickTakeShulker(player);
+            case CLOSE_ENDER -> tickCloseEnder(player);
+            case WAIT_CLOSE_ENDER -> tickWaitCloseEnder(player);
+            case POST_CLOSE_ENDER -> tickPostCloseEnder(player);
+            case BREAK_ENDER -> tickBreakEnder(player);
+            case WAIT_BREAK_ENDER -> tickWaitBreakEnder(player);
+            case PICKUP_ENDER -> tickPickupEnder(player);
             default -> abortKeepWorld();
         }
     }
@@ -260,6 +316,12 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         this.neededItems.addAll(needed);
         this.shulkerInvSlot = slot;
         this.placedPos = null;
+        this.enderMode = false;
+        this.enderInvSlot = -1;
+        this.placedEnderPositions.clear();
+        this.enderPlaceIndex = 0;
+        this.enderBreakIndex = 0;
+        this.placementCommitted = false;
         this.savedLook = new PlayerLook(player.getYRot(), player.getXRot());
         this.wasSneaking = player.isShiftKeyDown();
         if (this.wasSneaking) {
@@ -735,6 +797,12 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         this.tookItems = false;
         this.takePhaseDone = false;
         this.inventorySnapshot = Map.of();
+        this.enderMode = false;
+        this.enderInvSlot = -1;
+        this.placedEnderPositions.clear();
+        this.enderPlaceIndex = 0;
+        this.enderBreakIndex = 0;
+        this.placementCommitted = false;
     }
 
     private void refreshTookFlag(LocalPlayer player) {
@@ -957,6 +1025,11 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         Set<Item> needed = new HashSet<>(this.pendingNeeded);
         int slot = findShulkerSlot(player, needed);
         if (slot < 0) {
+            if (enderRefillEnabled() && findEnderChestSlot(player) >= 0) {
+                this.pendingNeeded.clear();
+                beginEnder(player, needed);
+                return;
+            }
             this.pendingNeeded.clear();
             return;
         }
@@ -1115,6 +1188,527 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         return Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue();
     }
 
+    private static boolean enderRefillEnabled() {
+        return enabled() && Configs.Special.MANUAL_VANILLA_REFILL_FROM_ENDER.getBooleanValue();
+    }
+
+    private static int configuredEnderCount() {
+        if (Configs.Special.MANUAL_VANILLA_REFILL_ENDER_COUNT.getOptionListValue() instanceof EnderChestCountType type) {
+            return type.count();
+        }
+        return 1;
+    }
+
+    private void beginEnder(LocalPlayer player, Set<Item> needed) {
+        int enderSlot = findEnderChestSlot(player);
+        if (enderSlot < 0) {
+            return;
+        }
+        this.neededItems.clear();
+        this.neededItems.addAll(needed);
+        this.enderMode = true;
+        this.enderInvSlot = enderSlot;
+        this.shulkerInvSlot = -1;
+        this.placedPos = null;
+        this.placedEnderPositions.clear();
+        this.enderPlaceIndex = 0;
+        this.enderBreakIndex = 0;
+        this.placementCommitted = false;
+        this.savedLook = new PlayerLook(player.getYRot(), player.getXRot());
+        this.wasSneaking = player.isShiftKeyDown();
+        if (this.wasSneaking) {
+            RuntimeAccess.get().actionBroker().setShift(player, false);
+        }
+        this.deadline = RuntimeAccess.get().currentTick() + GLOBAL_TIMEOUT_TICKS;
+        this.openAttempts = 0;
+        this.settleTicks = 0;
+        this.clickCooldown = 0;
+        this.expectedContainerId = -1;
+        this.contentReady = false;
+        this.issuedTakeClick = false;
+        this.tookItems = false;
+        this.takePhaseDone = false;
+        this.inventorySnapshot = Map.of();
+        RuntimeAccess.get().actionBroker().cancelQueue();
+        RuntimeAccess.get().inventorySwitchGuard().reset();
+        stopExternalWork();
+        RuntimeAccess.get().actionBroker().tryAcquire(
+                LEASE_OWNER,
+                EnumSet.of(ResourceLease.CONTAINER, ResourceLease.MAIN_HAND, ResourceLease.INTERACTION),
+                0L
+        );
+        this.phase = Phase.EQUIP_ENDER;
+    }
+
+    private void tickEquipEnder(LocalPlayer player) {
+        ItemStack stack = player.getInventory().getItem(this.enderInvSlot);
+        if (!isEnderChest(stack)) {
+            int found = findEnderChestSlot(player);
+            if (found < 0) {
+                abortKeepWorld();
+                return;
+            }
+            this.enderInvSlot = found;
+            stack = player.getInventory().getItem(found);
+        }
+        if (Inventory.isHotbarSlot(this.enderInvSlot)) {
+            InventoryUtils.setSelectedSlot(player.getInventory(), this.enderInvSlot);
+            InventoryUtils.syncSelectedHotbarSlot();
+        } else if (!InventoryUtils.setPickedItemToHand(this.enderInvSlot, stack, this.client)) {
+            abortKeepWorld();
+            return;
+        }
+        this.phase = Phase.PLACE_ENDER;
+        this.settleTicks = 0;
+        this.enderPlaceIndex = 0;
+        this.placedEnderPositions.clear();
+    }
+
+    private void tickPlaceEnder(LocalPlayer player) {
+        int targetCount = configuredEnderCount();
+        if (this.enderPlaceIndex >= targetCount) {
+            selectEmptyHand(player);
+            stopExternalWork();
+            this.phase = Phase.OPEN_ENDER;
+            this.settleTicks = 0;
+            this.openAttempts = 0;
+            return;
+        }
+        if (!isEnderChest(player.getMainHandItem())) {
+            int found = findEnderChestSlot(player);
+            if (found < 0) {
+                if (!this.placedEnderPositions.isEmpty()) {
+                    selectEmptyHand(player);
+                    this.phase = Phase.OPEN_ENDER;
+                    this.settleTicks = 0;
+                    this.openAttempts = 0;
+                    return;
+                }
+                abortKeepWorld();
+                return;
+            }
+            this.enderInvSlot = found;
+            ItemStack stack = player.getInventory().getItem(found);
+            if (Inventory.isHotbarSlot(found)) {
+                InventoryUtils.setSelectedSlot(player.getInventory(), found);
+                InventoryUtils.syncSelectedHotbarSlot();
+            } else if (!InventoryUtils.setPickedItemToHand(found, stack, this.client)) {
+                abortKeepWorld();
+                return;
+            }
+        }
+        BlockPos target = resolveEnderPlacePos(player, this.enderPlaceIndex);
+        if (target == null) {
+            if (!this.placedEnderPositions.isEmpty()) {
+                selectEmptyHand(player);
+                this.phase = Phase.OPEN_ENDER;
+                this.settleTicks = 0;
+                this.openAttempts = 0;
+                return;
+            }
+            abortKeepWorld();
+            return;
+        }
+        if (!this.client.level.getBlockState(target).isAir()) {
+            if (isRealPlacedEnder(target)) {
+                this.placedEnderPositions.add(target);
+                this.enderPlaceIndex++;
+                this.settleTicks = 0;
+                return;
+            }
+            target = findNearbyAir(player);
+            if (target == null || !this.client.level.getBlockState(target).isAir()) {
+                if (!this.placedEnderPositions.isEmpty()) {
+                    selectEmptyHand(player);
+                    this.phase = Phase.OPEN_ENDER;
+                    this.settleTicks = 0;
+                    this.openAttempts = 0;
+                    return;
+                }
+                abortKeepWorld();
+                return;
+            }
+        }
+        lookAt(player, target);
+        BlockHitResult hit;
+        if (!this.client.level.getBlockState(target.below()).isAir()) {
+            hit = new BlockHitResult(Vec3.atCenterOf(target.below()), Direction.UP, target.below(), false);
+        } else {
+            hit = new BlockHitResult(Vec3.atCenterOf(target), Direction.DOWN, target, false);
+        }
+        InteractionResult result = vanillaUseItemOn(InteractionHand.MAIN_HAND, hit);
+        if (result.consumesAction() || isRealPlacedEnder(target)) {
+            this.placedEnderPositions.add(target);
+            this.enderPlaceIndex++;
+            this.phase = Phase.SETTLE_ENDER;
+            this.settleTicks = 0;
+        } else if (++this.settleTicks > 20) {
+            abortKeepWorld();
+        }
+    }
+
+    private void tickSettleEnder(LocalPlayer player) {
+        if (this.placedEnderPositions.isEmpty()) {
+            abortKeepWorld();
+            return;
+        }
+        BlockPos last = this.placedEnderPositions.get(this.placedEnderPositions.size() - 1);
+        if (!isRealPlacedEnder(last)) {
+            if (++this.settleTicks > PLACE_CONFIRM_TICKS) {
+                abortKeepWorld();
+            }
+            return;
+        }
+        if (++this.settleTicks < PLACE_SETTLE_TICKS) {
+            return;
+        }
+        int targetCount = configuredEnderCount();
+        if (this.enderPlaceIndex < targetCount) {
+            this.phase = Phase.PLACE_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        selectEmptyHand(player);
+        stopExternalWork();
+        this.phase = Phase.OPEN_ENDER;
+        this.settleTicks = 0;
+        this.openAttempts = 0;
+    }
+
+    private void tickOpenEnder(LocalPlayer player) {
+        BlockPos openPos = primaryEnderPos(player);
+        if (openPos == null) {
+            abortKeepWorld();
+            return;
+        }
+        if (player.containerMenu != player.inventoryMenu) {
+            this.expectedContainerId = player.containerMenu.containerId;
+            this.phase = Phase.WAIT_CONTENT_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        if (!isRealPlacedEnder(openPos)) {
+            abortKeepWorld();
+            return;
+        }
+        selectEmptyHand(player);
+        stopExternalWork();
+        lookAt(player, openPos);
+        BlockHitResult hit = new BlockHitResult(
+                Vec3.atCenterOf(openPos),
+                Direction.UP,
+                openPos,
+                false
+        );
+        InteractionResult result = vanillaUseItemOn(InteractionHand.MAIN_HAND, hit);
+        if (!result.consumesAction() && player.containerMenu == player.inventoryMenu) {
+            result = vanillaUseItemOn(InteractionHand.OFF_HAND, hit);
+        }
+        this.openAttempts++;
+        this.phase = Phase.WAIT_CONTENT_ENDER;
+        this.settleTicks = 0;
+        this.contentReady = false;
+    }
+
+    private void tickWaitContentEnder(LocalPlayer player) {
+        if (player.containerMenu != player.inventoryMenu) {
+            if (this.expectedContainerId < 0) {
+                this.expectedContainerId = player.containerMenu.containerId;
+            }
+            if (this.contentReady || findShulkerInContainer(player.containerMenu) >= 0) {
+                this.contentReady = true;
+                this.phase = Phase.TAKE_SHULKER;
+                this.settleTicks = 0;
+                this.clickCooldown = CLICK_DELAY;
+                return;
+            }
+            if (++this.settleTicks > CONTENT_WAIT_TICKS) {
+                retryOpenEnderOrAbort(player);
+            }
+            return;
+        }
+        if (++this.settleTicks > 20) {
+            retryOpenEnderOrAbort(player);
+        }
+    }
+
+    private void retryOpenEnderOrAbort(LocalPlayer player) {
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+        }
+        this.contentReady = false;
+        this.expectedContainerId = -1;
+        if (this.openAttempts < MAX_OPEN_ATTEMPTS) {
+            this.phase = Phase.OPEN_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        if (!this.placedEnderPositions.isEmpty()) {
+            this.takePhaseDone = true;
+            this.phase = Phase.BREAK_ENDER;
+            this.settleTicks = 0;
+            this.enderBreakIndex = 0;
+            return;
+        }
+        abortKeepWorld();
+    }
+
+    private void tickTakeShulker(LocalPlayer player) {
+        if (player.containerMenu == player.inventoryMenu) {
+            this.takePhaseDone = true;
+            this.phase = Phase.CLOSE_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        if (this.clickCooldown > 0) {
+            return;
+        }
+        AbstractContainerMenu menu = player.containerMenu;
+        if (!menu.getCarried().isEmpty()) {
+            if (!returnCarriedToContainer(player, menu)) {
+                this.takePhaseDone = true;
+                this.phase = Phase.CLOSE_ENDER;
+                this.settleTicks = 0;
+            }
+            return;
+        }
+        if (countEmptySlots(player) < 1) {
+            this.takePhaseDone = true;
+            this.phase = Phase.CLOSE_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        int slot = findShulkerInContainer(menu);
+        if (slot < 0) {
+            this.takePhaseDone = true;
+            this.phase = Phase.CLOSE_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        //#if MC > 260100
+        this.client.gameMode.handleContainerInput(menu.containerId, slot, 0, ContainerInput.QUICK_MOVE, player);
+        //#else
+        //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, ClickType.QUICK_MOVE, player);
+        //#endif
+        this.issuedTakeClick = true;
+        this.clickCooldown = CLICK_DELAY;
+        this.tookItems = true;
+        this.takePhaseDone = true;
+        this.phase = Phase.CLOSE_ENDER;
+        this.settleTicks = 0;
+    }
+
+    private void tickCloseEnder(LocalPlayer player) {
+        this.takePhaseDone = true;
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+        }
+        this.phase = Phase.WAIT_CLOSE_ENDER;
+        this.settleTicks = 0;
+    }
+
+    private void tickWaitCloseEnder(LocalPlayer player) {
+        if (player.containerMenu != player.inventoryMenu) {
+            if (++this.settleTicks % 8 == 0) {
+                player.closeContainer();
+            }
+            if (this.settleTicks > CLOSE_WAIT_TICKS) {
+                this.phase = Phase.POST_CLOSE_ENDER;
+                this.settleTicks = 0;
+            }
+            return;
+        }
+        this.phase = Phase.POST_CLOSE_ENDER;
+        this.settleTicks = 0;
+    }
+
+    private void tickPostCloseEnder(LocalPlayer player) {
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+            return;
+        }
+        if (++this.settleTicks < POST_CLOSE_TICKS) {
+            return;
+        }
+        if (!this.placedEnderPositions.isEmpty()) {
+            this.phase = Phase.BREAK_ENDER;
+            this.settleTicks = 0;
+            this.enderBreakIndex = 0;
+        } else {
+            transitionToShulkerRefill(player);
+        }
+    }
+
+    private void tickBreakEnder(LocalPlayer player) {
+        if (this.enderBreakIndex >= this.placedEnderPositions.size()) {
+            this.phase = Phase.PICKUP_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+            this.phase = Phase.WAIT_CLOSE_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        BlockPos pos = this.placedEnderPositions.get(this.enderBreakIndex);
+        if (this.client.level.getBlockState(pos).isAir() || !isRealPlacedEnder(pos)) {
+            this.enderBreakIndex++;
+            this.settleTicks = 0;
+            return;
+        }
+        this.placedPos = pos;
+        lookAt(player, pos);
+        startBreakShulker(player);
+        this.phase = Phase.WAIT_BREAK_ENDER;
+        this.settleTicks = 0;
+    }
+
+    private void tickWaitBreakEnder(LocalPlayer player) {
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+            return;
+        }
+        if (this.enderBreakIndex >= this.placedEnderPositions.size()) {
+            this.phase = Phase.PICKUP_ENDER;
+            this.settleTicks = 0;
+            return;
+        }
+        BlockPos pos = this.placedEnderPositions.get(this.enderBreakIndex);
+        if (this.client.level.getBlockState(pos).isAir() || !(this.client.level.getBlockState(pos).getBlock() instanceof EnderChestBlock)) {
+            this.enderBreakIndex++;
+            this.settleTicks = 0;
+            if (this.enderBreakIndex >= this.placedEnderPositions.size()) {
+                this.phase = Phase.PICKUP_ENDER;
+            } else {
+                this.phase = Phase.BREAK_ENDER;
+            }
+            return;
+        }
+        this.placedPos = pos;
+        lookAt(player, pos);
+        continueBreakShulker(player);
+        if (++this.settleTicks > 120) {
+            this.enderBreakIndex++;
+            this.settleTicks = 0;
+            this.phase = Phase.BREAK_ENDER;
+        }
+    }
+
+    private void tickPickupEnder(LocalPlayer player) {
+        if (++this.settleTicks < POST_BREAK_MOVEMENT_LOCK_TICKS) {
+            return;
+        }
+        transitionToShulkerRefill(player);
+    }
+
+    private void transitionToShulkerRefill(LocalPlayer player) {
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+        }
+        Set<Item> needed = new HashSet<>(this.neededItems);
+        this.enderMode = false;
+        this.placedEnderPositions.clear();
+        this.placedPos = null;
+        this.enderInvSlot = -1;
+        this.enderPlaceIndex = 0;
+        this.enderBreakIndex = 0;
+        this.placementCommitted = false;
+        this.openAttempts = 0;
+        this.settleTicks = 0;
+        this.clickCooldown = 0;
+        this.expectedContainerId = -1;
+        this.contentReady = false;
+        this.issuedTakeClick = false;
+        this.tookItems = false;
+        this.takePhaseDone = false;
+        this.inventorySnapshot = Map.of();
+        int slot = findShulkerSlot(player, needed);
+        if (slot < 0) {
+            restoreLook(player);
+            RuntimeAccess.get().actionBroker().releaseOwner(LEASE_OWNER);
+            stopExternalWork();
+            hardClear();
+            return;
+        }
+        begin(player, slot, needed);
+    }
+
+    @Nullable
+    private BlockPos resolveEnderPlacePos(LocalPlayer player, int index) {
+        BlockPos above = blockPosAt(player.getX(), player.getY() + PLACE_HEIGHT, player.getZ());
+        if (index == 0) {
+            return above;
+        }
+        Direction[] dirs = {Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH};
+        for (Direction dir : dirs) {
+            BlockPos side = above.relative(dir);
+            if (this.client.level.getBlockState(side).isAir()) {
+                return side;
+            }
+        }
+        return findNearbyAir(player);
+    }
+
+    @Nullable
+    private BlockPos primaryEnderPos(LocalPlayer player) {
+        BlockPos above = blockPosAt(player.getX(), player.getY() + PLACE_HEIGHT, player.getZ());
+        if (isRealPlacedEnder(above)) {
+            return above;
+        }
+        for (BlockPos pos : this.placedEnderPositions) {
+            if (isRealPlacedEnder(pos)) {
+                return pos;
+            }
+        }
+        return null;
+    }
+
+    private boolean isRealPlacedEnder(BlockPos pos) {
+        if (pos == null || this.client.level == null) {
+            return false;
+        }
+        return this.client.level.getBlockState(pos).getBlock() instanceof EnderChestBlock;
+    }
+
+    private static int findEnderChestSlot(LocalPlayer player) {
+        Inventory inv = player.getInventory();
+        for (int slot = 0; slot < inv.getContainerSize(); slot++) {
+            if (isEnderChest(inv.getItem(slot))) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isEnderChest(ItemStack stack) {
+        return !stack.isEmpty()
+                && (stack.is(Items.ENDER_CHEST)
+                || (stack.getItem() instanceof BlockItem blockItem && blockItem.getBlock() instanceof EnderChestBlock));
+    }
+
+    private int findShulkerInContainer(AbstractContainerMenu menu) {
+        int size = containerSize(menu);
+        int bestSlot = -1;
+        int bestItemCount = Integer.MAX_VALUE;
+        for (int i = 0; i < size && i < menu.slots.size(); i++) {
+            Slot slot = menu.slots.get(i);
+            if (slot.container instanceof Inventory) {
+                continue;
+            }
+            ItemStack stack = slot.getItem();
+            if (!isShulker(stack) || !containsNeeded(stack, this.neededItems)) {
+                continue;
+            }
+            int itemCount = countStoredItems(stack);
+            if (itemCount < bestItemCount) {
+                bestItemCount = itemCount;
+                bestSlot = i;
+            }
+        }
+        return bestSlot;
+    }
+
     private enum Phase {
         IDLE,
         EQUIP,
@@ -1129,6 +1723,18 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         BREAK,
         WAIT_BREAK,
         PICKUP,
-        RESTORE
+        RESTORE,
+        EQUIP_ENDER,
+        PLACE_ENDER,
+        SETTLE_ENDER,
+        OPEN_ENDER,
+        WAIT_CONTENT_ENDER,
+        TAKE_SHULKER,
+        CLOSE_ENDER,
+        WAIT_CLOSE_ENDER,
+        POST_CLOSE_ENDER,
+        BREAK_ENDER,
+        WAIT_BREAK_ENDER,
+        PICKUP_ENDER
     }
 }

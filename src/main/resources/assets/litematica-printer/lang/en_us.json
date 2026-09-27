@@ -369,5 +369,11 @@
     "litematica-printer.message.value.off": "Off",
     "litematica-printer.message.value.on": "On",
     "litematica-printer.config.dropEmptyShulkers": "Drop Empty Shulkers",
-    "litematica-printer.config.dropEmptyShulkers.desc": "While the work switch is on, automatically drop empty shulker boxes from the inventory."
+    "litematica-printer.config.dropEmptyShulkers.desc": "While the work switch is on, automatically drop empty shulker boxes from the inventory.",
+    "litematica-printer.config.manualVanillaRefillFromEnder": "Refill Shulkers from Ender Chest",
+    "litematica-printer.config.manualVanillaRefillFromEnder.desc": "When no shulker in inventory has the needed blocks, place Ender Chest(s), take a matching shulker from it, then continue normal refill.",
+    "litematica-printer.config.manualVanillaRefillEnderCount": "Ender Chest Count",
+    "litematica-printer.config.manualVanillaRefillEnderCount.desc": "Number of Ender Chests to place side by side when refilling shulkers from Ender Chest.",
+    "litematica-printer.config.enderChestCount.one": "1 Ender Chest",
+    "litematica-printer.config.enderChestCount.two": "2 Ender Chests"
 }

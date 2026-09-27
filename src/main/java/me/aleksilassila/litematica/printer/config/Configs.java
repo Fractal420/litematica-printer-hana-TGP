@@ -226,6 +226,16 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .defaultValue(false)
                 .build();
 
+        public static final ConfigBoolean MANUAL_VANILLA_REFILL_FROM_ENDER = bool("manualVanillaRefillFromEnder")
+                .defaultValue(false)
+                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .build();
+
+        public static final ConfigOptionList MANUAL_VANILLA_REFILL_ENDER_COUNT = optionList("manualVanillaRefillEnderCount")
+                .defaultValue(EnderChestCountType.ONE)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_FROM_ENDER.getBooleanValue())
+                .build();
+
         public static final ConfigBoolean DROP_EMPTY_SHULKERS = bool("dropEmptyShulkers")
                 .defaultValue(false)
                 .build();
@@ -241,6 +251,8 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 Placement.STORE_ORDERLY,
                 REMOTE_TAKE,
                 MANUAL_VANILLA_REFILL,
+                MANUAL_VANILLA_REFILL_FROM_ENDER,
+                MANUAL_VANILLA_REFILL_ENDER_COUNT,
                 DROP_EMPTY_SHULKERS
         );
     }
