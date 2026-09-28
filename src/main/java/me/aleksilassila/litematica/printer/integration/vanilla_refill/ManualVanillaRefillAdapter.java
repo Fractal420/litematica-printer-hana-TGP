@@ -18,13 +18,10 @@ public final class ManualVanillaRefillAdapter implements InventoryProvider {
 
     @Override
     public MaterialReservation request(MaterialRequest request) {
-        if (!Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()) {
+        if (!isActive()) {
             return unavailable(request);
         }
         ManualVanillaRefillController controller = RuntimeAccess.get().manualVanillaRefill();
-        if (controller.isBusy()) {
-            return new MaterialReservation(request.token(), MaterialReservation.State.PENDING);
-        }
         List<Item> items = new ArrayList<>(request.acceptedItems());
         controller.requestItems(items);
         if (controller.isBusy()) {
@@ -35,6 +32,9 @@ public final class ManualVanillaRefillAdapter implements InventoryProvider {
 
     @Override
     public MaterialReservation status(MaterialRequest request) {
+        if (!isActive()) {
+            return unavailable(request);
+        }
         ManualVanillaRefillController controller = RuntimeAccess.get().manualVanillaRefill();
         if (controller.isBusy()) {
             return new MaterialReservation(request.token(), MaterialReservation.State.PENDING);
@@ -44,7 +44,7 @@ public final class ManualVanillaRefillAdapter implements InventoryProvider {
 
     @Override
     public boolean blocksPrinterWhilePending() {
-        return true;
+        return isActive();
     }
 
     @Override
@@ -55,6 +55,11 @@ public final class ManualVanillaRefillAdapter implements InventoryProvider {
     @Override
     public void reset() {
         RuntimeAccess.get().manualVanillaRefill().reset();
+    }
+
+    private static boolean isActive() {
+        return Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()
+                && Configs.Core.WORK_SWITCH.getBooleanValue();
     }
 
     private static MaterialReservation unavailable(MaterialRequest request) {

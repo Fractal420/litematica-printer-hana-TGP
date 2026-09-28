@@ -236,6 +236,16 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_FROM_ENDER.getBooleanValue())
                 .build();
 
+        public static final ConfigBoolean MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE = bool("manualVanillaRefillEnchantedGoldenApple")
+                .defaultValue(false)
+                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .build();
+
+        public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE = bool("manualVanillaRefillNetheritePickaxe")
+                .defaultValue(false)
+                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .build();
+
         public static final ConfigBoolean DROP_EMPTY_SHULKERS = bool("dropEmptyShulkers")
                 .defaultValue(false)
                 .build();
@@ -253,6 +263,8 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 MANUAL_VANILLA_REFILL,
                 MANUAL_VANILLA_REFILL_FROM_ENDER,
                 MANUAL_VANILLA_REFILL_ENDER_COUNT,
+                MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE,
+                MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE,
                 DROP_EMPTY_SHULKERS
         );
     }

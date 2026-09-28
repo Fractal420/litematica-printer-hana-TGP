@@ -375,5 +375,9 @@
     "litematica-printer.config.manualVanillaRefillEnderCount": "Ender Chest Count",
     "litematica-printer.config.manualVanillaRefillEnderCount.desc": "Number of Ender Chests to place side by side when refilling shulkers from Ender Chest.",
     "litematica-printer.config.enderChestCount.one": "1 Ender Chest",
-    "litematica-printer.config.enderChestCount.two": "2 Ender Chests"
+    "litematica-printer.config.enderChestCount.two": "2 Ender Chests",
+    "litematica-printer.config.manualVanillaRefillEnchantedGoldenApple": "Refill Enchanted Golden Apples",
+    "litematica-printer.config.manualVanillaRefillEnchantedGoldenApple.desc": "When the hotbar has fewer than 10 Enchanted Golden Apples, queue a shulker refill to bring the hotbar total up to 10 without interrupting the active refill.",
+    "litematica-printer.config.manualVanillaRefillNetheritePickaxe": "Refill Netherite Pickaxe",
+    "litematica-printer.config.manualVanillaRefillNetheritePickaxe.desc": "When the inventory Netherite Pickaxe drops below 10% durability, queue a shulker swap with a usable pickaxe without interrupting the active refill."
 }
