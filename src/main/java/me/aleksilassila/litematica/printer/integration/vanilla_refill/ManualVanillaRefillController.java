@@ -28,9 +28,11 @@ import net.minecraft.world.inventory.ContainerInput;
 //#else
 //$$ import net.minecraft.world.inventory.ClickType;
 //#endif
+//#if MC >= 12006
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.component.ItemContainerContents;
+//#endif
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -2102,6 +2104,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (shulker == null || shulker.isEmpty()) {
             return items;
         }
+        //#if MC >= 12006
         try {
             ItemContainerContents contents = shulker.get(DataComponents.CONTAINER);
             if (contents != null) {
@@ -2112,6 +2115,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (!items.isEmpty()) {
             return items;
         }
+        //#endif
         try {
             for (ItemStack inner : fi.dy.masa.malilib.util.InventoryUtils.getStoredItems(shulker, -1)) {
                 if (inner != null && !inner.isEmpty()) {
@@ -2123,6 +2127,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         return items;
     }
 
+    //#if MC >= 12006
     private static void collectContainerContents(ItemContainerContents contents, List<ItemStack> out) {
         if (invokeStackStream(contents, "stream", out)) {
             return;
@@ -2145,6 +2150,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         } catch (Throwable ignored) {
         }
     }
+    //#endif
 
     private static boolean invokeStackStream(Object target, String methodName, List<ItemStack> out) {
         try {
@@ -2250,6 +2256,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             }
         } catch (Throwable ignored) {
         }
+        //#if MC >= 12006
         try {
             Integer component = stack.get(DataComponents.MAX_DAMAGE);
             if (component != null && component > 0) {
@@ -2257,6 +2264,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             }
         } catch (Throwable ignored) {
         }
+        //#endif
         return 0;
     }
 
@@ -2266,6 +2274,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             damage = Math.max(damage, stack.getDamageValue());
         } catch (Throwable ignored) {
         }
+        //#if MC >= 12006
         try {
             Integer component = stack.get(DataComponents.DAMAGE);
             if (component != null) {
@@ -2273,6 +2282,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             }
         } catch (Throwable ignored) {
         }
+        //#endif
         return damage;
     }
 
