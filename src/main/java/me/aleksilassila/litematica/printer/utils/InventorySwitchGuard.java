@@ -8,7 +8,7 @@ import java.util.function.LongSupplier;
 
 public final class InventorySwitchGuard {
 
-    private static final int MAX_SETTLE_TICKS = 3;
+    private static final int MAX_SETTLE_TICKS = 12;
     private final Minecraft client;
     private final LongSupplier tickClock;
     private Item pendingItem;

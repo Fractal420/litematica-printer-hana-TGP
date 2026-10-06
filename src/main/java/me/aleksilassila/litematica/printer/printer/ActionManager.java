@@ -8,6 +8,7 @@ import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.mixin_extension.MultiPlayerGameModeExtension;
 import me.aleksilassila.litematica.printer.utils.mods.QuickShulkerBridge;
 import me.aleksilassila.litematica.printer.utils.minecraft.DirectionUtils;
+import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.NetworkUtils;
 import net.minecraft.client.player.LocalPlayer;
@@ -169,6 +170,9 @@ public class ActionManager {
         if (needWaitModifyLook) {
             needWaitModifyLook = false;
         }
+        if (RuntimeAccess.get().inventorySwitchGuard().isWaiting()) {
+            return SendResult.WAITING_FOR_LOOK;
+        }
         if (!isHoldingExpectedItem(player, click)) {
             return this.finish(click, SendResult.HELD_ITEM_CHANGED);
         }
@@ -215,13 +219,19 @@ public class ActionManager {
         }
         //#endif
         try {
+            InventoryUtils.syncSelectedHotbarSlot();
+            gameModeExtension.ensureCarriedItemSent();
+            if (!isHoldingExpectedItem(player, click)) {
+                return this.finish(click, SendResult.HELD_ITEM_CHANGED);
+            }
+            boolean predictLocally = click.source == ActionSource.GENERIC;
             BlockHitResult blockHitResult = new BlockHitResult(hitVec, click.side, click.target, false);
             for (int i = 0; i < click.repeatCount; i++) {
                 if (reserveAllowance <= 0) {
                     break;
                 }
                 boolean interactionAccepted = gameModeExtension.litematica_printer$useItemOn(
-                        true,
+                        predictLocally,
                         InteractionHand.MAIN_HAND,
                         blockHitResult
                 ) != net.minecraft.world.InteractionResult.FAIL;
@@ -374,7 +384,7 @@ public class ActionManager {
     }
 
     private boolean shouldDropStaleQueuedClick(LocalPlayer player, QueuedClick click) {
-        if (!this.needWaitModifyLook || click.queuedPlayerPosition == null) {
+        if (click.queuedPlayerPosition == null) {
             return false;
         }
         long currentTick = Reference.MINECRAFT.level == null ? Long.MIN_VALUE : Reference.MINECRAFT.level.getGameTime();
@@ -385,16 +395,24 @@ public class ActionManager {
     }
 
     private static boolean isHoldingExpectedItem(LocalPlayer player, QueuedClick click) {
-        if (click.expectedStackPredicate != null
-                && !click.expectedStackPredicate.test(player.getMainHandItem())) {
-            return false;
+        ItemStack held = player.getMainHandItem();
+        if (click.expectedStackPredicate != null) {
+            return click.expectedStackPredicate.test(held);
         }
         if (click.expectedItems == null || click.expectedItems.length == 0) {
             return true;
         }
-        Item heldItem = player.getMainHandItem().getItem();
+        if (held.isEmpty()) {
+            for (Item expectedItem : click.expectedItems) {
+                if (expectedItem == null || expectedItem == net.minecraft.world.item.Items.AIR) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        Item heldItem = held.getItem();
         for (Item expectedItem : click.expectedItems) {
-            if (heldItem.equals(expectedItem)) {
+            if (expectedItem != null && heldItem.equals(expectedItem)) {
                 return true;
             }
         }

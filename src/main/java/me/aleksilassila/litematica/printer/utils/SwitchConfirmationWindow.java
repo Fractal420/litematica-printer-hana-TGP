@@ -13,10 +13,18 @@ final class SwitchConfirmationWindow {
     }
 
     boolean isWaiting(long tick, boolean handMatches) {
-        if (!this.isActive()) return false;
+        if (!this.isActive()) {
+            return false;
+        }
         long age = tick - this.startedTick;
-        if (age <= 0L) return true;
-        if (handMatches || age > this.maxSettleTicks) {
+        if (age < 2L) {
+            return true;
+        }
+        if (handMatches) {
+            this.clear();
+            return false;
+        }
+        if (age > this.maxSettleTicks) {
             this.clear();
             return false;
         }

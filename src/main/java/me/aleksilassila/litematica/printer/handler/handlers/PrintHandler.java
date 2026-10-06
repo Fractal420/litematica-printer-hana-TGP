@@ -84,7 +84,9 @@ public class PrintHandler extends FeatureModuleBase {
     }
 
     public boolean isPlacementBusy() {
-        if (this.printTasks.hasActiveWorkflow() || this.actionBroker.isWaitingForLook()) {
+        if (this.printTasks.hasActiveWorkflow()
+                || this.actionBroker.isWaitingForLook()
+                || this.runtime.inventorySwitchGuard().isWaiting()) {
             return true;
         }
         long lastSent = this.placementRateController.lastSentTick();

@@ -58,8 +58,9 @@ public final class MaterialSelector {
                 if (itemStack.getItem().equals(item)
                         && getConsumableSurplus(player, itemStack, null, reserveCount) > 0) {
                     if (InventoryUtils.setPickedItemToHand(slot, itemStack, client)) {
-                        if (!InventoryUtils.isHoldingAnyItem(player, new Item[]{item})) {
-                            RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(item);
+                        RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(item);
+                        if (!InventoryUtils.isHoldingAnyItem(player, new Item[]{item})
+                                || RuntimeAccess.get().inventorySwitchGuard().isWaiting()) {
                             return false;
                         }
                         return true;
@@ -99,8 +100,9 @@ public final class MaterialSelector {
                 continue;
             }
             if (InventoryUtils.setPickedItemToHand(slot, stack, client)) {
-                if (!predicate.test(player.getMainHandItem())) {
-                    RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(stack);
+                RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(stack);
+                if (!predicate.test(player.getMainHandItem())
+                        || RuntimeAccess.get().inventorySwitchGuard().isWaiting()) {
                     return false;
                 }
                 return true;

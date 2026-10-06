@@ -37,4 +37,6 @@ public interface MultiPlayerGameModeExtension {
 
     default void litematica_printer$resetRuntime() {
     }
+
+    void ensureCarriedItemSent();
 }

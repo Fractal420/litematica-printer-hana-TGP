@@ -12,7 +12,8 @@ class SwitchConfirmationWindowTest {
         window.begin(100L);
 
         assertTrue(window.isWaiting(100L, true));
-        assertFalse(window.isWaiting(101L, true));
+        assertTrue(window.isWaiting(101L, true));
+        assertFalse(window.isWaiting(102L, true));
     }
 
     @Test

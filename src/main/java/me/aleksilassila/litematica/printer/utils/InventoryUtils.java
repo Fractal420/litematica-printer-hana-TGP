@@ -105,8 +105,15 @@ public class InventoryUtils {
     }
 
     public static void setHotbarSlot(int slot, Inventory inventory) {
+        int previous = getSelectedSlot(inventory);
         setSelectedSlot(inventory, slot);
         syncSelectedHotbarSlot();
+        if (previous != slot && client.player != null) {
+            ItemStack hand = client.player.getMainHandItem();
+            if (!hand.isEmpty()) {
+                RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(hand);
+            }
+        }
     }
 
     public static void syncSelectedHotbarSlot() {
@@ -144,7 +151,11 @@ public class InventoryUtils {
         }
         Inventory inventory = player.getInventory();
         if (Inventory.isHotbarSlot(sourceSlot)) {
+            int previousSlot = getSelectedSlot(inventory);
             setHotbarSlot(sourceSlot, inventory);
+            if (previousSlot != sourceSlot && stack != null && !stack.isEmpty()) {
+                RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(stack);
+            }
             return true;
         }
         if (InventoryUtilsAccessor.getPICK_BLOCKABLE_SLOTS().isEmpty()) {
@@ -163,10 +174,20 @@ public class InventoryUtils {
             if (EntityUtils.isCreativeMode(player)) {
                 getMainStacks(inventory).set(hotbarSlot, stack.copy());
                 client.gameMode.handleCreativeModeItemAdd(client.player.getMainHandItem(), 36 + hotbarSlot);
+                if (stack != null && !stack.isEmpty()) {
+                    RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(stack);
+                }
                 return true;
             }
             EasyPlaceUtilsAccessor.callSetEasyPlaceLastPickBlockTime();
-            return swapItemToMainHand(stack.copy(), mc);
+            boolean swapped = swapItemToMainHand(stack.copy(), mc);
+            if (swapped) {
+                syncSelectedHotbarSlot();
+                if (stack != null && !stack.isEmpty()) {
+                    RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(stack);
+                }
+            }
+            return swapped;
         } else {
             showMessageWithCooldown(Message.MessageType.WARNING, "litematica.message.warn.pickblock.no_suitable_slot_found");
             return false;
