@@ -131,7 +131,9 @@ public final class PrintPlacementExecutor {
             boolean switchPending = this.inventorySwitchGuard.isWaiting();
             boolean inventoryLease = this.actionBroker.isResourceHeld(ResourceLease.INVENTORY);
             boolean retrievalPending = switchPending || inventoryLease;
-            if (switchPending && !inventoryLease && !this.materialRequests.isBusy()) {
+            boolean manualRefill = Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue();
+            if (switchPending && !inventoryLease && !this.materialRequests.isBusy()
+                    && !RuntimeAccess.get().manualVanillaRefill().isBusy()) {
                 this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.WAITING_ITEM_SYNC);
                 return PrintPlacementResult.deferred(true);
             }
@@ -143,8 +145,21 @@ public final class PrintPlacementExecutor {
                             reserveCount
                     )
                     : ItemStack.EMPTY;
+            if (manualRefill) {
+                requestManualMaterialRefill(requiredItems, requiredStackPredicate, action.getRequiredCreativeStack());
+                if (RuntimeAccess.get().manualVanillaRefill().isBusy()
+                        || this.materialRequests.isBusy()) {
+                    this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.WAITING_RETRIEVAL);
+                    return PrintPlacementResult.deferred(true);
+                }
+            }
+            if (manualRefill && !reserveBlockedStack.isEmpty()) {
+                this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.WAITING_RETRIEVAL);
+                return PrintPlacementResult.deferred(true);
+            }
             if (retrievalPending) {
-                if (!this.materialRequests.isBusy()) {
+                if (!this.materialRequests.isBusy()
+                        && !RuntimeAccess.get().manualVanillaRefill().isBusy()) {
                     this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.MISSING_MATERIAL);
                     this.missingMaterials.recordMissing(
                             requiredItems,
@@ -155,14 +170,18 @@ public final class PrintPlacementExecutor {
                     return PrintPlacementResult.failure(false, shouldStopAfterTaskAction(taskAction));
                 }
                 this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.WAITING_RETRIEVAL);
-
                 this.missingMaterials.recordMissing(
                         requiredItems,
                         requiredStackPredicate,
                         action.getRequiredCreativeStack(),
                         context.level.getGameTime()
                 );
-            } else if (reserveBlockedStack.isEmpty()) {
+                return PrintPlacementResult.materialUnavailable(
+                        this.materialRequests.blocksPrinterWhilePending()
+                                || RuntimeAccess.get().manualVanillaRefill().shouldPause()
+                );
+            }
+            if (reserveBlockedStack.isEmpty()) {
                 this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.MISSING_MATERIAL);
                 this.missingMaterials.recordMissing(
                         requiredItems,
@@ -174,15 +193,11 @@ public final class PrintPlacementExecutor {
                 this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.RESERVE_LIMIT);
                 showReserveNotice(context, reserveBlockedStack);
             }
-            if (retrievalPending) {
-
-                return PrintPlacementResult.materialUnavailable(this.materialRequests.blocksPrinterWhilePending());
-            }
-
             return PrintPlacementResult.materialUnavailable(false);
         }
         this.missingMaterials.resolve(requiredItems, requiredStackPredicate);
         if (this.inventorySwitchGuard.isWaiting()
+                || CarriedItemUtils.hasCarriedItem(context.client.player)
                 || !InventoryUtils.isHoldingAnyItem(context.client.player, requiredItems)
                 || requiredStackPredicate != null
                 && !requiredStackPredicate.test(context.client.player.getMainHandItem())) {
@@ -288,6 +303,14 @@ public final class PrintPlacementExecutor {
                 this.actionBroker.cancelPrintSignEdit(blockPos);
             }
             if (sendResult == ActionPort.SendResult.RESERVE_LIMIT) {
+                if (Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()) {
+                    Item held = context.client.player.getMainHandItem().getItem();
+                    if (held != null && held != Items.AIR) {
+                        RuntimeAccess.get().manualVanillaRefill().requestItems(java.util.List.of(held));
+                    }
+                    this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, HudStatus.WAITING_RETRIEVAL);
+                    return PrintPlacementResult.deferred(true);
+                }
                 showReserveNotice(context, context.client.player.getMainHandItem());
             }
             this.hudStats.recordDeferred(HudStatsManager.Mode.PRINT, describeSendFailure(sendResult));
@@ -402,6 +425,33 @@ public final class PrintPlacementExecutor {
             }
         }
         return false;
+    }
+
+
+    private void requestManualMaterialRefill(
+            Item[] requiredItems,
+            @Nullable Predicate<ItemStack> requiredStackPredicate,
+            @Nullable ItemStack creativeFallback
+    ) {
+        java.util.ArrayList<Item> needed = new java.util.ArrayList<>();
+        if (requiredItems != null) {
+            for (Item item : requiredItems) {
+                if (item != null && item != Items.AIR) {
+                    needed.add(item);
+                }
+            }
+        }
+        if (needed.isEmpty() && creativeFallback != null && !creativeFallback.isEmpty()) {
+            needed.add(creativeFallback.getItem());
+        }
+        if (needed.isEmpty()) {
+            return;
+        }
+        RuntimeAccess.get().manualVanillaRefill().requestItems(needed);
+        this.materialRequests.request(
+                needed.toArray(Item[]::new),
+                me.aleksilassila.litematica.printer.integration.inventory.MaterialRequest.Source.PRINT
+        );
     }
 
     private void showReserveNotice(SchematicBlockContext context, ItemStack stack) {

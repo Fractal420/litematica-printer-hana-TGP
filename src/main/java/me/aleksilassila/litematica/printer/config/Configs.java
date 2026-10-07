@@ -246,6 +246,30 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
                 .build();
 
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_PICKAXE_SLOT = integer("manualVanillaRefillPickaxeSlot")
+                .defaultValue(2)
+                .range(1, 9)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE.getBooleanValue())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_ENDER_SLOT = integer("manualVanillaRefillEnderSlot")
+                .defaultValue(5)
+                .range(1, 9)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_FROM_ENDER.getBooleanValue())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_GAPPLE_SLOT = integer("manualVanillaRefillGappleSlot")
+                .defaultValue(6)
+                .range(1, 9)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE.getBooleanValue())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_MATERIAL_SLOT = integer("manualVanillaRefillMaterialSlot")
+                .defaultValue(0)
+                .range(0, 9)
+                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .build();
+
         public static final ConfigBoolean DROP_EMPTY_SHULKERS = bool("dropEmptyShulkers")
                 .defaultValue(false)
                 .build();
@@ -265,6 +289,10 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 MANUAL_VANILLA_REFILL_ENDER_COUNT,
                 MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE,
                 MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE,
+                MANUAL_VANILLA_REFILL_PICKAXE_SLOT,
+                MANUAL_VANILLA_REFILL_ENDER_SLOT,
+                MANUAL_VANILLA_REFILL_GAPPLE_SLOT,
+                MANUAL_VANILLA_REFILL_MATERIAL_SLOT,
                 DROP_EMPTY_SHULKERS
         );
     }

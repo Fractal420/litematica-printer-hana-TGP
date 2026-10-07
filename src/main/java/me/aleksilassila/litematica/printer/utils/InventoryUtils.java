@@ -26,6 +26,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
@@ -164,6 +165,9 @@ public class InventoryUtils {
         }
         int hotbarSlot = sourceSlot;
         if (sourceSlot == -1 || !Inventory.isHotbarSlot(sourceSlot)) {
+            hotbarSlot = selectBestPickBlockableHotbarSlot(inventory, stack);
+        }
+        if (hotbarSlot == -1) {
             hotbarSlot = InventoryUtilsAccessor.getEmptyPickBlockableHotbarSlot(inventory);
         }
         if (hotbarSlot == -1) {
@@ -192,6 +196,32 @@ public class InventoryUtils {
             showMessageWithCooldown(Message.MessageType.WARNING, "litematica.message.warn.pickblock.no_suitable_slot_found");
             return false;
         }
+    }
+
+    private static int selectBestPickBlockableHotbarSlot(Inventory inventory, ItemStack wanted) {
+        List<Integer> configured = InventoryUtilsAccessor.getPICK_BLOCKABLE_SLOTS();
+        if (configured == null || configured.isEmpty()) {
+            return -1;
+        }
+        int sameItemSlot = -1;
+        for (int slot : configured) {
+            if (slot < 0 || slot > 8) {
+                continue;
+            }
+            if (!InventoryUtilsAccessor.canPickToSlot(inventory, slot)) {
+                continue;
+            }
+            ItemStack existing = inventory.getItem(slot);
+            if (existing.isEmpty()) {
+                return slot;
+            }
+            if (wanted != null && !wanted.isEmpty()
+                    && ItemStack.isSameItemSameComponents(existing, wanted)
+                    && sameItemSlot < 0) {
+                sameItemSlot = slot;
+            }
+        }
+        return sameItemSlot;
     }
 
     public static boolean swapItemToMainHand(ItemStack stackReference, Minecraft mc) {

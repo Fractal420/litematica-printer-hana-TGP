@@ -1,5 +1,6 @@
 package me.aleksilassila.litematica.printer.integration.inventory;
 
+import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeComponent;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeEvent;
 import net.minecraft.world.item.Item;
@@ -39,11 +40,12 @@ public final class MaterialRequestCoordinator implements RuntimeComponent {
             Item preferredItem,
             MaterialRequest.Source source
     ) {
+        int minimumCount = resolveMinimumCount(source);
         MaterialRequest requested = new MaterialRequest(
                 this.nextToken,
                 acceptedItems,
                 preferredItem,
-                1,
+                minimumCount,
                 source
         );
         if (this.active != null && !sameRequirement(this.active.request, requested)) {
@@ -57,12 +59,21 @@ public final class MaterialRequestCoordinator implements RuntimeComponent {
                     this.nextToken++,
                     acceptedItems,
                     preferredItem,
-                    1,
+                    minimumCount,
                     source
             );
             this.active = new ActiveRequest(request, 0, false, this.tick);
         }
         return this.advance();
+    }
+
+    private static int resolveMinimumCount(MaterialRequest.Source source) {
+        if (source == MaterialRequest.Source.PRINT
+                && Configs.Print.PRINT_RESERVE_ITEMS.getBooleanValue()
+                && Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()) {
+            return Math.max(1, Configs.Print.PRINT_RESERVE_ITEM_COUNT.getIntegerValue() + 1);
+        }
+        return 1;
     }
 
     public void tick() {

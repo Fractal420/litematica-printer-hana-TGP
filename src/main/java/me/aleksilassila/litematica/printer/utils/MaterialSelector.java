@@ -22,23 +22,37 @@ public final class MaterialSelector {
     }
 
     public static boolean switchToItems(LocalPlayer player, Item[] items, int reserveCount) {
-        if (player == null
-                || RuntimeAccess.get().inventorySwitchGuard().isWaiting()
-                || CarriedItemUtils.hasCarriedItem(player)) {
+        if (player == null) {
             return false;
         }
         if (items == null || items.length == 0) {
             items = new Item[]{Items.AIR};
         }
-        if (Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()) {
-            int emergency = Configs.Print.PRINT_RESERVE_ITEM_COUNT.getIntegerValue();
+        if (Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()
+                && Configs.Core.WORK_SWITCH.getBooleanValue()) {
+            int emergency = Configs.Print.PRINT_RESERVE_ITEMS.getBooleanValue()
+                    ? Configs.Print.PRINT_RESERVE_ITEM_COUNT.getIntegerValue()
+                    : 0;
             for (Item item : items) {
                 if (item != null && item != Items.AIR
                         && countMatchingMainInventory(player, candidate -> candidate.is(item)) <= emergency) {
+                    java.util.ArrayList<Item> needed = new java.util.ArrayList<>();
+                    for (Item candidate : items) {
+                        if (candidate != null && candidate != Items.AIR) {
+                            needed.add(candidate);
+                        }
+                    }
+                    if (!needed.isEmpty()) {
+                        RuntimeAccess.get().manualVanillaRefill().requestItems(needed);
+                    }
                     QuickShulkerBridge.requestItems(items, MaterialRequest.Source.PRINT);
                     break;
                 }
             }
+        }
+        if (RuntimeAccess.get().inventorySwitchGuard().isWaiting()
+                || CarriedItemUtils.hasCarriedItem(player)) {
+            return false;
         }
         Inventory inventory = player.getInventory();
         ItemStack mainHandStack = player.getMainHandItem();
@@ -59,11 +73,7 @@ public final class MaterialSelector {
                         && getConsumableSurplus(player, itemStack, null, reserveCount) > 0) {
                     if (InventoryUtils.setPickedItemToHand(slot, itemStack, client)) {
                         RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(item);
-                        if (!InventoryUtils.isHoldingAnyItem(player, new Item[]{item})
-                                || RuntimeAccess.get().inventorySwitchGuard().isWaiting()) {
-                            return false;
-                        }
-                        return true;
+                        return false;
                     }
                     return false;
                 }
@@ -85,6 +95,28 @@ public final class MaterialSelector {
                 || CarriedItemUtils.hasCarriedItem(player)) {
             return false;
         }
+        if (Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()
+                && Configs.Print.PRINT_RESERVE_ITEMS.getBooleanValue()
+                && reserveCount >= 0) {
+            int total = countMatchingMainInventory(player, predicate);
+            if (total <= reserveCount) {
+                Item preferred = null;
+                for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+                    ItemStack stack = player.getInventory().getItem(slot);
+                    if (!stack.isEmpty() && predicate.test(stack)) {
+                        preferred = stack.getItem();
+                        break;
+                    }
+                }
+                if (preferred == null && creativeFallback != null && !creativeFallback.isEmpty()) {
+                    preferred = creativeFallback.getItem();
+                }
+                if (preferred != null) {
+                    RuntimeAccess.get().manualVanillaRefill().requestItems(java.util.List.of(preferred));
+                    QuickShulkerBridge.requestItems(new Item[]{preferred}, MaterialRequest.Source.PRINT);
+                }
+            }
+        }
         ItemStack mainHandStack = player.getMainHandItem();
         if (predicate.test(mainHandStack)
                 && getConsumableSurplus(player, mainHandStack, predicate, reserveCount) > 0) {
@@ -101,11 +133,7 @@ public final class MaterialSelector {
             }
             if (InventoryUtils.setPickedItemToHand(slot, stack, client)) {
                 RuntimeAccess.get().inventorySwitchGuard().markSwitchIfNeeded(stack);
-                if (!predicate.test(player.getMainHandItem())
-                        || RuntimeAccess.get().inventorySwitchGuard().isWaiting()) {
-                    return false;
-                }
-                return true;
+                return false;
             }
             return false;
         }

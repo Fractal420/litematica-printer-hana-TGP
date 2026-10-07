@@ -17,7 +17,7 @@ final class SwitchConfirmationWindow {
             return false;
         }
         long age = tick - this.startedTick;
-        if (age < 2L) {
+        if (age < 3L) {
             return true;
         }
         if (handMatches) {

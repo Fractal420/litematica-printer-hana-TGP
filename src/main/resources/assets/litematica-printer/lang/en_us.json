@@ -379,5 +379,13 @@
     "litematica-printer.config.manualVanillaRefillEnchantedGoldenApple": "Refill Enchanted Golden Apples",
     "litematica-printer.config.manualVanillaRefillEnchantedGoldenApple.desc": "When the hotbar has fewer than 10 Enchanted Golden Apples, queue a shulker refill to bring the hotbar total up to 10 without interrupting the active refill.",
     "litematica-printer.config.manualVanillaRefillNetheritePickaxe": "Refill Netherite Pickaxe",
-    "litematica-printer.config.manualVanillaRefillNetheritePickaxe.desc": "When the inventory Netherite Pickaxe drops below 10% durability, queue a shulker swap with a usable pickaxe without interrupting the active refill."
+    "litematica-printer.config.manualVanillaRefillNetheritePickaxe.desc": "When the inventory Netherite Pickaxe drops below 10% durability, queue a shulker swap with a usable pickaxe without interrupting the active refill.",
+    "litematica-printer.config.manualVanillaRefillPickaxeSlot": "Refill Pickaxe Hotbar Slot",
+    "litematica-printer.config.manualVanillaRefillPickaxeSlot.desc": "Hotbar slot (1-9) for netherite pickaxe refill.",
+    "litematica-printer.config.manualVanillaRefillEnderSlot": "Refill Ender Chest Hotbar Slot",
+    "litematica-printer.config.manualVanillaRefillEnderSlot.desc": "Hotbar slot (1-9) for ender chest stack refill.",
+    "litematica-printer.config.manualVanillaRefillGappleSlot": "Refill Gapple Hotbar Slot",
+    "litematica-printer.config.manualVanillaRefillGappleSlot.desc": "Hotbar slot (1-9) for enchanted golden apple refill.",
+    "litematica-printer.config.manualVanillaRefillMaterialSlot": "Refill Material Hotbar Slot",
+    "litematica-printer.config.manualVanillaRefillMaterialSlot.desc": "Hotbar slot (1-9) for material blocks from shulkers. 0 = use Litematica pickblockable slots."
 }

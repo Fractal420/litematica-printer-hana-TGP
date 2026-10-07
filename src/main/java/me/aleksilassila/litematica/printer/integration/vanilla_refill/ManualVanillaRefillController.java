@@ -10,7 +10,9 @@ import me.aleksilassila.litematica.printer.mixin_extension.MultiPlayerGameModeEx
 import me.aleksilassila.litematica.printer.printer.PlayerLook;
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import me.aleksilassila.litematica.printer.utils.InteractionUtils;
+import me.aleksilassila.litematica.printer.utils.CarriedItemUtils;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
+import me.aleksilassila.litematica.printer.utils.minecraft.MessageUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.NetworkUtils;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.client.Minecraft;
@@ -62,13 +64,42 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     private static final int PLACE_HEIGHT = 2;
     private static final int PLACE_SETTLE_TICKS = 12;
     private static final int PLACE_CONFIRM_TICKS = 60;
-    private static final int MAX_OPEN_ATTEMPTS = 8;
+    private static final int MAX_OPEN_ATTEMPTS = 1;
     private static final int CONTENT_WAIT_TICKS = 60;
     private static final int CLOSE_WAIT_TICKS = 40;
     private static final int POST_CLOSE_TICKS = 3;
     private static final int CLICK_DELAY = 2;
     private static final int POST_BREAK_MOVEMENT_LOCK_TICKS = 30;
     private static final float PICKAXE_MIN_DURABILITY = 0.02f;
+    private static int pickaxeHotbarSlot() {
+        return clampHotbarIndex(Configs.Special.MANUAL_VANILLA_REFILL_PICKAXE_SLOT.getIntegerValue() - 1);
+    }
+
+    private static int enderHotbarSlot() {
+        return clampHotbarIndex(Configs.Special.MANUAL_VANILLA_REFILL_ENDER_SLOT.getIntegerValue() - 1);
+    }
+
+    private static int gappleHotbarSlot() {
+        return clampHotbarIndex(Configs.Special.MANUAL_VANILLA_REFILL_GAPPLE_SLOT.getIntegerValue() - 1);
+    }
+
+    private static int materialHotbarSlotOrAuto() {
+        int configured = Configs.Special.MANUAL_VANILLA_REFILL_MATERIAL_SLOT.getIntegerValue();
+        if (configured <= 0) {
+            return -1;
+        }
+        return clampHotbarIndex(configured - 1);
+    }
+
+    private static int clampHotbarIndex(int index) {
+        if (index < 0) {
+            return 0;
+        }
+        if (index > 8) {
+            return 8;
+        }
+        return index;
+    }
 
     private final Minecraft client;
     private Phase phase = Phase.IDLE;
@@ -106,6 +137,9 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     private RefillKind enderFetchKind = RefillKind.MATERIALS;
     private int enderFetchTargetSlot = -1;
     private int enderFetchTakeRemaining;
+    private long enderFetchCooldownUntilTick;
+    private boolean refillFailed;
+    private boolean refillLockedOut;
     private final Set<Integer> rejectedEnderPickaxeSlots = new HashSet<>();
     private boolean stashWornPickaxeShulker;
     private boolean enderStashMode;
@@ -117,7 +151,13 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     public void requestItems(Collection<Item> items) {
-        if (!enabled() || items == null || items.isEmpty()) {
+        if (!Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue() || items == null || items.isEmpty()) {
+            return;
+        }
+        if (!Configs.Core.WORK_SWITCH.getBooleanValue()) {
+            return;
+        }
+        if (this.refillLockedOut || this.refillFailed) {
             return;
         }
         Set<Item> needed = new HashSet<>();
@@ -129,7 +169,11 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (needed.isEmpty()) {
             return;
         }
-        enqueue(RefillKind.MATERIALS, needed, false);
+        boolean already = isActiveOrQueued(RefillKind.MATERIALS, needed);
+        enqueue(RefillKind.MATERIALS, needed, true);
+        if (!already) {
+            MessageUtils.setOverlayMessage("[Printer Refill] Queued materials: " + needed);
+        }
     }
 
     public void requestItem(Item item) {
@@ -146,7 +190,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     public boolean shouldPause() {
-        return enabled() && this.phase != Phase.IDLE;
+        return enabled() && isBusy();
     }
 
     public boolean shouldBlockExternalBreaking() {
@@ -214,9 +258,12 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             this.settleTicks = 0;
             this.clickCooldown = CLICK_DELAY;
         } else if (this.phase == Phase.WAIT_CONTENT_ENDER) {
-            this.phase = Phase.TAKE_SHULKER;
-            this.settleTicks = 0;
-            this.clickCooldown = CLICK_DELAY;
+            pruneRejectedEnderSlots(player.containerMenu);
+            if (this.enderStashMode || findShulkerInContainer(player.containerMenu) >= 0) {
+                this.phase = Phase.TAKE_SHULKER;
+                this.settleTicks = 0;
+                this.clickCooldown = CLICK_DELAY;
+            }
         }
     }
 
@@ -254,6 +301,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             return;
         }
         scanAutoRefills(player);
+        clearRefillLockoutIfWorkResumed();
         if (this.phase == Phase.IDLE) {
             tryStartPending(player);
             if (this.phase == Phase.IDLE) {
@@ -262,7 +310,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             return;
         }
         if (RuntimeAccess.get().currentTick() > this.deadline) {
-            abortKeepWorld();
+            failAndStop("global timeout elapsed without completing refill");
             return;
         }
         if (player.isShiftKeyDown()) {
@@ -341,6 +389,9 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         this.issuedTakeClick = false;
         this.tookItems = false;
         this.takePhaseDone = false;
+        if (!this.refillLockedOut) {
+            this.refillFailed = false;
+        }
         this.inventorySnapshot = Map.of();
         RuntimeAccess.get().actionBroker().cancelQueue();
         RuntimeAccess.get().inventorySwitchGuard().reset();
@@ -361,38 +412,330 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     private void tickEquip(LocalPlayer player) {
-        ItemStack stack = player.getInventory().getItem(this.shulkerInvSlot);
-        if (!isShulker(stack)) {
-            abortKeepWorld();
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
             return;
         }
+        if (this.clickCooldown > 0) {
+            return;
+        }
+        if (!player.inventoryMenu.getCarried().isEmpty()) {
+            if (!resolveEquipCarried(player)) {
+                if (++this.settleTicks > 40) {
+                    failAndStop("equip failed: could not clear cursor item");
+                }
+                return;
+            }
+            this.clickCooldown = CLICK_DELAY;
+            this.settleTicks = 0;
+            return;
+        }
+        if (isEquippedRefillShulker(player)) {
+            this.phase = Phase.PLACE;
+            this.settleTicks = 0;
+            return;
+        }
+        int hotbarShulker = findRefillShulkerHotbarSlot(player);
+        if (hotbarShulker >= 0) {
+            this.shulkerInvSlot = hotbarShulker;
+            InventoryUtils.setSelectedSlot(player.getInventory(), hotbarShulker);
+            InventoryUtils.syncSelectedHotbarSlot();
+            this.clickCooldown = 1;
+            if (++this.settleTicks > 30) {
+                failAndStop("equip failed: could not select shulker in hotbar");
+            }
+            return;
+        }
+        if (!relocateShulkerInvSlot(player)) {
+            if (++this.settleTicks > 40) {
+                failAndStop("equip failed: inventory slot is not a shulker");
+            }
+            return;
+        }
+        ItemStack stack = player.getInventory().getItem(this.shulkerInvSlot);
         if (this.activeKind == RefillKind.NETHERITE_PICKAXE) {
             if (countUsableShulkerPickaxes(stack) <= 0) {
                 int alt = findShulkerWithUsablePickaxe(player);
                 if (alt < 0) {
-                    abortKeepWorld();
+                    failAndStop("equip failed: no shulker with usable netherite pickaxe");
                     return;
                 }
                 this.shulkerInvSlot = alt;
                 stack = player.getInventory().getItem(alt);
                 if (!isShulker(stack) || countUsableShulkerPickaxes(stack) <= 0) {
-                    abortKeepWorld();
+                    failAndStop("equip failed: alternate pickaxe shulker invalid");
                     return;
                 }
             }
         } else if (!containsNeeded(stack, this.neededItems)) {
-            abortKeepWorld();
+            if (++this.settleTicks > 40) {
+                failAndStop("equip failed: shulker does not contain needed items " + this.neededItems);
+            }
             return;
         }
-        if (Inventory.isHotbarSlot(this.shulkerInvSlot)) {
-            InventoryUtils.setSelectedSlot(player.getInventory(), this.shulkerInvSlot);
-            InventoryUtils.syncSelectedHotbarSlot();
-        } else if (!InventoryUtils.setPickedItemToHand(this.shulkerInvSlot, stack, this.client)) {
-            abortKeepWorld();
+        if (!issueMoveShulkerToHotbar(player, stack)) {
+            if (++this.settleTicks > 30) {
+                failAndStop("equip failed: could not move shulker to hotbar");
+            }
             return;
         }
-        this.phase = Phase.PLACE;
+        this.clickCooldown = CLICK_DELAY;
         this.settleTicks = 0;
+    }
+
+    private boolean resolveEquipCarried(LocalPlayer player) {
+        AbstractContainerMenu menu = player.inventoryMenu;
+        ItemStack carried = menu.getCarried();
+        if (carried.isEmpty() || this.client.gameMode == null) {
+            return true;
+        }
+        if (isShulker(carried)) {
+            int hotbar = findEquipHotbarSlot(player);
+            if (hotbar < 0) {
+                int invEmpty = findEmptyMainInvMenuSlot(menu);
+                if (invEmpty < 0) {
+                    return false;
+                }
+                //#if MC > 260100
+                this.client.gameMode.handleContainerInput(menu.containerId, invEmpty, 0, ContainerInput.PICKUP, player);
+                //#else
+                //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, invEmpty, 0, ClickType.PICKUP, player);
+                //#endif
+                return menu.getCarried().isEmpty();
+            }
+            int menuSlot = findInventoryMenuSlot(menu, hotbar);
+            if (menuSlot < 0) {
+                return false;
+            }
+            //#if MC > 260100
+            this.client.gameMode.handleContainerInput(menu.containerId, menuSlot, 0, ContainerInput.PICKUP, player);
+            //#else
+            //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, menuSlot, 0, ClickType.PICKUP, player);
+            //#endif
+            this.shulkerInvSlot = hotbar;
+            InventoryUtils.setSelectedSlot(player.getInventory(), hotbar);
+            InventoryUtils.syncSelectedHotbarSlot();
+            if (!menu.getCarried().isEmpty() && !isShulker(menu.getCarried())) {
+                int invEmpty = findEmptyMainInvMenuSlot(menu);
+                if (invEmpty >= 0) {
+                    //#if MC > 260100
+                    this.client.gameMode.handleContainerInput(menu.containerId, invEmpty, 0, ContainerInput.PICKUP, player);
+                    //#else
+                    //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, invEmpty, 0, ClickType.PICKUP, player);
+                    //#endif
+                }
+            }
+            return menu.getCarried().isEmpty()
+                    || isShulker(player.getInventory().getItem(hotbar))
+                    || isEquippedRefillShulker(player);
+        }
+        int invEmpty = findEmptyMainInvMenuSlot(menu);
+        if (invEmpty >= 0) {
+            //#if MC > 260100
+            this.client.gameMode.handleContainerInput(menu.containerId, invEmpty, 0, ContainerInput.PICKUP, player);
+            //#else
+            //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, invEmpty, 0, ClickType.PICKUP, player);
+            //#endif
+            return menu.getCarried().isEmpty();
+        }
+        return CarriedItemUtils.tryClearCarried(this.client);
+    }
+
+    private static int findEmptyMainInvMenuSlot(AbstractContainerMenu menu) {
+        for (int i = 0; i < menu.slots.size(); i++) {
+            Slot slot = menu.slots.get(i);
+            if (!(slot.container instanceof Inventory)) {
+                continue;
+            }
+            int invIndex = slot.getContainerSlot();
+            if (invIndex < 9 || invIndex >= 36) {
+                continue;
+            }
+            if (slot.getItem().isEmpty()) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean isRefillShulkerStack(ItemStack stack) {
+        if (!isShulker(stack)) {
+            return false;
+        }
+        if (this.activeKind == RefillKind.NETHERITE_PICKAXE) {
+            return countUsableShulkerPickaxes(stack) > 0;
+        }
+        if (this.neededItems.isEmpty()) {
+            return true;
+        }
+        return containsNeeded(stack, this.neededItems);
+    }
+
+    private boolean isEquippedRefillShulker(LocalPlayer player) {
+        return isRefillShulkerStack(player.getMainHandItem());
+    }
+
+    private int findRefillShulkerHotbarSlot(LocalPlayer player) {
+        Inventory inv = player.getInventory();
+        for (int slot = 0; slot < 9; slot++) {
+            if (isRefillShulkerStack(inv.getItem(slot))) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    private boolean relocateShulkerInvSlot(LocalPlayer player) {
+        Inventory inv = player.getInventory();
+        if (this.shulkerInvSlot >= 0 && this.shulkerInvSlot < 36
+                && isRefillShulkerStack(inv.getItem(this.shulkerInvSlot))) {
+            return true;
+        }
+        for (int i = 0; i < 36; i++) {
+            if (isRefillShulkerStack(inv.getItem(i))) {
+                this.shulkerInvSlot = i;
+                return true;
+            }
+        }
+        for (int i = 0; i < 36; i++) {
+            if (isShulker(inv.getItem(i))) {
+                this.shulkerInvSlot = i;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean issueMoveShulkerToHotbar(LocalPlayer player, ItemStack stack) {
+        Inventory inv = player.getInventory();
+        if (Inventory.isHotbarSlot(this.shulkerInvSlot)) {
+            InventoryUtils.setSelectedSlot(inv, this.shulkerInvSlot);
+            InventoryUtils.syncSelectedHotbarSlot();
+            return true;
+        }
+        if (!player.inventoryMenu.getCarried().isEmpty()) {
+            return false;
+        }
+        if (this.client.gameMode == null) {
+            return false;
+        }
+        int hotbar = findEquipHotbarSlot(player);
+        if (hotbar < 0) {
+            return false;
+        }
+        AbstractContainerMenu menu = player.inventoryMenu;
+        int sourceMenuSlot = findInventoryMenuSlot(menu, this.shulkerInvSlot);
+        if (sourceMenuSlot < 0) {
+            return false;
+        }
+        ItemStack existing = inv.getItem(hotbar);
+        if (existing.isEmpty()) {
+            //#if MC > 260100
+            this.client.gameMode.handleContainerInput(menu.containerId, sourceMenuSlot, 0, ContainerInput.PICKUP, player);
+            //#else
+            //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, sourceMenuSlot, 0, ClickType.PICKUP, player);
+            //#endif
+            if (!menu.getCarried().isEmpty()) {
+                int dest = findInventoryMenuSlot(menu, hotbar);
+                if (dest >= 0) {
+                    //#if MC > 260100
+                    this.client.gameMode.handleContainerInput(menu.containerId, dest, 0, ContainerInput.PICKUP, player);
+                    //#else
+                    //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, dest, 0, ClickType.PICKUP, player);
+                    //#endif
+                }
+            }
+        } else {
+            InventoryUtils.setHotbarSlot(hotbar, inv);
+            //#if MC > 260100
+            this.client.gameMode.handleContainerInput(menu.containerId, sourceMenuSlot, hotbar, ContainerInput.SWAP, player);
+            //#else
+            //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, sourceMenuSlot, hotbar, ClickType.SWAP, player);
+            //#endif
+        }
+        this.shulkerInvSlot = hotbar;
+        InventoryUtils.setSelectedSlot(inv, hotbar);
+        InventoryUtils.syncSelectedHotbarSlot();
+        return true;
+    }
+
+    private static int findInventoryMenuSlot(AbstractContainerMenu menu, int invSlot) {
+        if (invSlot < 0 || invSlot >= 36) {
+            return -1;
+        }
+        if (menu == null) {
+            return -1;
+        }
+        if (invSlot < 9) {
+            int hotbar = 36 + invSlot;
+            if (hotbar < menu.slots.size()) {
+                Slot slot = menu.slots.get(hotbar);
+                if (slot.container instanceof Inventory && slot.getContainerSlot() == invSlot) {
+                    return hotbar;
+                }
+            }
+        } else if (invSlot < menu.slots.size()) {
+            Slot slot = menu.slots.get(invSlot);
+            if (slot.container instanceof Inventory && slot.getContainerSlot() == invSlot) {
+                return invSlot;
+            }
+        }
+        int found = -1;
+        for (int i = 0; i < menu.slots.size(); i++) {
+            Slot slot = menu.slots.get(i);
+            if (slot.container instanceof Inventory && slot.getContainerSlot() == invSlot) {
+                found = i;
+            }
+        }
+        if (found >= 0) {
+            return found;
+        }
+        return inventorySlotToMenuSlot(menu, invSlot);
+    }
+
+    private int findEquipHotbarSlot(LocalPlayer player) {
+        Inventory inv = player.getInventory();
+        List<Integer> pickSlots = getPickBlockableHotbarSlots();
+        int occupied = -1;
+        for (int slot : pickSlots) {
+            if (slot < 0 || slot > 8) {
+                continue;
+            }
+            try {
+                if (!InventoryUtilsAccessor.canPickToSlot(inv, slot)) {
+                    continue;
+                }
+            } catch (Throwable ignored) {
+            }
+            ItemStack existing = inv.getItem(slot);
+            if (existing.isEmpty()) {
+                return slot;
+            }
+            if (occupied < 0 && !isShulker(existing)) {
+                occupied = slot;
+            }
+        }
+        if (occupied >= 0) {
+            return occupied;
+        }
+        for (int slot : pickSlots) {
+            if (slot < 0 || slot > 8) {
+                continue;
+            }
+            try {
+                if (!InventoryUtilsAccessor.canPickToSlot(inv, slot)) {
+                    continue;
+                }
+            } catch (Throwable ignored) {
+            }
+            if (!isShulker(inv.getItem(slot))) {
+                return slot;
+            }
+            if (occupied < 0) {
+                occupied = slot;
+            }
+        }
+        return occupied;
     }
 
     private void tickPlace(LocalPlayer player) {
@@ -405,14 +748,19 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             return;
         }
         if (!isShulker(player.getMainHandItem())) {
-            abortKeepWorld();
+            if (!this.placementCommitted && this.settleTicks < 15) {
+                this.phase = Phase.EQUIP;
+                this.settleTicks = 0;
+                return;
+            }
+            failAndStop("place failed: main hand is not a shulker");
             return;
         }
         BlockPos target = blockPosAt(player.getX(), player.getY() + PLACE_HEIGHT, player.getZ());
         if (!this.client.level.getBlockState(target).isAir()) {
             target = findNearbyAir(player);
             if (target == null) {
-                abortKeepWorld();
+                failAndStop("place failed: no air block to place shulker");
                 return;
             }
         }
@@ -436,7 +784,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
 
     private void tickSettlePlace(LocalPlayer player) {
         if (this.placedPos == null) {
-            abortKeepWorld();
+            failAndStop("settle failed: no placed shulker position");
             return;
         }
         if (!isRealPlacedShulker()) {
@@ -465,7 +813,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
 
     private void tickOpen(LocalPlayer player) {
         if (this.placedPos == null) {
-            abortKeepWorld();
+            failAndStop("settle failed: no placed shulker position");
             return;
         }
         if (player.containerMenu != player.inventoryMenu) {
@@ -477,7 +825,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (!isRealPlacedShulker()) {
             BlockPos found = findNearbyPlacedShulker(player);
             if (found == null) {
-                abortKeepWorld();
+                failAndStop("open failed: placed shulker not found in world");
                 return;
             }
             this.placedPos = found;
@@ -518,7 +866,10 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                 return;
             }
             if (++this.settleTicks > CONTENT_WAIT_TICKS) {
-                retryOpenOrAbort(player);
+                AbstractContainerMenu menu = player.containerMenu;
+                failAndStop("shulker open but no matching items (containerSize=" + containerSize(menu)
+                        + " kind=" + this.activeKind
+                        + " needed=" + this.neededItems + ")");
             }
             return;
         }
@@ -533,18 +884,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         }
         this.contentReady = false;
         this.expectedContainerId = -1;
-        if (this.openAttempts < MAX_OPEN_ATTEMPTS) {
-            this.phase = Phase.OPEN;
-            this.settleTicks = 0;
-            return;
-        }
-        if (isRealPlacedShulker()) {
-            this.takePhaseDone = true;
-            this.phase = Phase.BREAK;
-            this.settleTicks = 0;
-            return;
-        }
-        abortKeepWorld();
+        failAndStop("could not open placed shulker after " + this.openAttempts + " attempts");
     }
 
     private void tickTake(LocalPlayer player) {
@@ -562,26 +902,30 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             tickTakePickaxeSwap(player);
             return;
         }
-        if (this.activeKind == RefillKind.ENDER_CHEST_STACK || this.activeKind == RefillKind.ENCHANTED_GOLDEN_APPLE) {
+        if (this.activeKind == RefillKind.ENDER_CHEST_STACK
+                || this.activeKind == RefillKind.ENCHANTED_GOLDEN_APPLE
+                || (this.activeKind == RefillKind.MATERIALS && this.targetInvSlot >= 0)) {
             tickTakeLimited(player);
             return;
         }
         AbstractContainerMenu menu = player.containerMenu;
         if (!menu.getCarried().isEmpty()) {
-            if (!returnCarriedToContainer(player, menu)) {
-                refreshTookFlag(player);
-                this.takePhaseDone = true;
-                this.phase = Phase.CLOSE;
-                this.settleTicks = 0;
+            if (countEmptySlots(player) <= 1) {
+                int dest = findPartialMergeMenuSlot(menu, menu.getCarried());
+                if (dest >= 0) {
+                    //#if MC > 260100
+                    this.client.gameMode.handleContainerInput(menu.containerId, dest, 0, ContainerInput.PICKUP, player);
+                    //#else
+                    //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, dest, 0, ClickType.PICKUP, player);
+                    //#endif
+                    this.issuedTakeClick = true;
+                    this.clickCooldown = CLICK_DELAY;
+                    refreshTookFlag(player);
+                    return;
+                }
             }
-            return;
-        }
-        if (countEmptySlots(player) <= 1) {
-            if (!ensureInventorySpace(player, menu, 2, true, false)) {
-                refreshTookFlag(player);
-                this.takePhaseDone = true;
-                this.phase = Phase.CLOSE;
-                this.settleTicks = 0;
+            if (!returnCarriedToContainer(player, menu)) {
+                failAndStop("could not return carried items to shulker after material take");
             }
             return;
         }
@@ -594,19 +938,33 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             this.settleTicks = 0;
             return;
         }
-        //#if MC > 260100
-        this.client.gameMode.handleContainerInput(menu.containerId, slot, 0, ContainerInput.QUICK_MOVE, player);
-        //#else
-        //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, ClickType.QUICK_MOVE, player);
-        //#endif
+        ItemStack source = menu.slots.get(slot).getItem();
+        int empty = countEmptySlots(player);
+        if (empty < 1 && !canMergeIntoPartialStacks(player, source)) {
+            failAndStop("inventory full while refilling materials; no empty or merge slot for "
+                    + source.getItem());
+            return;
+        }
+        if (empty > 1) {
+            //#if MC > 260100
+            this.client.gameMode.handleContainerInput(menu.containerId, slot, 0, ContainerInput.QUICK_MOVE, player);
+            //#else
+            //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, ClickType.QUICK_MOVE, player);
+            //#endif
+        } else {
+            //#if MC > 260100
+            this.client.gameMode.handleContainerInput(menu.containerId, slot, 0, ContainerInput.PICKUP, player);
+            //#else
+            //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, slot, 0, ClickType.PICKUP, player);
+            //#endif
+        }
         this.issuedTakeClick = true;
         this.clickCooldown = CLICK_DELAY;
         refreshTookFlag(player);
-        if (!menu.getCarried().isEmpty()) {
-            returnCarriedToContainer(player, menu);
-            this.takePhaseDone = true;
-            this.phase = Phase.CLOSE;
-            this.settleTicks = 0;
+        if (!menu.getCarried().isEmpty() && empty > 1) {
+            if (!returnCarriedToContainer(player, menu)) {
+                failAndStop("carried remainder after material take could not be returned to shulker");
+            }
         }
     }
 
@@ -662,6 +1020,11 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         }
         int slot = findNextTakeableSlot(player, menu);
         if (slot < 0) {
+            if (!this.tookItems && this.takeRemaining > 0) {
+                failAndStop("opened shulker had no matching items for " + this.activeKind
+                        + " (still need " + this.takeRemaining + ")");
+                return;
+            }
             this.takePhaseDone = true;
             this.phase = Phase.CLOSE;
             this.settleTicks = 0;
@@ -821,16 +1184,19 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                 this.pickaxeSwapStage = 4;
             }
             case 5 -> {
-                int dest = -1;
-                if (this.targetInvSlot >= 0) {
-                    dest = inventorySlotToMenuSlot(menu, this.targetInvSlot);
-                }
+                this.targetInvSlot = pickaxeHotbarSlot();
+                int dest = inventorySlotToMenuSlot(menu, pickaxeHotbarSlot());
                 if (dest < 0 || dest >= menu.slots.size()) {
-                    dest = findEmptyHotbarMenuSlot(menu);
+                    failAndStop("could not map hotbar pickaxe slot " + pickaxeHotbarSlot() + " in open menu");
+                    return;
                 }
-                if (dest < 0) {
-                    depositCarriedIntoContainer(player, menu);
-                    this.pickaxeSwapStage = 6;
+                ItemStack destStack = menu.slots.get(dest).getItem();
+                if (!destStack.isEmpty() && !isNetheritePickaxe(destStack)) {
+                    if (!tryDepositHotbarStackToContainer(player, menu, dest)) {
+                        failAndStop("hotbar pickaxe slot " + pickaxeHotbarSlot() + " blocked and cannot deposit into shulker");
+                        return;
+                    }
+                    this.clickCooldown = CLICK_DELAY;
                     return;
                 }
                 clickPickup(menu, player, dest);
@@ -860,21 +1226,18 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     private boolean makePickaxeInventorySpace(LocalPlayer player, AbstractContainerMenu menu) {
-        int invSlot = findDisposablePickBlockableHotbarSlot(player, true);
-        if (invSlot < 0) {
-            return false;
-        }
-        int menuSlot = inventorySlotToMenuSlot(menu, invSlot);
+        int menuSlot = inventorySlotToMenuSlot(menu, pickaxeHotbarSlot());
         if (menuSlot < 0 || menuSlot >= menu.slots.size()) {
             return false;
         }
         ItemStack stack = menu.slots.get(menuSlot).getItem();
-        if (stack.isEmpty() || isShulker(stack)) {
+        if (stack.isEmpty()) {
+            return true;
+        }
+        if (isShulker(stack)) {
             return false;
         }
-        throwMenuSlot(player, menu, menuSlot);
-        this.clickCooldown = CLICK_DELAY;
-        return true;
+        return tryDepositHotbarStackToContainer(player, menu, menuSlot);
     }
 
     private static int findEmptyMainInventoryMenuSlot(AbstractContainerMenu menu) {
@@ -1244,6 +1607,10 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     private void tickPickup(LocalPlayer player) {
+        if (this.refillFailed || this.refillLockedOut) {
+            finalizeFailedRefill();
+            return;
+        }
         if (this.stashWornPickaxeShulker) {
             tickWaitStashShulker(player);
             return;
@@ -1362,6 +1729,10 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     private void tickRestore(LocalPlayer player) {
+        if (this.refillFailed || this.refillLockedOut) {
+            finalizeFailedRefill();
+            return;
+        }
         restoreLook(player);
         RuntimeAccess.get().actionBroker().releaseOwner(LEASE_OWNER);
         stopExternalWork();
@@ -1393,6 +1764,129 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         hardClear();
     }
 
+    private void clearRefillLockoutIfWorkResumed() {
+        if (!this.refillLockedOut) {
+            return;
+        }
+        if (Configs.Core.WORK_SWITCH.getBooleanValue()) {
+            this.refillLockedOut = false;
+            this.refillFailed = false;
+            if (this.enderFetchCooldownUntilTick == Long.MAX_VALUE) {
+                this.enderFetchCooldownUntilTick = 0L;
+            }
+        }
+    }
+
+    private void failAndStop(String reason) {
+        if (this.refillLockedOut) {
+            finalizeFailedRefill();
+            return;
+        }
+        this.refillFailed = true;
+        this.refillLockedOut = true;
+        this.enderFetchCooldownUntilTick = Long.MAX_VALUE;
+        this.queue.clear();
+        this.pendingNeeded.clear();
+        this.rejectedEnderPickaxeSlots.clear();
+        String detail = reason == null || reason.isEmpty() ? "unknown" : reason;
+        String kind = this.activeKind == null ? "NONE" : this.activeKind.name();
+        String phaseName = this.phase == null ? "NONE" : this.phase.name();
+        String msg = "[Printer Refill] FAILED kind=" + kind
+                + " phase=" + phaseName
+                + " ender=" + this.enderMode
+                + " took=" + this.tookItems
+                + " opens=" + this.openAttempts
+                + " | " + detail;
+        MessageUtils.addMessage(msg);
+        MessageUtils.setOverlayMessage("[Printer Refill] " + detail);
+        if (Configs.Core.WORK_SWITCH.getBooleanValue()) {
+            Configs.Core.WORK_SWITCH.setBooleanValue(false);
+            MessageUtils.addMessage("[Printer Refill] Work switch disabled after failure");
+        }
+        LocalPlayer p = this.client.player;
+        if (p != null && p.containerMenu != p.inventoryMenu) {
+            p.closeContainer();
+        }
+        if (this.enderMode && !this.placedEnderPositions.isEmpty()) {
+            this.takePhaseDone = true;
+            this.phase = Phase.BREAK_ENDER;
+            this.settleTicks = 0;
+            this.enderBreakIndex = 0;
+            this.openAttempts = 0;
+            this.contentReady = false;
+            this.expectedContainerId = -1;
+            return;
+        }
+        if (this.placementCommitted && this.placedPos != null) {
+            this.takePhaseDone = true;
+            this.phase = Phase.BREAK;
+            this.settleTicks = 0;
+            this.openAttempts = 0;
+            this.contentReady = false;
+            this.expectedContainerId = -1;
+            return;
+        }
+        finalizeFailedRefill();
+    }
+
+    private void finalizeFailedRefill() {
+        this.queue.clear();
+        this.pendingNeeded.clear();
+        this.rejectedEnderPickaxeSlots.clear();
+        this.enderFetchActive = false;
+        this.enderFetchCooldownUntilTick = Long.MAX_VALUE;
+        LocalPlayer player = this.client.player;
+        if (player != null && player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+        }
+        if (player != null) {
+            restoreLook(player);
+        } else {
+            NetworkUtils.clearScopedLookOverride();
+        }
+        RuntimeAccess.get().actionBroker().releaseOwner(LEASE_OWNER);
+        stopExternalWork();
+        NetworkUtils.clearScopedLookOverride();
+        this.phase = Phase.IDLE;
+        this.wasSneaking = false;
+        this.refillFailed = true;
+        this.neededItems.clear();
+        this.shulkerInvSlot = -1;
+        this.placedPos = null;
+        this.savedLook = null;
+        this.deadline = 0;
+        this.openAttempts = 0;
+        this.settleTicks = 0;
+        this.clickCooldown = 0;
+        this.expectedContainerId = -1;
+        this.contentReady = false;
+        this.issuedTakeClick = false;
+        this.tookItems = false;
+        this.takePhaseDone = false;
+        this.inventorySnapshot = Map.of();
+        this.enderMode = false;
+        this.enderInvSlot = -1;
+        this.placedEnderPositions.clear();
+        this.enderPlaceIndex = 0;
+        this.enderBreakIndex = 0;
+        this.placementCommitted = false;
+        this.activeKind = RefillKind.MATERIALS;
+        this.targetInvSlot = -1;
+        this.takeRemaining = 0;
+        this.pickaxeSwapDone = false;
+        this.pickaxeSwapStage = 0;
+        this.pickaxeTempInvSlot = -1;
+        this.pickaxeContainerSlot = -1;
+        this.enderFetchActive = false;
+        this.enderFetchKind = RefillKind.MATERIALS;
+        this.enderFetchTargetSlot = -1;
+        this.enderFetchTakeRemaining = 0;
+        this.stashWornPickaxeShulker = false;
+        this.enderStashMode = false;
+        this.stashShulkerInvSlot = -1;
+        this.invShulkerSlotsSnapshot.clear();
+    }
+
     private void restoreLook(LocalPlayer player) {
         NetworkUtils.clearScopedLookOverride();
         if (this.wasSneaking && !player.isShiftKeyDown()) {
@@ -1405,6 +1899,9 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         NetworkUtils.clearScopedLookOverride();
         this.phase = Phase.IDLE;
         this.wasSneaking = false;
+        if (!this.refillLockedOut) {
+            this.refillFailed = false;
+        }
         this.neededItems.clear();
         this.shulkerInvSlot = -1;
         this.placedPos = null;
@@ -1477,11 +1974,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     private int findNextNeededSlot(AbstractContainerMenu menu) {
         int size = containerSize(menu);
         for (int i = 0; i < size && i < menu.slots.size(); i++) {
-            Slot slot = menu.slots.get(i);
-            if (slot.container instanceof Inventory) {
-                continue;
-            }
-            ItemStack stack = slot.getItem();
+            ItemStack stack = menu.slots.get(i).getItem();
             if (stack.isEmpty() || !isNeeded(stack)) {
                 continue;
             }
@@ -1493,11 +1986,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     private int findNextTakeableSlot(LocalPlayer player, AbstractContainerMenu menu) {
         int size = containerSize(menu);
         for (int i = 0; i < size && i < menu.slots.size(); i++) {
-            Slot slot = menu.slots.get(i);
-            if (slot.container instanceof Inventory) {
-                continue;
-            }
-            ItemStack stack = slot.getItem();
+            ItemStack stack = menu.slots.get(i).getItem();
             if (stack.isEmpty() || !isNeeded(stack)) {
                 continue;
             }
@@ -1513,18 +2002,36 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (menu.slots.isEmpty()) {
             return 0;
         }
-        try {
-            return Math.min(menu.slots.size(), menu.slots.get(0).container.getContainerSize());
-        } catch (Exception ignored) {
-            int count = 0;
-            for (int i = 0; i < menu.slots.size(); i++) {
-                if (menu.slots.get(i).container instanceof Inventory) {
-                    break;
-                }
-                count++;
+        int nonPlayer = 0;
+        for (Slot slot : menu.slots) {
+            if (slot.container instanceof Inventory) {
+                break;
             }
-            return count > 0 ? count : Math.min(27, Math.max(0, menu.slots.size() - 36));
+            nonPlayer++;
         }
+        if (nonPlayer > 0) {
+            return nonPlayer;
+        }
+        int total = menu.slots.size();
+        if (total > 36) {
+            return total - 36;
+        }
+        try {
+            return Math.min(total, menu.slots.get(0).container.getContainerSize());
+        } catch (Exception ignored) {
+            return total;
+        }
+    }
+
+
+    private static List<Slot> nonPlayerSlots(AbstractContainerMenu menu) {
+        List<Slot> out = new java.util.ArrayList<>();
+        for (Slot slot : menu.slots) {
+            if (!(slot.container instanceof Inventory)) {
+                out.add(slot);
+            }
+        }
+        return out;
     }
 
     private boolean hasNeededInContainer(AbstractContainerMenu menu) {
@@ -1614,9 +2121,31 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         return total;
     }
 
+
+    private boolean canMergeNeededIntoInventory(LocalPlayer player, ItemStack incoming) {
+        if (incoming == null || incoming.isEmpty()) {
+            return false;
+        }
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack.isEmpty()) {
+                return true;
+            }
+            if (ItemStack.isSameItemSameComponents(stack, incoming)
+                    && stack.getCount() < stack.getMaxStackSize()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean ensureInventorySpace(LocalPlayer player, AbstractContainerMenu menu, int minEmpty, boolean allowDepositToContainer, boolean allowNeeded) {
         if (countEmptySlots(player) >= minEmpty) {
             return true;
+        }
+        if (!allowDepositToContainer) {
+            return false;
         }
         int invSlot = findDisposablePickBlockableHotbarSlot(player, allowNeeded);
         if (invSlot < 0) {
@@ -1626,37 +2155,15 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (menuSlot < 0 || menuSlot >= menu.slots.size()) {
             return false;
         }
-        if (allowDepositToContainer && tryDepositHotbarStackToContainer(player, menu, menuSlot)) {
+        if (tryDepositHotbarStackToContainer(player, menu, menuSlot)) {
             this.clickCooldown = CLICK_DELAY;
             return true;
         }
-        throwMenuSlot(player, menu, menuSlot);
-        this.clickCooldown = CLICK_DELAY;
-        return true;
+        return false;
     }
 
     private boolean ensureInventorySpaceClosed(LocalPlayer player, int minEmpty) {
-        if (countEmptySlots(player) >= minEmpty) {
-            return true;
-        }
-        if (player.containerMenu != player.inventoryMenu || this.client.gameMode == null) {
-            return false;
-        }
-        int invSlot = findDisposablePickBlockableHotbarSlot(player, true);
-        if (invSlot < 0) {
-            return false;
-        }
-        int menuSlot = invSlot < 9 ? invSlot + 36 : invSlot;
-        ItemStack stack = player.getInventory().getItem(invSlot);
-        if (stack.isEmpty() || isShulker(stack)) {
-            return false;
-        }
-        //#if MC > 260100
-        this.client.gameMode.handleContainerInput(player.inventoryMenu.containerId, menuSlot, 1, ContainerInput.THROW, player);
-        //#else
-        //$$ this.client.gameMode.handleInventoryMouseClick(player.inventoryMenu.containerId, menuSlot, 1, ClickType.THROW, player);
-        //#endif
-        return true;
+        return countEmptySlots(player) >= minEmpty;
     }
 
     private boolean tryDepositHotbarStackToContainer(LocalPlayer player, AbstractContainerMenu menu, int invMenuSlot) {
@@ -1758,13 +2265,59 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         return empty;
     }
 
-    private static boolean canTakeStack(LocalPlayer player, ItemStack source) {
-        return countEmptySlots(player) > 1;
+    private boolean canTakeStack(LocalPlayer player, ItemStack source) {
+        if (countEmptySlots(player) > 1) {
+            return true;
+        }
+        return canMergeIntoPartialStacks(player, source);
+    }
+
+    private static boolean canMergeIntoPartialStacks(LocalPlayer player, ItemStack incoming) {
+        if (incoming == null || incoming.isEmpty()) {
+            return false;
+        }
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty()
+                    && ItemStack.isSameItemSameComponents(stack, incoming)
+                    && stack.getCount() < stack.getMaxStackSize()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int findPartialMergeMenuSlot(AbstractContainerMenu menu, ItemStack carried) {
+        if (carried == null || carried.isEmpty()) {
+            return -1;
+        }
+        int size = containerSize(menu);
+        for (int i = size; i < menu.slots.size(); i++) {
+            Slot slot = menu.slots.get(i);
+            if (!(slot.container instanceof Inventory)) {
+                continue;
+            }
+            int invIndex = slot.getContainerSlot();
+            if (invIndex < 0 || invIndex >= 36) {
+                continue;
+            }
+            ItemStack stack = slot.getItem();
+            if (!stack.isEmpty()
+                    && ItemStack.isSameItemSameComponents(stack, carried)
+                    && stack.getCount() < stack.getMaxStackSize()) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private boolean returnCarriedToContainer(LocalPlayer player, AbstractContainerMenu menu) {
         ItemStack carried = menu.getCarried();
-        if (carried.isEmpty() || this.client.gameMode == null) {
+        if (carried.isEmpty()) {
+            return true;
+        }
+        if (this.client.gameMode == null) {
             return false;
         }
         int size = containerSize(menu);
@@ -1783,10 +2336,10 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                 //$$ this.client.gameMode.handleInventoryMouseClick(menu.containerId, i, 0, ClickType.PICKUP, player);
                 //#endif
                 this.clickCooldown = CLICK_DELAY;
-                return !menu.getCarried().isEmpty();
+                return true;
             }
         }
-        return !menu.getCarried().isEmpty();
+        return false;
     }
 
     private void enqueue(RefillKind kind, Set<Item> items, boolean highPriority) {
@@ -1821,34 +2374,39 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     private void scanAutoRefills(LocalPlayer player) {
+        Inventory inv = player.getInventory();
         if (enderRefillEnabled()) {
-            int enderSlot = findHotbarEnderChestSlot(player);
-            if (enderSlot >= 0) {
-                ItemStack stack = player.getInventory().getItem(enderSlot);
-                if (stack.getCount() <= 4) {
-                    enqueue(RefillKind.ENDER_CHEST_STACK, Set.of(Items.ENDER_CHEST), true);
-                }
+            ItemStack ender = inv.getItem(enderHotbarSlot());
+            if (ender.isEmpty()
+                    || (isEnderChest(ender) && ender.getCount() <= 4)) {
+                enqueue(RefillKind.ENDER_CHEST_STACK, Set.of(Items.ENDER_CHEST), true);
             }
         }
         if (Configs.Special.MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE.getBooleanValue()) {
-            int hotbarGapples = countHotbarItem(player, Items.ENCHANTED_GOLDEN_APPLE);
-            if (hotbarGapples < 10) {
+            ItemStack gapple = inv.getItem(gappleHotbarSlot());
+            int count = isGapple(gapple) ? gapple.getCount() : 0;
+            if (count < 10) {
                 enqueue(RefillKind.ENCHANTED_GOLDEN_APPLE, Set.of(Items.ENCHANTED_GOLDEN_APPLE), false);
             }
         }
         if (Configs.Special.MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE.getBooleanValue()) {
-            if (findLowDurabilityHotbarPickaxe(player) >= 0
-                    || !hasNetheritePickaxeInHotbar(player)) {
+            ItemStack pick = inv.getItem(pickaxeHotbarSlot());
+            if (!isUsableNetheritePickaxe(pick)) {
                 enqueue(RefillKind.NETHERITE_PICKAXE, Set.of(Items.NETHERITE_PICKAXE), true);
             }
         }
     }
 
     private void tryStartQueued(LocalPlayer player) {
-        if (this.phase != Phase.IDLE || player.containerMenu != player.inventoryMenu) {
+        if (this.refillLockedOut || this.refillFailed) {
+            this.queue.clear();
+            this.pendingNeeded.clear();
             return;
         }
-        if (isNearAnyWater(player, this.client.level)) {
+        if (this.phase != Phase.IDLE) {
+            return;
+        }
+        if (player.containerMenu != player.inventoryMenu) {
             return;
         }
         int attempts = this.queue.size();
@@ -1881,40 +2439,70 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         this.enderFetchActive = false;
         Set<Item> needed = new HashSet<>(task.items);
         if (task.kind == RefillKind.ENDER_CHEST_STACK) {
-            int enderSlot = findHotbarEnderChestSlot(player);
-            if (enderSlot < 0) {
+            ItemStack stack = player.getInventory().getItem(enderHotbarSlot());
+            if (!stack.isEmpty() && !isEnderChest(stack)) {
+                failAndStop("hotbar slot " + enderHotbarSlot() + " is occupied by non-ender-chest item");
                 return false;
             }
-            ItemStack stack = player.getInventory().getItem(enderSlot);
-            int need = Math.max(0, stack.getMaxStackSize() - stack.getCount());
+            int need = stack.isEmpty()
+                    ? new ItemStack(Items.ENDER_CHEST).getMaxStackSize()
+                    : Math.max(0, stack.getMaxStackSize() - stack.getCount());
             if (need <= 0) {
                 return false;
             }
-            this.targetInvSlot = enderSlot;
+            this.targetInvSlot = enderHotbarSlot();
             this.takeRemaining = need;
         } else if (task.kind == RefillKind.ENCHANTED_GOLDEN_APPLE) {
-            int target = findIncompleteHotbarStack(player, Items.ENCHANTED_GOLDEN_APPLE);
-            if (target < 0) {
+            ItemStack stack = player.getInventory().getItem(gappleHotbarSlot());
+            if (!stack.isEmpty() && !isGapple(stack)) {
+                failAndStop("hotbar slot " + gappleHotbarSlot() + " is occupied by non-gapple item");
                 return false;
             }
-            ItemStack stack = player.getInventory().getItem(target);
-            int need = Math.max(0, stack.getMaxStackSize() - stack.getCount());
+            int need = stack.isEmpty()
+                    ? new ItemStack(Items.ENCHANTED_GOLDEN_APPLE).getMaxStackSize()
+                    : Math.max(0, stack.getMaxStackSize() - stack.getCount());
             if (need <= 0) {
                 return false;
             }
-            this.targetInvSlot = target;
+            this.targetInvSlot = gappleHotbarSlot();
             this.takeRemaining = need;
         } else if (task.kind == RefillKind.NETHERITE_PICKAXE) {
-            int lowSlot = findLowDurabilityHotbarPickaxe(player);
-            this.targetInvSlot = lowSlot;
-            if (lowSlot < 0) {
-                if (hasNetheritePickaxeInHotbar(player)) {
+            this.targetInvSlot = pickaxeHotbarSlot();
+            ItemStack pick = player.getInventory().getItem(pickaxeHotbarSlot());
+            if (isUsableNetheritePickaxe(pick)) {
+                return false;
+            }
+            if (findShulkerWithUsablePickaxe(player) < 0
+                    && (!enderRefillEnabled() || findEnderChestSlot(player) < 0)) {
+                return false;
+            }
+        } else if (task.kind == RefillKind.MATERIALS) {
+            int materialSlot = materialHotbarSlotOrAuto();
+            if (materialSlot >= 0) {
+                ItemStack stack = player.getInventory().getItem(materialSlot);
+                Item primary = null;
+                for (Item item : needed) {
+                    if (item != null) {
+                        primary = item;
+                        break;
+                    }
+                }
+                if (primary == null) {
                     return false;
                 }
-                if (findShulkerWithUsablePickaxe(player) < 0
-                        && (!enderRefillEnabled() || findEnderChestSlot(player) < 0)) {
+                if (!stack.isEmpty() && !stack.is(primary)) {
+                    failAndStop("hotbar slot " + (materialSlot + 1)
+                            + " is occupied by non-material item while fixed material slot is set");
                     return false;
                 }
+                int need = stack.isEmpty()
+                        ? new ItemStack(primary).getMaxStackSize()
+                        : Math.max(0, stack.getMaxStackSize() - stack.getCount());
+                if (need <= 0) {
+                    return false;
+                }
+                this.targetInvSlot = materialSlot;
+                this.takeRemaining = need;
             }
         }
         int slot = resolveInventoryShulkerSlot(player, needed);
@@ -1922,7 +2510,14 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             begin(player, slot, needed);
             return true;
         }
-        return tryStartEnderFetch(player, needed);
+        if (tryStartEnderFetch(player, needed)) {
+            return true;
+        }
+        if (task.kind == RefillKind.MATERIALS) {
+            failAndStop("no shulker/ender source containing materials: " + needed);
+            return false;
+        }
+        return false;
     }
 
     private int resolveInventoryShulkerSlot(LocalPlayer player, Set<Item> needed) {
@@ -1933,7 +2528,11 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     private boolean tryStartEnderFetch(LocalPlayer player, Set<Item> needed) {
-        if (!enderRefillEnabled()) {
+        if (!enderRefillEnabled() || this.refillLockedOut || this.refillFailed) {
+            return false;
+        }
+        if (this.enderFetchCooldownUntilTick == Long.MAX_VALUE
+                || RuntimeAccess.get().currentTick() < this.enderFetchCooldownUntilTick) {
             return false;
         }
         if (findEnderChestSlot(player) < 0) {
@@ -1955,9 +2554,6 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             return;
         }
         if (player.containerMenu != player.inventoryMenu) {
-            return;
-        }
-        if (isNearAnyWater(player, this.client.level)) {
             return;
         }
         Set<Item> needed = new HashSet<>(this.pendingNeeded);
@@ -2286,22 +2882,6 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         return damage;
     }
 
-    private static boolean isNearAnyWater(LocalPlayer player, net.minecraft.client.multiplayer.ClientLevel level) {
-        BlockPos origin = player.blockPosition();
-        int radius = 3;
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dy = -radius; dy <= radius; dy++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    BlockPos pos = origin.offset(dx, dy, dz);
-                    var fluid = level.getFluidState(pos);
-                    if (fluid != null && !fluid.isEmpty()) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
 
     private static int findShulkerSlot(LocalPlayer player, Set<Item> needed) {
         Inventory inv = player.getInventory();
@@ -2424,6 +3004,10 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         //#endif
     }
 
+    private static boolean isGapple(ItemStack stack) {
+        return !stack.isEmpty() && (stack.getItem() == Items.ENCHANTED_GOLDEN_APPLE || stack.is(Items.ENCHANTED_GOLDEN_APPLE));
+    }
+
     private static boolean isShulker(ItemStack stack) {
         return !stack.isEmpty()
                 && stack.getItem() instanceof BlockItem blockItem
@@ -2490,6 +3074,9 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         this.issuedTakeClick = false;
         this.tookItems = false;
         this.takePhaseDone = false;
+        if (!this.refillLockedOut) {
+            this.refillFailed = false;
+        }
         this.inventorySnapshot = Map.of();
         RuntimeAccess.get().actionBroker().cancelQueue();
         RuntimeAccess.get().inventorySwitchGuard().reset();
@@ -2507,7 +3094,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (!isEnderChest(stack)) {
             int found = findEnderChestSlot(player);
             if (found < 0) {
-                abortKeepWorld();
+                failAndStop("no ender chest in inventory to place for refill");
                 return;
             }
             this.enderInvSlot = found;
@@ -2517,7 +3104,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             InventoryUtils.setSelectedSlot(player.getInventory(), this.enderInvSlot);
             InventoryUtils.syncSelectedHotbarSlot();
         } else if (!InventoryUtils.setPickedItemToHand(this.enderInvSlot, stack, this.client)) {
-            abortKeepWorld();
+            failAndStop("could not move ender chest to hotbar for placement");
             return;
         }
         this.phase = Phase.PLACE_ENDER;
@@ -2546,7 +3133,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                     this.openAttempts = 0;
                     return;
                 }
-                abortKeepWorld();
+                failAndStop("no ender chest left to place for double-ender refill");
                 return;
             }
             this.enderInvSlot = found;
@@ -2555,7 +3142,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                 InventoryUtils.setSelectedSlot(player.getInventory(), found);
                 InventoryUtils.syncSelectedHotbarSlot();
             } else if (!InventoryUtils.setPickedItemToHand(found, stack, this.client)) {
-                abortKeepWorld();
+                failAndStop("could not equip ender chest for placement");
                 return;
             }
         }
@@ -2568,7 +3155,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                 this.openAttempts = 0;
                 return;
             }
-            abortKeepWorld();
+            failAndStop("no air block available to place ender chest");
             return;
         }
         if (!this.client.level.getBlockState(target).isAir()) {
@@ -2587,7 +3174,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                     this.openAttempts = 0;
                     return;
                 }
-                abortKeepWorld();
+                failAndStop("no air block available to place ender chest");
                 return;
             }
         }
@@ -2605,19 +3192,19 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             this.phase = Phase.SETTLE_ENDER;
             this.settleTicks = 0;
         } else if (++this.settleTicks > 20) {
-            abortKeepWorld();
+            failAndStop("ender chest placement not accepted by server");
         }
     }
 
     private void tickSettleEnder(LocalPlayer player) {
         if (this.placedEnderPositions.isEmpty()) {
-            abortKeepWorld();
+            failAndStop("ender settle with no placed positions");
             return;
         }
         BlockPos last = this.placedEnderPositions.get(this.placedEnderPositions.size() - 1);
         if (!isRealPlacedEnder(last)) {
             if (++this.settleTicks > PLACE_CONFIRM_TICKS) {
-                abortKeepWorld();
+                failAndStop("placed ender chest disappeared before open");
             }
             return;
         }
@@ -2640,7 +3227,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     private void tickOpenEnder(LocalPlayer player) {
         BlockPos openPos = primaryEnderPos(player);
         if (openPos == null) {
-            abortKeepWorld();
+            failAndStop("no placed ender chest available to open");
             return;
         }
         if (player.containerMenu != player.inventoryMenu) {
@@ -2650,7 +3237,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             return;
         }
         if (!isRealPlacedEnder(openPos)) {
-            abortKeepWorld();
+            failAndStop("placed ender chest missing or invalid at open target");
             return;
         }
         selectEmptyHand(player);
@@ -2688,7 +3275,13 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                 return;
             }
             if (++this.settleTicks > CONTENT_WAIT_TICKS) {
-                retryOpenEnderOrAbort(player);
+                AbstractContainerMenu menu = player.containerMenu;
+                int size = containerSize(menu);
+                failAndStop("ender chest open but no matching shulker (containerSize=" + size
+                        + " menuSlots=" + menu.slots.size()
+                        + " shulkers=" + countContainerShulkers(menu)
+                        + " needed=" + this.neededItems
+                        + " kind=" + this.activeKind + ")");
             }
             return;
         }
@@ -2703,19 +3296,8 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         }
         this.contentReady = false;
         this.expectedContainerId = -1;
-        if (this.openAttempts < MAX_OPEN_ATTEMPTS) {
-            this.phase = Phase.OPEN_ENDER;
-            this.settleTicks = 0;
-            return;
-        }
-        if (!this.placedEnderPositions.isEmpty()) {
-            this.takePhaseDone = true;
-            this.phase = Phase.BREAK_ENDER;
-            this.settleTicks = 0;
-            this.enderBreakIndex = 0;
-            return;
-        }
-        abortKeepWorld();
+        failAndStop("could not open ender chest after "
+                + this.openAttempts + " attempts");
     }
 
     private void tickTakeShulker(LocalPlayer player) {
@@ -2735,27 +3317,30 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         AbstractContainerMenu menu = player.containerMenu;
         if (!menu.getCarried().isEmpty()) {
             if (!returnCarriedToContainer(player, menu)) {
-                this.takePhaseDone = true;
-                this.phase = Phase.CLOSE_ENDER;
-                this.settleTicks = 0;
+                failAndStop("could not return carried item to ender chest after shulker take");
             }
             return;
         }
         if (countEmptySlots(player) < 1) {
-            if (!ensureInventorySpace(player, menu, 1, false, true)) {
-                this.takePhaseDone = true;
-                this.phase = Phase.CLOSE_ENDER;
-                this.settleTicks = 0;
-            }
+            failAndStop("no free inventory slot to take shulker from ender chest");
             return;
         }
         int slot = findShulkerInContainer(menu);
         if (slot < 0) {
-            this.takePhaseDone = true;
-            this.phase = Phase.CLOSE_ENDER;
-            this.settleTicks = 0;
+            if (hasContainerShulker(menu) && this.settleTicks < CONTENT_WAIT_TICKS) {
+                this.settleTicks++;
+                return;
+            }
+            int size = containerSize(menu);
+            int shulkerCount = countContainerShulkers(menu);
+            failAndStop("no matching shulker in ender chest (containerSize=" + size
+                    + " shulkers=" + shulkerCount
+                    + " needed=" + this.neededItems
+                    + " kind=" + this.activeKind
+                    + " menuSlots=" + menu.slots.size() + ")");
             return;
         }
+        this.settleTicks = 0;
         //#if MC > 260100
         this.client.gameMode.handleContainerInput(menu.containerId, slot, 0, ContainerInput.QUICK_MOVE, player);
         //#else
@@ -2818,8 +3403,9 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     private int findEmptyContainerSlot(AbstractContainerMenu menu) {
-        int size = containerSize(menu);
-        for (int i = 0; i < size && i < menu.slots.size(); i++) {
+        int size = Math.max(containerSize(menu), Math.max(0, menu.slots.size() - 36));
+        size = Math.min(size, menu.slots.size());
+        for (int i = 0; i < size; i++) {
             if (this.rejectedEnderPickaxeSlots.contains(i)) {
                 continue;
             }
@@ -2906,7 +3492,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (!this.placedEnderPositions.isEmpty()) {
             if (countEmptySlots(player) < 1) {
                 if (!ensureInventorySpaceClosed(player, 1)) {
-                    abortKeepWorld();
+                    failAndStop("no inventory space to pick up broken ender chest");
                     return;
                 }
                 this.settleTicks = POST_CLOSE_TICKS;
@@ -2987,6 +3573,10 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (++this.settleTicks < POST_BREAK_MOVEMENT_LOCK_TICKS) {
             return;
         }
+        if (this.refillFailed || this.refillLockedOut) {
+            finalizeFailedRefill();
+            return;
+        }
         if (this.enderStashMode) {
             this.enderStashMode = false;
             this.stashShulkerInvSlot = -1;
@@ -3033,10 +3623,11 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             slot = findShulkerSlot(player, needed);
         }
         if (slot < 0) {
-            restoreLook(player);
-            RuntimeAccess.get().actionBroker().releaseOwner(LEASE_OWNER);
-            stopExternalWork();
-            hardClear();
+            if (this.refillFailed || this.refillLockedOut) {
+                finalizeFailedRefill();
+            } else {
+                failAndStop("ender fetch finished without a usable inventory shulker (kind=" + kind + ")");
+            }
             return;
         }
         this.activeKind = kind;
@@ -3134,12 +3725,14 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
 
     private int findShulkerInContainer(AbstractContainerMenu menu) {
         pruneRejectedEnderSlots(menu);
-        int size = containerSize(menu);
+        int size = Math.max(containerSize(menu), Math.max(0, menu.slots.size() - 36));
+        size = Math.min(size, menu.slots.size());
         int bestSlot = -1;
         int bestUsable = -1;
         int bestItemCount = Integer.MAX_VALUE;
-        for (int i = 0; i < size && i < menu.slots.size(); i++) {
-            if (this.rejectedEnderPickaxeSlots.contains(i)) {
+        RefillKind kind = refillKindForShulkerSearch();
+        for (int i = 0; i < size; i++) {
+            if (kind == RefillKind.NETHERITE_PICKAXE && this.rejectedEnderPickaxeSlots.contains(i)) {
                 continue;
             }
             Slot slot = menu.slots.get(i);
@@ -3150,7 +3743,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             if (!isShulker(stack)) {
                 continue;
             }
-            if (refillKindForShulkerSearch() == RefillKind.NETHERITE_PICKAXE) {
+            if (kind == RefillKind.NETHERITE_PICKAXE) {
                 if (!shulkerContainsNetheritePickaxe(stack)) {
                     continue;
                 }
@@ -3165,7 +3758,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
                 }
                 continue;
             }
-            if (!containsNeeded(stack, this.neededItems)) {
+            if (!this.neededItems.isEmpty() && !containsNeeded(stack, this.neededItems)) {
                 continue;
             }
             int itemCount = countStoredItems(stack);
@@ -3175,6 +3768,26 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             }
         }
         return bestSlot;
+    }
+
+    private static boolean hasContainerShulker(AbstractContainerMenu menu) {
+        return countContainerShulkers(menu) > 0;
+    }
+
+    private static int countContainerShulkers(AbstractContainerMenu menu) {
+        int size = Math.max(containerSize(menu), Math.max(0, menu.slots.size() - 36));
+        size = Math.min(size, menu.slots.size());
+        int count = 0;
+        for (int i = 0; i < size; i++) {
+            Slot slot = menu.slots.get(i);
+            if (slot.container instanceof Inventory) {
+                continue;
+            }
+            if (isShulker(slot.getItem())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private enum RefillKind {

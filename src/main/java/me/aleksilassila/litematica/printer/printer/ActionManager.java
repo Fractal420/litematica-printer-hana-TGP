@@ -178,6 +178,12 @@ public class ActionManager {
         }
         int reserveAllowance = getReserveAllowance(player, click);
         if (reserveAllowance <= 0) {
+            if (Configs.Special.MANUAL_VANILLA_REFILL.getBooleanValue()) {
+                Item held = player.getMainHandItem().getItem();
+                if (held != null) {
+                    RuntimeAccess.get().manualVanillaRefill().requestItems(java.util.List.of(held));
+                }
+            }
             return this.finish(click, SendResult.RESERVE_LIMIT);
         }
         Direction direction;

@@ -220,6 +220,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
                 requiredState.getBlock().asItem() != heldItem,
                 requiredState.getBlock() instanceof FallingBlock,
                 pos.getY(),
+                distanceSqr,
                 localitySqr,
                 viewAngleScore
         );
@@ -231,6 +232,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
             boolean fallingBlock,
             int y,
             double distanceSqr,
+            double localitySqr,
             double viewAngleScore
     ) {
 
@@ -240,6 +242,7 @@ public final class SortedSchematicTargetQueue implements ScanCandidateIterable {
                 .thenComparing(TargetScore::heldItemMismatch)
                 .thenComparingDouble(TargetScore::distanceSqr)
                 .thenComparingDouble(TargetScore::viewAngleScore)
+                .thenComparingDouble(TargetScore::localitySqr)
                 .thenComparingInt(score -> score.pos.getY())
                 .thenComparingInt(score -> score.pos.getX())
                 .thenComparingInt(score -> score.pos.getZ());
