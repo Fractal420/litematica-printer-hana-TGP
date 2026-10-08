@@ -333,6 +333,9 @@ public class PrintHandler extends FeatureModuleBase {
 
     @Override
     protected void executeIteration(BlockPos blockPos, AtomicReference<Boolean> skipIteration) {
+        if (this.ctx != null && this.ctx.requiredState != null) {
+            this.sortedTargets.setPreferredItem(this.ctx.requiredState.getBlock().asItem());
+        }
         PrintTaskAction taskAction = this.printTaskAction;
         PrintPlacementResult result = this.placementExecutor.execute(this.ctx, this.action, taskAction);
         if (taskAction == null && result.taskEvent() == PrintPlacementResult.TaskEvent.SUCCESS) {

@@ -1979,15 +1979,15 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
     }
 
     private void clearRefillLockoutIfWorkResumed() {
-        if (!this.refillLockedOut) {
+        if (!Configs.Core.WORK_SWITCH.getBooleanValue()) {
             return;
         }
-        if (Configs.Core.WORK_SWITCH.getBooleanValue()) {
+        if (this.refillLockedOut || this.refillFailed) {
             this.refillLockedOut = false;
             this.refillFailed = false;
-            if (this.enderFetchCooldownUntilTick == Long.MAX_VALUE) {
-                this.enderFetchCooldownUntilTick = 0L;
-            }
+        }
+        if (this.enderFetchCooldownUntilTick == Long.MAX_VALUE) {
+            this.enderFetchCooldownUntilTick = 0L;
         }
     }
 
@@ -2807,6 +2807,23 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
             return true;
         }
         if (task.kind == RefillKind.MATERIALS) {
+            boolean enderOn = enderRefillEnabled();
+            int enderSlot = findEnderChestSlot(player);
+            if (enderOn && enderSlot >= 0) {
+                if (countEmptySlots(player) < 1) {
+                    this.queue.addLast(task);
+                    return false;
+                }
+                if (tryStartEnderFetch(player, needed)) {
+                    return true;
+                }
+                this.queue.addLast(task);
+                return false;
+            }
+            if (enderOn && enderSlot < 0) {
+                failAndStop("no ender chest in inventory to open for materials: " + needed);
+                return false;
+            }
             failAndStop("no shulker/ender source containing materials: " + needed);
             return false;
         }
@@ -2824,9 +2841,12 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (!enderRefillEnabled() || this.refillLockedOut || this.refillFailed) {
             return false;
         }
-        if (this.enderFetchCooldownUntilTick == Long.MAX_VALUE
-                || RuntimeAccess.get().currentTick() < this.enderFetchCooldownUntilTick) {
+        if (this.enderFetchCooldownUntilTick != Long.MAX_VALUE
+                && RuntimeAccess.get().currentTick() < this.enderFetchCooldownUntilTick) {
             return false;
+        }
+        if (this.enderFetchCooldownUntilTick == Long.MAX_VALUE) {
+            this.enderFetchCooldownUntilTick = 0L;
         }
         if (findEnderChestSlot(player) < 0) {
             return false;

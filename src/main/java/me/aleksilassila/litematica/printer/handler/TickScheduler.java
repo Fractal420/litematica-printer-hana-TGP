@@ -5,6 +5,8 @@ import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeComponent;
 import me.aleksilassila.litematica.printer.core.runtime.RuntimeEvent;
 import me.aleksilassila.litematica.printer.handler.handlers.GuiHandler;
+import me.aleksilassila.litematica.printer.handler.handlers.MineHandler;
+import me.aleksilassila.litematica.printer.handler.handlers.PrintHandler;
 import me.aleksilassila.litematica.printer.handler.handlers.MineDebugLog;
 import me.aleksilassila.litematica.printer.core.action.ResourceLease;
 import net.minecraft.client.Minecraft;
@@ -21,6 +23,7 @@ final class TickScheduler implements RuntimeComponent {
     private boolean runtimeActive;
     private int executionScopeHash = Integer.MIN_VALUE;
     private int roundRobinOffset;
+    private String stickyModeId;
 
     TickScheduler(ImmutableList<FeatureModuleBase> modules, PrinterRuntime runtime) {
         this.modules = modules;
@@ -79,10 +82,66 @@ final class TickScheduler implements RuntimeComponent {
         if (actionableCount == 0) {
             return;
         }
-        int startIndex = this.roundRobinOffset % actionableCount;
-        this.roundRobinOffset = (this.roundRobinOffset + 1) % actionableCount;
-        for (int offset = 0; offset < actionableCount; offset++) {
-            FeatureModuleBase handler = this.modules.get(1 + (startIndex + offset) % actionableCount);
+        FeatureModuleBase printModule = null;
+        FeatureModuleBase mineModule = null;
+        for (FeatureModuleBase handler : this.modules) {
+            if (handler instanceof PrintHandler) {
+                printModule = handler;
+            } else if (handler instanceof MineHandler) {
+                mineModule = handler;
+            }
+        }
+        boolean printPending = printModule != null && printModule.hasPendingIterationWork();
+        boolean mineActive = mineModule instanceof MineHandler mh && mh.hasActiveBreakingWork();
+        boolean minePending = mineModule != null && mineModule.hasRunnableIterationWork();
+        boolean stickToPrint = PrintHandler.NAME.equals(this.stickyModeId) && printPending;
+        boolean stickToMine = MineHandler.NAME.equals(this.stickyModeId) && (mineActive || minePending);
+        if (!stickToPrint && !stickToMine) {
+            if (printPending && !mineActive) {
+                this.stickyModeId = PrintHandler.NAME;
+            } else if (mineActive || minePending) {
+                this.stickyModeId = MineHandler.NAME;
+            } else if (printPending) {
+                this.stickyModeId = PrintHandler.NAME;
+            } else {
+                this.stickyModeId = null;
+            }
+        }
+
+        java.util.ArrayList<FeatureModuleBase> ordered = new java.util.ArrayList<>(actionableCount);
+        for (int i = 1; i < this.modules.size(); i++) {
+            ordered.add(this.modules.get(i));
+        }
+        if (this.stickyModeId != null) {
+            ordered.sort((a, b) -> {
+                boolean aSticky = this.stickyModeId.equals(a.getId());
+                boolean bSticky = this.stickyModeId.equals(b.getId());
+                if (aSticky == bSticky) {
+                    return 0;
+                }
+                return aSticky ? -1 : 1;
+            });
+            if (PrintHandler.NAME.equals(this.stickyModeId) || MineHandler.NAME.equals(this.stickyModeId)) {
+                ordered.removeIf(handler -> {
+                    if (PrintHandler.NAME.equals(this.stickyModeId)) {
+                        return handler instanceof MineHandler;
+                    }
+                    if (MineHandler.NAME.equals(this.stickyModeId)) {
+                        return handler instanceof PrintHandler;
+                    }
+                    return false;
+                });
+            }
+        } else {
+            int startIndex = this.roundRobinOffset % ordered.size();
+            this.roundRobinOffset = (this.roundRobinOffset + 1) % ordered.size();
+            java.util.ArrayList<FeatureModuleBase> rotated = new java.util.ArrayList<>(ordered.size());
+            for (int offset = 0; offset < ordered.size(); offset++) {
+                rotated.add(ordered.get((startIndex + offset) % ordered.size()));
+            }
+            ordered = rotated;
+        }
+        for (FeatureModuleBase handler : ordered) {
             if (this.pauseForHandlerPrecheck(handler)) {
                 return;
             }
@@ -108,6 +167,7 @@ final class TickScheduler implements RuntimeComponent {
         this.runtimeActive = false;
         this.executionScopeHash = Integer.MIN_VALUE;
         this.roundRobinOffset = 0;
+        this.stickyModeId = null;
     }
 
     @Override

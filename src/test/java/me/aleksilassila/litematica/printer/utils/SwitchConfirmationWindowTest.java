@@ -7,12 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SwitchConfirmationWindowTest {
     @Test
-    void clientPredictionCannotReleaseSwitchInTheSameTick() {
+    void clientPredictionCannotReleaseSwitchBeforeMinimumSettle() {
         SwitchConfirmationWindow window = new SwitchConfirmationWindow(4);
         window.begin(100L);
 
         assertTrue(window.isWaiting(100L, true));
-        assertFalse(window.isWaiting(101L, true));
+        assertTrue(window.isWaiting(101L, true));
+        assertFalse(window.isWaiting(102L, true));
     }
 
     @Test

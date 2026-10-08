@@ -58,6 +58,7 @@ class SortedSchematicTargetQueueTest {
                     pos,
                     random.nextBoolean(),
                     random.nextBoolean(),
+                    random.nextBoolean(),
                     pos.getY(),
                     random.nextDouble() * 20000.0D,
                     random.nextDouble() * 20000.0D,
@@ -86,14 +87,28 @@ class SortedSchematicTargetQueueTest {
     @Test
     void fallingTargetsAreBottomUpBeforeHeldItemPreference() {
         var lowerSand = new SortedSchematicTargetQueue.TargetScore(
-                new BlockPos(0, 10, 0), true, true, 10, 100.0D, 100.0D, 1.0D);
+                new BlockPos(0, 10, 0), true, false, true, 10, 100.0D, 100.0D, 1.0D);
         var upperAnvil = new SortedSchematicTargetQueue.TargetScore(
-                new BlockPos(0, 11, 0), false, true, 11, 1.0D, 1.0D, 0.0D);
+                new BlockPos(0, 11, 0), false, false, true, 11, 1.0D, 1.0D, 0.0D);
         List<SortedSchematicTargetQueue.TargetScore> scores = new ArrayList<>(List.of(upperAnvil, lowerSand));
 
         scores.sort(SortedSchematicTargetQueue.TargetScore.COMPARATOR);
 
         assertEquals(lowerSand, scores.get(0));
         assertEquals(upperAnvil, scores.get(1));
+    }
+
+    @Test
+    void preferredItemBeatsDistance() {
+        var farPreferred = new SortedSchematicTargetQueue.TargetScore(
+                new BlockPos(0, 0, 0), true, false, false, 0, 10000.0D, 10000.0D, 1.0D);
+        var nearOther = new SortedSchematicTargetQueue.TargetScore(
+                new BlockPos(1, 0, 0), false, true, false, 0, 1.0D, 1.0D, 0.0D);
+        List<SortedSchematicTargetQueue.TargetScore> scores = new ArrayList<>(List.of(nearOther, farPreferred));
+
+        scores.sort(SortedSchematicTargetQueue.TargetScore.COMPARATOR);
+
+        assertEquals(farPreferred, scores.get(0));
+        assertEquals(nearOther, scores.get(1));
     }
 }

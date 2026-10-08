@@ -10,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 final class MineToolSession {
     private Item sessionToolItem;
@@ -35,8 +36,11 @@ final class MineToolSession {
 
     Comparator<MineBreakExecutor.Target> comparator(LocalPlayer player) {
         BlockPos anchor = this.lastSessionPos;
+        Item tool = this.sessionToolItem;
         return Comparator
-                .comparingDouble((MineBreakExecutor.Target target) -> localityScore(player, anchor, target))
+                .comparing((MineBreakExecutor.Target target) -> tool != null
+                        && !Objects.equals(target.bestToolItem(), tool))
+                .thenComparingDouble(target -> localityScore(player, anchor, target))
                 .thenComparingInt(target -> target.pos().getY())
                 .thenComparingInt(target -> target.pos().getX())
                 .thenComparingInt(target -> target.pos().getZ());
@@ -50,6 +54,9 @@ final class MineToolSession {
     }
 
     MineBreakExecutor.Target selectTarget(List<MineBreakExecutor.Target> candidates, MineBreakExecutor analyzer, LocalPlayer player) {
+        if (candidates.isEmpty()) {
+            return null;
+        }
         MineBreakExecutor.Target nearest = candidates.get(0);
         if (this.lastSessionPos != null) {
             for (MineBreakExecutor.Target target : candidates) {
@@ -60,11 +67,20 @@ final class MineToolSession {
             }
         }
         if (this.sessionToolItem != null) {
+            MineBreakExecutor.Target bestSameTool = null;
+            double bestScore = Double.MAX_VALUE;
             for (MineBreakExecutor.Target target : candidates) {
                 if (analyzer.hasSameBestTool(target, this.sessionToolItem)) {
-                    this.lastSessionPos = target.pos();
-                    return target;
+                    double score = localityScore(player, this.lastSessionPos, target);
+                    if (score < bestScore) {
+                        bestScore = score;
+                        bestSameTool = target;
+                    }
                 }
+            }
+            if (bestSameTool != null) {
+                this.lastSessionPos = bestSameTool.pos();
+                return bestSameTool;
             }
         }
         this.sessionToolItem = nearest.bestToolItem();

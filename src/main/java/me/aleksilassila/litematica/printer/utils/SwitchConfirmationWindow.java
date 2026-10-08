@@ -2,10 +2,12 @@ package me.aleksilassila.litematica.printer.utils;
 
 final class SwitchConfirmationWindow {
     private final int maxSettleTicks;
+    private final int minSettleTicks;
     private long startedTick = Long.MIN_VALUE;
 
     SwitchConfirmationWindow(int maxSettleTicks) {
         this.maxSettleTicks = maxSettleTicks;
+        this.minSettleTicks = Math.max(2, maxSettleTicks / 6);
     }
 
     void begin(long tick) {
@@ -17,7 +19,7 @@ final class SwitchConfirmationWindow {
             return false;
         }
         long age = tick - this.startedTick;
-        if (age < 1L) {
+        if (age < this.minSettleTicks) {
             return true;
         }
         if (handMatches) {

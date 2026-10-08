@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 
 public final class InventorySwitchGuard {
 
-    private static final int MAX_SETTLE_TICKS = 8;
+    private static final int MAX_SETTLE_TICKS = 12;
     private final Minecraft client;
     private final LongSupplier tickClock;
     private Item pendingItem;
