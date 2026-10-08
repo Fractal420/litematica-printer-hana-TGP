@@ -9,6 +9,7 @@ import me.aleksilassila.litematica.printer.mixin_extension.MultiPlayerGameModeEx
 import me.aleksilassila.litematica.printer.utils.mods.QuickShulkerBridge;
 import me.aleksilassila.litematica.printer.utils.minecraft.DirectionUtils;
 import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
+import me.aleksilassila.litematica.printer.utils.InventorySwitchGuard;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.NetworkUtils;
 import net.minecraft.client.player.LocalPlayer;
@@ -86,6 +87,10 @@ public class ActionManager {
 
     public boolean isWaitingForLook() {
         return this.needWaitModifyLook;
+    }
+
+    public boolean hasQueuedAction() {
+        return this.queuedClick != null;
     }
 
     @Nullable
@@ -170,11 +175,22 @@ public class ActionManager {
         if (needWaitModifyLook) {
             needWaitModifyLook = false;
         }
-        if (RuntimeAccess.get().inventorySwitchGuard().isWaiting()) {
+        if (me.aleksilassila.litematica.printer.utils.InteractionUtils.getRuntime().hasActiveDestroyTarget()
+                || me.aleksilassila.litematica.printer.runtime.RuntimeAccess.get().modules().mine().hasActiveBreakingWork()) {
+            return this.finish(click, SendResult.HELD_ITEM_CHANGED);
+        }
+        InventorySwitchGuard switchGuard = RuntimeAccess.get().inventorySwitchGuard();
+        if (switchGuard.isWaiting()) {
+            if (switchGuard.getPendingItem() != null && !pendingMatchesQueuedExpectation(switchGuard, click)) {
+                return this.finish(click, SendResult.HELD_ITEM_CHANGED);
+            }
             return SendResult.WAITING_FOR_LOOK;
         }
-        if (!isHoldingExpectedItem(player, click)) {
-            return this.finish(click, SendResult.HELD_ITEM_CHANGED);
+        if (!switchGuard.isReadyToPlace(click.expectedItems, click.expectedStackPredicate)) {
+            if (!isHoldingExpectedItem(player, click)) {
+                return this.finish(click, SendResult.HELD_ITEM_CHANGED);
+            }
+            return SendResult.WAITING_FOR_LOOK;
         }
         int reserveAllowance = getReserveAllowance(player, click);
         if (reserveAllowance <= 0) {
@@ -230,7 +246,7 @@ public class ActionManager {
             if (!isHoldingExpectedItem(player, click)) {
                 return this.finish(click, SendResult.HELD_ITEM_CHANGED);
             }
-            boolean predictLocally = click.source == ActionSource.GENERIC;
+            boolean predictLocally = false;
             BlockHitResult blockHitResult = new BlockHitResult(hitVec, click.side, click.target, false);
             for (int i = 0; i < click.repeatCount; i++) {
                 if (reserveAllowance <= 0) {
@@ -260,7 +276,14 @@ public class ActionManager {
             this.activeSource = ActionSource.GENERIC;
             restoreShift(player, click, wasSneak);
         }
-        return this.finish(click, accepted ? SendResult.SENT : SendResult.INTERACTION_REJECTED);
+        SendResult result = accepted ? SendResult.SENT : SendResult.INTERACTION_REJECTED;
+        if (result == SendResult.SENT) {
+            ItemStack held = player.getMainHandItem();
+            if (!held.isEmpty()) {
+                RuntimeAccess.get().inventorySwitchGuard().clearIfPending(held.getItem());
+            }
+        }
+        return this.finish(click, result);
     }
 
     private void armTaskAnvilScreenSuppression(QueuedClick click) {
@@ -400,13 +423,20 @@ public class ActionManager {
         return player.position().distanceToSqr(click.queuedPlayerPosition) > STALE_WAIT_MOVE_DISTANCE_SQR;
     }
 
+    private static boolean pendingMatchesQueuedExpectation(InventorySwitchGuard switchGuard, QueuedClick click) {
+        if (click.expectedStackPredicate != null) {
+            return switchGuard.isPendingMatching(click.expectedStackPredicate);
+        }
+        return switchGuard.isPendingMatching(click.expectedItems);
+    }
+
     private static boolean isHoldingExpectedItem(LocalPlayer player, QueuedClick click) {
         ItemStack held = player.getMainHandItem();
         if (click.expectedStackPredicate != null) {
             return click.expectedStackPredicate.test(held);
         }
         if (click.expectedItems == null || click.expectedItems.length == 0) {
-            return true;
+            return held.isEmpty();
         }
         if (held.isEmpty()) {
             for (Item expectedItem : click.expectedItems) {

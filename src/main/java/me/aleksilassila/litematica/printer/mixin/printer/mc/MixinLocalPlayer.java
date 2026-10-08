@@ -114,7 +114,8 @@ public class MixinLocalPlayer extends AbstractClientPlayer {
 
     @Inject(method = "aiStep", at = @At("TAIL"))
     private void litematica_printer$blockMovementDuringVanillaRefill(CallbackInfo ci) {
-        if (!RuntimeAccess.get().manualVanillaRefill().shouldPause()) {
+        if (!RuntimeAccess.get().manualVanillaRefill().shouldPause()
+                || RuntimeAccess.get().manualVanillaRefill().allowsPlayerMovement()) {
             return;
         }
         LocalPlayer self = (LocalPlayer) (Object) this;

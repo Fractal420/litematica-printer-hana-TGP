@@ -224,11 +224,13 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
 
         public static final ConfigBoolean MANUAL_VANILLA_REFILL = bool("manualVanillaRefill")
                 .defaultValue(false)
+                .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
 
         public static final ConfigBoolean MANUAL_VANILLA_REFILL_FROM_ENDER = bool("manualVanillaRefillFromEnder")
                 .defaultValue(false)
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
 
         public static final ConfigOptionList MANUAL_VANILLA_REFILL_ENDER_COUNT = optionList("manualVanillaRefillEnderCount")
@@ -236,26 +238,16 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_FROM_ENDER.getBooleanValue())
                 .build();
 
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_MATERIAL_SLOT = integer("manualVanillaRefillMaterialSlot")
+                .defaultValue(0)
+                .range(0, 9)
+                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .build();
+
         public static final ConfigBoolean MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE = bool("manualVanillaRefillEnchantedGoldenApple")
                 .defaultValue(false)
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
-                .build();
-
-        public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE = bool("manualVanillaRefillNetheritePickaxe")
-                .defaultValue(false)
-                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
-                .build();
-
-        public static final ConfigInteger MANUAL_VANILLA_REFILL_PICKAXE_SLOT = integer("manualVanillaRefillPickaxeSlot")
-                .defaultValue(2)
-                .range(1, 9)
-                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE.getBooleanValue())
-                .build();
-
-        public static final ConfigInteger MANUAL_VANILLA_REFILL_ENDER_SLOT = integer("manualVanillaRefillEnderSlot")
-                .defaultValue(5)
-                .range(1, 9)
-                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_FROM_ENDER.getBooleanValue())
+                .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
 
         public static final ConfigInteger MANUAL_VANILLA_REFILL_GAPPLE_SLOT = integer("manualVanillaRefillGappleSlot")
@@ -264,10 +256,82 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE.getBooleanValue())
                 .build();
 
-        public static final ConfigInteger MANUAL_VANILLA_REFILL_MATERIAL_SLOT = integer("manualVanillaRefillMaterialSlot")
-                .defaultValue(0)
-                .range(0, 9)
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_ENDER_SLOT = integer("manualVanillaRefillEnderSlot")
+                .defaultValue(5)
+                .range(1, 9)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_FROM_ENDER.getBooleanValue())
+                .build();
+
+        public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE = bool("manualVanillaRefillNetheritePickaxe")
+                .defaultValue(false)
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .addValueChangeListener(c -> ConfigUi.refresh())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_PICKAXE_SLOT = integer("manualVanillaRefillPickaxeSlot")
+                .defaultValue(2)
+                .range(1, 9)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE.getBooleanValue())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_PICKAXE_DURABILITY = integer("manualVanillaRefillPickaxeDurability")
+                .defaultValue(10)
+                .range(1, 100)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE.getBooleanValue())
+                .build();
+
+        public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_AXE = bool("manualVanillaRefillNetheriteAxe")
+                .defaultValue(false)
+                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .addValueChangeListener(c -> ConfigUi.refresh())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_AXE_SLOT = integer("manualVanillaRefillAxeSlot")
+                .defaultValue(4)
+                .range(1, 9)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_AXE.getBooleanValue())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_AXE_DURABILITY = integer("manualVanillaRefillAxeDurability")
+                .defaultValue(10)
+                .range(1, 100)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_AXE.getBooleanValue())
+                .build();
+
+        public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_SHOVEL = bool("manualVanillaRefillNetheriteShovel")
+                .defaultValue(false)
+                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .addValueChangeListener(c -> ConfigUi.refresh())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_SHOVEL_SLOT = integer("manualVanillaRefillShovelSlot")
+                .defaultValue(3)
+                .range(1, 9)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_SHOVEL.getBooleanValue())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_SHOVEL_DURABILITY = integer("manualVanillaRefillShovelDurability")
+                .defaultValue(10)
+                .range(1, 100)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_SHOVEL.getBooleanValue())
+                .build();
+
+        public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_HOE = bool("manualVanillaRefillNetheriteHoe")
+                .defaultValue(false)
+                .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
+                .addValueChangeListener(c -> ConfigUi.refresh())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_HOE_SLOT = integer("manualVanillaRefillHoeSlot")
+                .defaultValue(7)
+                .range(1, 9)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_HOE.getBooleanValue())
+                .build();
+
+        public static final ConfigInteger MANUAL_VANILLA_REFILL_HOE_DURABILITY = integer("manualVanillaRefillHoeDurability")
+                .defaultValue(10)
+                .range(1, 100)
+                .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_HOE.getBooleanValue())
                 .build();
 
         public static final ConfigBoolean DROP_EMPTY_SHULKERS = bool("dropEmptyShulkers")
@@ -278,22 +342,32 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 //#if MC < 260200
                 UNLOCK_BEACON_EFFECTS,
                 //#endif
-                TWEAKEROO_ANGEL_BLOCK_MAY_BUILD,
                 Placement.QUICK_SHULKER,
                 Placement.QUICK_SHULKER_MODE,
                 Placement.QUICK_SHULKER_COOLDOWN,
                 Placement.STORE_ORDERLY,
+                TWEAKEROO_ANGEL_BLOCK_MAY_BUILD,
                 REMOTE_TAKE,
+                DROP_EMPTY_SHULKERS,
                 MANUAL_VANILLA_REFILL,
                 MANUAL_VANILLA_REFILL_FROM_ENDER,
                 MANUAL_VANILLA_REFILL_ENDER_COUNT,
+                MANUAL_VANILLA_REFILL_ENDER_SLOT,
+                MANUAL_VANILLA_REFILL_MATERIAL_SLOT,
                 MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE,
+                MANUAL_VANILLA_REFILL_GAPPLE_SLOT,
                 MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE,
                 MANUAL_VANILLA_REFILL_PICKAXE_SLOT,
-                MANUAL_VANILLA_REFILL_ENDER_SLOT,
-                MANUAL_VANILLA_REFILL_GAPPLE_SLOT,
-                MANUAL_VANILLA_REFILL_MATERIAL_SLOT,
-                DROP_EMPTY_SHULKERS
+                MANUAL_VANILLA_REFILL_PICKAXE_DURABILITY,
+                MANUAL_VANILLA_REFILL_NETHERITE_AXE,
+                MANUAL_VANILLA_REFILL_AXE_SLOT,
+                MANUAL_VANILLA_REFILL_AXE_DURABILITY,
+                MANUAL_VANILLA_REFILL_NETHERITE_SHOVEL,
+                MANUAL_VANILLA_REFILL_SHOVEL_SLOT,
+                MANUAL_VANILLA_REFILL_SHOVEL_DURABILITY,
+                MANUAL_VANILLA_REFILL_NETHERITE_HOE,
+                MANUAL_VANILLA_REFILL_HOE_SLOT,
+                MANUAL_VANILLA_REFILL_HOE_DURABILITY
         );
     }
 
@@ -330,19 +404,23 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
 
         public static final ConfigBoolean QUICK_SHULKER = bool("quickShulker")
                 .defaultValue(false)
+                .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
 
         public static final ConfigOptionList QUICK_SHULKER_MODE = optionList("quickShulkerMode")
                 .defaultValue(QuickShulkerModeType.INVOKE)
+                .setVisible(QUICK_SHULKER::getBooleanValue)
                 .build();
 
         public static final ConfigInteger QUICK_SHULKER_COOLDOWN = integer("quickShulkerCooldown")
                 .defaultValue(1)
                 .range(0, 20)
+                .setVisible(QUICK_SHULKER::getBooleanValue)
                 .build();
 
         public static final ConfigBoolean STORE_ORDERLY = bool("storeOrderly")
                 .defaultValue(false)
+                .setVisible(QUICK_SHULKER::getBooleanValue)
                 .build();
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(

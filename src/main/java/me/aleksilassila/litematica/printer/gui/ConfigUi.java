@@ -33,13 +33,17 @@ public class ConfigUi extends GuiConfigsBase {
     }
 
     public static void refresh() {
-        //#if MC > 260100
-        //$$ if (Reference.MINECRAFT.gui.screen() instanceof ConfigUi gui) {
-        //#else
-        if (Reference.MINECRAFT.screen instanceof ConfigUi gui) {
-        //#endif
-            gui.initGui();
-        }
+        // Defer list rebuild until after the current click/value-change finishes,
+        // otherwise the GUI is mid-update and the new rows never appear.
+        Reference.MINECRAFT.execute(() -> {
+            //#if MC > 260100
+            //$$ if (Reference.MINECRAFT.gui.screen() instanceof ConfigUi gui) {
+            //#else
+            if (Reference.MINECRAFT.screen instanceof ConfigUi gui) {
+            //#endif
+                gui.reset();
+            }
+        });
     }
 
     @Override

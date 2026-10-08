@@ -123,7 +123,9 @@ public class InventoryUtils {
         if (player == null || connection == null) {
             return;
         }
-        connection.send(new ServerboundSetCarriedItemPacket(getSelectedSlot(player.getInventory())));
+        int slot = getSelectedSlot(player.getInventory());
+        connection.send(new ServerboundSetCarriedItemPacket(slot));
+        RuntimeAccess.get().inventorySwitchGuard().noteSyncedSlot(slot);
     }
 
     public static PickResult checkPickSlotAvailable(int sourceSlot, Minecraft mc) {

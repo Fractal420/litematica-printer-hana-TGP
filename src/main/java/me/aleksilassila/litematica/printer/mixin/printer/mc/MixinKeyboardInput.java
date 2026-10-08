@@ -27,7 +27,8 @@ public abstract class MixinKeyboardInput {
     //#endif
 
     private void litematica_printer$zeroMovement() {
-        if (!RuntimeAccess.get().manualVanillaRefill().shouldPause()) {
+        if (!RuntimeAccess.get().manualVanillaRefill().shouldPause()
+                || RuntimeAccess.get().manualVanillaRefill().allowsPlayerMovement()) {
             return;
         }
         //#if MC >= 12103

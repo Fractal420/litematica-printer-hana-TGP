@@ -130,6 +130,10 @@ public final class ActionBroker implements RuntimeComponent, ActionPort {
         return this.delegate.isWaitingForLook();
     }
 
+    public boolean hasQueuedAction() {
+        return this.delegate.hasQueuedAction();
+    }
+
     @Nullable
     public PlayerLook getLook() {
         return this.delegate.getLook();

@@ -56,6 +56,10 @@ public interface ActionPort {
 
     boolean isWaitingForLook();
 
+    default boolean hasQueuedAction() {
+        return false;
+    }
+
     @Nullable PlayerLook getLook();
 
     void setLook(@Nullable PlayerLook look);
