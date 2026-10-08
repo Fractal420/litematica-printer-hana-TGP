@@ -75,7 +75,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
 
         public static final ConfigBooleanHotkeyed WORK_SWITCH = booleanHotkey("workingSwitch")
                 .defaultValue(false)
-                .defaultHotkey("CAPS_LOCK")
+                .defaultHotkey("T")
                 .keybindSettings(KeybindSettings.PRESS_ALLOWEXTRA_EMPTY)
                 .build();
 
@@ -84,22 +84,22 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigBooleanHotkeyed PRINT = booleanHotkey("print")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(Core::isMultiMode)
                 .build();
 
         public static final ConfigBooleanHotkeyed MINE = booleanHotkey("mine")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(Core::isMultiMode)
                 .build();
 
         public static final ConfigBooleanHotkeyed FILL = booleanHotkey("fill")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(Core::isMultiMode)
                 .build();
 
         public static final ConfigBooleanHotkeyed FLUID = booleanHotkey("fluid")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(Core::isMultiMode)
                 .build();
 
@@ -129,7 +129,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigBoolean CHECK_PLAYER_INTERACTION_RANGE = bool("checkPlayerInteractionRange")
-                .defaultValue(true)
+                .defaultValue(false)
                 .build();
 
         public static final ConfigBoolean LAG_CHECK = bool("printerLagCheck")
@@ -223,18 +223,18 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigBoolean MANUAL_VANILLA_REFILL = bool("manualVanillaRefill")
-                .defaultValue(false)
+                .defaultValue(true)
                 .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
 
         public static final ConfigBoolean MANUAL_VANILLA_REFILL_FROM_ENDER = bool("manualVanillaRefillFromEnder")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
                 .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
 
         public static final ConfigOptionList MANUAL_VANILLA_REFILL_ENDER_COUNT = optionList("manualVanillaRefillEnderCount")
-                .defaultValue(EnderChestCountType.ONE)
+                .defaultValue(EnderChestCountType.TWO)
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_FROM_ENDER.getBooleanValue())
                 .build();
 
@@ -245,7 +245,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigBoolean MANUAL_VANILLA_REFILL_ENCHANTED_GOLDEN_APPLE = bool("manualVanillaRefillEnchantedGoldenApple")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
                 .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
@@ -263,7 +263,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE = bool("manualVanillaRefillNetheritePickaxe")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
                 .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
@@ -275,43 +275,43 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigInteger MANUAL_VANILLA_REFILL_PICKAXE_DURABILITY = integer("manualVanillaRefillPickaxeDurability")
-                .defaultValue(10)
+                .defaultValue(5)
                 .range(1, 100)
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_PICKAXE.getBooleanValue())
                 .build();
 
         public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_AXE = bool("manualVanillaRefillNetheriteAxe")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
                 .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
 
         public static final ConfigInteger MANUAL_VANILLA_REFILL_AXE_SLOT = integer("manualVanillaRefillAxeSlot")
-                .defaultValue(4)
+                .defaultValue(3)
                 .range(1, 9)
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_AXE.getBooleanValue())
                 .build();
 
         public static final ConfigInteger MANUAL_VANILLA_REFILL_AXE_DURABILITY = integer("manualVanillaRefillAxeDurability")
-                .defaultValue(10)
+                .defaultValue(5)
                 .range(1, 100)
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_AXE.getBooleanValue())
                 .build();
 
         public static final ConfigBoolean MANUAL_VANILLA_REFILL_NETHERITE_SHOVEL = bool("manualVanillaRefillNetheriteShovel")
-                .defaultValue(false)
+                .defaultValue(true)
                 .setVisible(MANUAL_VANILLA_REFILL::getBooleanValue)
                 .addValueChangeListener(c -> ConfigUi.refresh())
                 .build();
 
         public static final ConfigInteger MANUAL_VANILLA_REFILL_SHOVEL_SLOT = integer("manualVanillaRefillShovelSlot")
-                .defaultValue(3)
+                .defaultValue(4)
                 .range(1, 9)
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_SHOVEL.getBooleanValue())
                 .build();
 
         public static final ConfigInteger MANUAL_VANILLA_REFILL_SHOVEL_DURABILITY = integer("manualVanillaRefillShovelDurability")
-                .defaultValue(10)
+                .defaultValue(5)
                 .range(1, 100)
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_SHOVEL.getBooleanValue())
                 .build();
@@ -329,13 +329,13 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigInteger MANUAL_VANILLA_REFILL_HOE_DURABILITY = integer("manualVanillaRefillHoeDurability")
-                .defaultValue(10)
+                .defaultValue(5)
                 .range(1, 100)
                 .setVisible(() -> MANUAL_VANILLA_REFILL.getBooleanValue() && MANUAL_VANILLA_REFILL_NETHERITE_HOE.getBooleanValue())
                 .build();
 
         public static final ConfigBoolean DROP_EMPTY_SHULKERS = bool("dropEmptyShulkers")
-                .defaultValue(false)
+                .defaultValue(true)
                 .build();
 
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
@@ -374,12 +374,12 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
     public static class Placement {
 
         public static final ConfigInteger PLACE_INTERVAL = integer("placeInterval")
-                .defaultValue(0)
+                .defaultValue(1)
                 .range(0, 20)
                 .build();
 
         public static final ConfigInteger PLACE_BLOCKS_PER_TICK = integer("placeBlocksPerTick")
-                .defaultValue(1)
+                .defaultValue(4)
                 .range(0, 256)
                 .build();
 
@@ -451,12 +451,12 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigInteger BREAK_BLOCKS_PER_TICK = integer("breakBlocksPerTick")
-                .defaultValue(0)
+                .defaultValue(5)
                 .range(0, 1000)
                 .build();
 
         public static final ConfigInteger BREAK_PROGRESS_THRESHOLD = integer("breakProgressThreshold")
-                .defaultValue(100)
+                .defaultValue(70)
                 .range(70, 100)
                 .build();
 
@@ -475,7 +475,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigBoolean BREAK_AUTO_TOOL = bool("breakAutoTool")
-                .defaultValue(false)
+                .defaultValue(true)
                 .build();
 
         public static final ConfigOptionList BREAK_LIMITER = optionList("breakLimiter")
@@ -483,7 +483,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigOptionList BREAK_LIMIT = optionList("breakLimit")
-                .defaultValue(UsageRestriction.ListType.NONE)
+                .defaultValue(UsageRestriction.ListType.BLACKLIST)
                 .setVisible(Break::isCustom)
                 .build();
 
@@ -580,11 +580,11 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigBoolean PRINT_RESERVE_ITEMS = bool("printReserveItems")
-                .defaultValue(false)
+                .defaultValue(true)
                 .build();
 
         public static final ConfigInteger PRINT_RESERVE_ITEM_COUNT = integer("printReserveItemCount")
-                .defaultValue(1)
+                .defaultValue(10)
                 .range(1, 64)
                 .setVisible(PRINT_RESERVE_ITEMS::getBooleanValue)
                 .build();
@@ -640,11 +640,11 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigBoolean BREAK_WRONG_BLOCK = bool("printBreakWrongBlock")
-                .defaultValue(false)
+                .defaultValue(true)
                 .build();
 
         public static final ConfigBoolean BREAK_EXTRA_BLOCK = bool("printBreakExtraBlock")
-                .defaultValue(false)
+                .defaultValue(true)
                 .build();
 
         public static final ConfigBoolean BREAK_WRONG_STATE_BLOCK = bool("printBreakWrongStateBlock")
@@ -796,7 +796,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .build();
 
         public static final ConfigStringList FLUID_REPLACE_BLOCK_LIST = stringList("fluidReplaceBlockList")
-                .defaultValue(Blocks.SAND)
+                .defaultValue(Blocks.COBBLESTONE, Blocks.SAND)
                 .build();
 
         public static final ConfigStringList FLUID_LIST = stringList("fluidList")
