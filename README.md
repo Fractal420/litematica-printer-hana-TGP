@@ -19,7 +19,7 @@ Huge thanks to **Yur1Ca** for the outstanding work on Hana — this project woul
 ## Download
 
 - **[GitHub Releases](https://github.com/Fractal420/litematica-printer-hana-TGP/releases)** — recommended. Standalone JARs per Minecraft version + multi-version builds.
-- Current version naming follows the pattern `Hana-TGP-Vx` (e.g. `Hana-TGP-V4`).
+- Current version naming follows the pattern `Hana-TGP-Vx` (e.g. `Hana-TGP-V6`).
 
 There is currently no Modrinth page for this fork. Use the GitHub releases only.
 
@@ -33,7 +33,7 @@ There is currently no Modrinth page for this fork. Use the GitHub releases only.
 - 1.19.4
 - 1.20.1, 1.20.2, 1.20.4, and 1.20.6
 - 1.21 through 1.21.11
-- 26.1.x and 26.2
+- 26.1.x, 26.2, and 26.3
 
 Versions older than 1.18.2 are not supported. Intermediate Minecraft versions may work when they fall inside the same compatibility range, but are not always built as separate JARs.
 
@@ -71,6 +71,7 @@ Dependency versions **must** match the Minecraft version you are launching.
 - Safer handling for directional and state-sensitive blocks.
 - Continuous retry after server reverts / rate limits — positions are kept and re-checked until the world actually matches the schematic (or a timeout occurs). Cooldowns are cleared on mismatch so the printer can recover without needing to be toggled off and on.
 - Sorted target queue that refills when low or dirty instead of only after a full batch is consumed.
+- Placement pipeline tuned for fewer misplacements and faster recovery on laggy servers (stricter confirmation, better hotbar switch guards, player-level placement fixes).
 - Defaults tuned for dense / laggy areas (lazy scan effectively off, shorter place cooldown, conservative blocks-per-tick).
 
 ### Building tools
@@ -78,21 +79,37 @@ Dependency versions **must** match the Minecraft version you are launching.
 - Fill within the active schematic or selection area.
 - Drain water and lava source blocks.
 - Mine blocks within the selected area.
-- Independent handling of extra blocks and wrong-state blocks.
+- Independent handling of wrong, extra and wrong-state blocks.
 - Bedrock-breaking mode with an allowlist.
 - Waterlogged block placement and ice-breaking water placement.
 - Replacement of dead coral in the schematic using live coral.
 
-### Selection ranges (print & mine)
+### Selection ranges (print, mine, fill, fluid, cover)
 
-- Litematica Selection
-- Litematica Render Layer
+- **Projection Selection** — whole schematic placement area
+- **Projection Render Layer** — only the Litematica rendered layer volume
 - Below Player (full Litematica selection)
 - Above Player (full Litematica selection)
 - Below Player + Render Layer
 - Above Player + Render Layer
 
-Available for both print and mine selection ranges. Above/Below modes correctly respect wrong / extra / wrong-state block breaking.
+Available for print, mine, fill, fluid, and cover selection ranges. Projection Selection and Render Layer are scoped correctly (whole schematic vs rendered layer only). Above/Below modes correctly respect wrong / extra / wrong-state block breaking.
+
+### Work crosshair
+
+When the work switch is on, a small center-screen item icon replaces the vanilla crosshair and shows the current activity:
+
+| Mode | Icon |
+|------|------|
+| Idle (enabled, nothing to do) | Campfire |
+| Printing | Bricks |
+| Mining / breaking wrong·extra·wrong-state | Netherite pickaxe |
+| Fluid removal | Water bucket |
+| Fill | Sponge |
+| Cover | Obsidian |
+| Bedrock | Bedrock |
+
+The icon switches as soon as work starts and returns to idle when the task finishes. The vanilla crosshair is restored when the work switch is turned off (and on disconnect / quit).
 
 ### Convenience & safety
 
@@ -110,13 +127,14 @@ The printer can pull materials automatically when they run out. Several paths ar
 - Pauses printing while a refill is in progress so placement does not fight the refill sequence.
 - Optional **refill from ender chest**: places one or two ender chests, opens them, pulls shulker boxes out into your inventory, then uses those shulkers for materials. You can choose how many ender chests to place (1 or 2).
 - Optional **enchanted golden apple** auto-refill (keeps gapples stocked while working).
-- Optional **netherite pickaxe** auto-refill / swap (useful when mining or bedrock-breaking; respects remaining durability).
+- Optional **netherite pickaxe / axe / shovel / hoe** auto-refill / swap (respects remaining durability and configured slots).
 
 **Quick Shulker** (optional mod)
 
 - Opens shulker boxes directly from the inventory without placing them in the world.
 - Ordered return of items into the original shulker when possible.
 - Store-orderly mode for tidying inventory near full.
+(Work only on servers with mod installed)
 
 **Other inventory helpers**
 
@@ -132,12 +150,12 @@ The printer also contains special placement logic for many vanilla blocks, inclu
 
 1. Load a schematic in the world with Litematica.
 2. Move within interaction range of the schematic blocks.
-3. Press **Caps Lock** to enable the printer. (Configurable)
+3. Press **T** to enable the printer. (Configurable)
 4. Adjust printer settings in the configuration screen when required by the server (especially work interval / place cooldown on strict or laggy servers).
 
 Most options include tooltips in the configuration interface.
 
-**Tip for laggy / rate-limited servers (including 6b6t):** start with the defaults. If placements are still being reverted, slightly increase place cooldown or lower blocks-per-tick rather than turning the printer off and on repeatedly.
+**Tip for 6b6t:** start with the defaults.
 
 ---
 
