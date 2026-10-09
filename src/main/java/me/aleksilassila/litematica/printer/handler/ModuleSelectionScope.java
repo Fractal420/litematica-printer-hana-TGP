@@ -55,7 +55,8 @@ final class ModuleSelectionScope {
 
         List<PrinterBox> baseBoxes;
         if (this.owner.isSchematicBlockHandler()) {
-            baseBoxes = this.owner.litematica.createSchematicPlacementBoxes();
+            boolean onlyRendered = currentType != null && currentType.requiresRenderLayer();
+            baseBoxes = this.owner.litematica.createSchematicPlacementBoxes(onlyRendered);
         } else if (this.owner.requiresSelection1ModeRangeCheck()) {
             baseBoxes = this.owner.litematica.createSelectionBoxes();
         } else {

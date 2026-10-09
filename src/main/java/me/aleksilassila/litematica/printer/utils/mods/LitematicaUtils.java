@@ -152,15 +152,20 @@ public class LitematicaUtils {
     }
 
     public static List<PrinterBox> createSchematicPlacementBoxes() {
+        return createSchematicPlacementBoxes(true);
+    }
+
+    public static List<PrinterBox> createSchematicPlacementBoxes(boolean onlyRenderingEnabled) {
         List<PrinterBox> result = new ArrayList<>();
         SchematicPlacementManager manager = DataManager.getSchematicPlacementManager();
+        SubRegionPlacement.RequiredEnabled requirement = onlyRenderingEnabled
+                ? SubRegionPlacement.RequiredEnabled.RENDERING_ENABLED
+                : SubRegionPlacement.RequiredEnabled.ANY;
         for (SchematicPlacement placement : manager.getAllSchematicsPlacements()) {
-            if (!placement.matchesRequirement(SubRegionPlacement.RequiredEnabled.RENDERING_ENABLED)) {
+            if (!placement.matchesRequirement(requirement)) {
                 continue;
             }
-            Map<String, Box> boxes = placement.getSubRegionBoxes(
-                    SubRegionPlacement.RequiredEnabled.RENDERING_ENABLED
-            );
+            Map<String, Box> boxes = placement.getSubRegionBoxes(requirement);
             for (Box box : boxes.values()) {
                 Bounds bounds = Bounds.from(box);
                 if (bounds != null) {

@@ -29,6 +29,10 @@ public final class LitematicaAdapter {
         return LitematicaUtils.createSchematicPlacementBoxes();
     }
 
+    public List<PrinterBox> createSchematicPlacementBoxes(boolean onlyRenderingEnabled) {
+        return LitematicaUtils.createSchematicPlacementBoxes(onlyRenderingEnabled);
+    }
+
     public boolean isWithinSelectionRange(BlockPos pos) {
         return LitematicaUtils.isWithinSelection1ModeRange(pos);
     }
