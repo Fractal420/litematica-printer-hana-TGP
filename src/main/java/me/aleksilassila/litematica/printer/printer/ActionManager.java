@@ -243,7 +243,11 @@ public class ActionManager {
         try {
             InventoryUtils.syncSelectedHotbarSlot();
             gameModeExtension.ensureCarriedItemSent();
-            if (!isHoldingExpectedItem(player, click)) {
+            if (switchGuard.isWaiting()) {
+                return SendResult.WAITING_FOR_LOOK;
+            }
+            if (!switchGuard.isReadyToPlace(click.expectedItems, click.expectedStackPredicate)
+                    || !isHoldingExpectedItem(player, click)) {
                 return this.finish(click, SendResult.HELD_ITEM_CHANGED);
             }
             boolean predictLocally = false;

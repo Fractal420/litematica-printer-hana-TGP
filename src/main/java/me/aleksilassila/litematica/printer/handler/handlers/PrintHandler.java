@@ -22,6 +22,7 @@ import me.aleksilassila.litematica.printer.printer.action.Action;
 import me.aleksilassila.litematica.printer.runtime.PrinterRuntime;
 import me.aleksilassila.litematica.printer.utils.*;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
@@ -249,6 +250,13 @@ public class PrintHandler extends FeatureModuleBase {
             return false;
         }
         this.ctx = new SchematicBlockContext(client, level, schematic, blockPos);
+        Item preferred = this.sortedTargets.getPreferredItem();
+        if (preferred != null) {
+            Item required = this.ctx.requiredState.getBlock().asItem();
+            if (required != null && required != preferred) {
+                return false;
+            }
+        }
         boolean inPrintSelection = ConfigUtils.isPositionInSelectionRange(
                 this.player, blockPos, Configs.Print.PRINT_SELECTION_TYPE);
         if (!inPrintSelection) {

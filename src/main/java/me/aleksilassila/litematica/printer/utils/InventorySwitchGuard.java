@@ -1,5 +1,6 @@
 package me.aleksilassila.litematica.printer.utils;
 
+import me.aleksilassila.litematica.printer.runtime.RuntimeAccess;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -9,7 +10,7 @@ import java.util.function.Predicate;
 
 public final class InventorySwitchGuard {
 
-    private static final int MAX_SETTLE_TICKS = 12;
+    private static final int MAX_SETTLE_TICKS = 16;
     private final Minecraft client;
     private final LongSupplier tickClock;
     private Item pendingItem;
@@ -44,7 +45,7 @@ public final class InventorySwitchGuard {
         matchDamage = false;
         pendingSlot = slot;
         noteSyncedSlot(slot);
-        this.confirmationWindow.begin(this.tickClock.getAsLong());
+        this.confirmationWindow.begin(this.tickClock.getAsLong(), adaptiveMinSettleTicks());
         return true;
     }
 
@@ -65,7 +66,7 @@ public final class InventorySwitchGuard {
         pendingDamage = damage;
         pendingSlot = slot;
         noteSyncedSlot(slot);
-        this.confirmationWindow.begin(this.tickClock.getAsLong());
+        this.confirmationWindow.begin(this.tickClock.getAsLong(), adaptiveMinSettleTicks());
         return true;
     }
 
@@ -177,6 +178,19 @@ public final class InventorySwitchGuard {
 
     private void clear() {
         clearPendingOnly();
+    }
+
+    private int adaptiveMinSettleTicks() {
+        int rttMs = 0;
+        try {
+            rttMs = RuntimeAccess.get().rttReplayController().getEstimatedRttMillis();
+        } catch (Throwable ignored) {
+        }
+        if (rttMs <= 0) {
+            return 3;
+        }
+        int ticks = (int) Math.ceil(rttMs / 50.0D);
+        return Math.max(3, Math.min(MAX_SETTLE_TICKS, ticks));
     }
 
     private int currentSelectedSlot() {
