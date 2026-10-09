@@ -12,7 +12,11 @@ public class Implementation {
             DoorBlock.class,
             TrapDoorBlock.class,
             BedBlock.class,
+            //#if MC >= 260300
+            //$$ RedstoneWireBlock.class,
+            //#else
             RedStoneWireBlock.class,
+            //#endif
             ScaffoldingBlock.class,
             HopperBlock.class,
             EnchantingTableBlock.class,

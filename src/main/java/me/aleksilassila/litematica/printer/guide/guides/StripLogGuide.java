@@ -6,7 +6,7 @@ import me.aleksilassila.litematica.printer.guide.Guide;
 import me.aleksilassila.litematica.printer.guide.Result;
 import me.aleksilassila.litematica.printer.printer.SchematicBlockContext;
 import me.aleksilassila.litematica.printer.printer.action.Action;
-import net.fabricmc.fabric.mixin.content.registry.AxeItemAccessor;
+import me.aleksilassila.litematica.printer.utils.minecraft.StrippablesAccess;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -16,7 +16,7 @@ import java.util.Map;
 public class StripLogGuide extends Guide {
 
     @SuppressWarnings("all")
-    private static final Map<Block, Block> STRIPPED_LOGS = AxeItemAccessor.getStrippables();
+    private static final Map<Block, Block> STRIPPED_LOGS = StrippablesAccess.getStrippables();
 
     public StripLogGuide(SchematicBlockContext context) {
         super(context);

@@ -37,7 +37,11 @@ class CoverMaterialFilterTest {
     static void bootstrap() {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
-        //#if MC >= 260200
+        //#if MC >= 260300
+        //$$ BuiltInRegistries.DATA_COMPONENT_INITIALIZERS
+        //$$         .build(net.minecraft.data.registries.VanillaRegistries.createWorldLookup())
+        //$$         .forEach(net.minecraft.core.component.DataComponentInitializers.PendingComponents::apply);
+        //#elseif MC >= 260200
         BuiltInRegistries.DATA_COMPONENT_INITIALIZERS
                 .build(net.minecraft.data.registries.VanillaRegistries.createLookup())
                 .forEach(net.minecraft.core.component.DataComponentInitializers.PendingComponents::apply);

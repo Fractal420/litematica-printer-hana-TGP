@@ -107,12 +107,14 @@ dependencies {
     }
 
     if (mcVersionInt >= 12006) {
-        val quickshulkerUrl = prop("quickshulker").toString()
+        val quickshulkerUrl = propStrOrNull("quickshulker")?.trim().orEmpty()
         if (quickshulkerUrl.isNotEmpty()) {
             val quickshulkerFile = downloadDependencyMod(quickshulkerUrl)
-            if (quickshulkerFile != null && quickshulkerFile.exists()) {
-                modImplementation(files(quickshulkerFile))
+            require(quickshulkerFile != null && quickshulkerFile.exists()) {
+                "Failed to download quickshulker dependency from $quickshulkerUrl"
             }
+            modImplementation(files(quickshulkerFile))
+            modCompileOnly(files(quickshulkerFile))
         }
         if (mcVersionInt == 12006) {
             run {
@@ -138,12 +140,14 @@ dependencies {
         }
     }
 
-    val chestTrackerUrl = propStrOrNull("chesttracker")
-    if (chestTrackerUrl?.startsWith("http") == true) {
+    val chestTrackerUrl = propStrOrNull("chesttracker")?.trim()
+    if (!chestTrackerUrl.isNullOrEmpty() && chestTrackerUrl.startsWith("http")) {
         val chestTrackerFile = downloadDependencyMod(chestTrackerUrl)
-        if (chestTrackerFile != null && chestTrackerFile.exists()) {
-            modImplementation(files(chestTrackerFile))
+        require(chestTrackerFile != null && chestTrackerFile.exists()) {
+            "Failed to download chesttracker dependency from $chestTrackerUrl"
         }
+        modImplementation(files(chestTrackerFile))
+        modCompileOnly(files(chestTrackerFile))
     }
 }
 

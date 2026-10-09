@@ -1,7 +1,7 @@
 package me.aleksilassila.litematica.printer.integration.inventory;
 
 import me.aleksilassila.litematica.printer.interaction.StrippableBlockPort;
-import net.fabricmc.fabric.mixin.content.registry.AxeItemAccessor;
+import me.aleksilassila.litematica.printer.utils.minecraft.StrippablesAccess;
 import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,7 +12,7 @@ public final class StrippableBlockAdapter implements StrippableBlockPort {
     private final Map<Block, Block> sourceByStripped = new IdentityHashMap<>();
 
     public StrippableBlockAdapter() {
-        for (Map.Entry<Block, Block> entry : AxeItemAccessor.getStrippables().entrySet()) {
+        for (Map.Entry<Block, Block> entry : StrippablesAccess.getStrippables().entrySet()) {
             this.sourceByStripped.putIfAbsent(entry.getValue(), entry.getKey());
         }
     }

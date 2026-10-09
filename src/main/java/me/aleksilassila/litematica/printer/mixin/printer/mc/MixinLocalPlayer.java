@@ -55,7 +55,11 @@ public class MixinLocalPlayer extends AbstractClientPlayer {
     }
 
     @Inject(method = "openTextEdit", at = @At("HEAD"), cancellable = true)
-    //#if MC > 11904
+    //#if MC >= 260300
+    //$$ public void openTextEdit(SignBlockEntity sign, net.minecraft.world.level.block.entity.SignTextSlot slot, CallbackInfo ci) {
+    //$$     openEditSignScreen(sign, slot, ci);
+    //$$ }
+    //#elseif MC > 11904
     public void openTextEdit(SignBlockEntity sign, boolean front, CallbackInfo ci) {
         openEditSignScreen(sign, front, ci);
     }
@@ -66,6 +70,26 @@ public class MixinLocalPlayer extends AbstractClientPlayer {
     //#endif
 
     @Unique
+    //#if MC >= 260300
+    //$$ public void openEditSignScreen(SignBlockEntity sign, net.minecraft.world.level.block.entity.SignTextSlot slot, CallbackInfo ci) {
+    //$$     if (!Configs.Core.WORK_SWITCH.getBooleanValue()) {
+    //$$         return;
+    //$$     }
+    //$$     getTargetSignEntity(sign)
+    //$$             .filter(signBlockEntity -> RuntimeAccess.get().actionBroker().consumePrintSignEdit(sign.getBlockPos()))
+    //$$             .ifPresent(signBlockEntity ->
+    //$$     {
+    //$$         java.util.List<net.minecraft.network.chat.Component> messages = signBlockEntity.getText(slot).getMessages(false);
+    //$$         java.util.List<String> lines = new java.util.ArrayList<>(4);
+    //$$         for (int i = 0; i < 4; i++) {
+    //$$             lines.add(i < messages.size() ? messages.get(i).getString() : "");
+    //$$         }
+    //$$         ServerboundSignUpdatePacket packet = new ServerboundSignUpdatePacket(sign.getBlockPos(), lines, slot);
+    //$$         this.connection.send(packet);
+    //$$         ci.cancel();
+    //$$     });
+    //$$ }
+    //#else
     public void openEditSignScreen(SignBlockEntity sign, boolean front, CallbackInfo ci) {
         if (!Configs.Core.WORK_SWITCH.getBooleanValue()) {
             return;
@@ -98,6 +122,7 @@ public class MixinLocalPlayer extends AbstractClientPlayer {
             ci.cancel();
         });
     }
+    //#endif
 
     @Unique
     private Optional<SignBlockEntity> getTargetSignEntity(SignBlockEntity sign) {

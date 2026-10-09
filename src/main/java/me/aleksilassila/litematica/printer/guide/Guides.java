@@ -107,7 +107,11 @@ public class Guides {
 
         register(ComparatorGuide::new, net.minecraft.world.level.block.ComparatorBlock.class);
 
+        //#if MC >= 260300
+        //$$ register(RedstoneWireGuide::new, RedstoneWireBlock.class);
+        //#else
         register(RedstoneWireGuide::new, RedStoneWireBlock.class);
+        //#endif
 
         register(LeverGuide::new, LeverBlock.class);
 
@@ -143,7 +147,11 @@ public class Guides {
 
         register(ComposterGuide::new, ComposterBlock.class);
 
+        //#if MC >= 260300
+        //$$ register(SoilGuide::new, FarmlandBlock.class, PathBlock.class);
+        //#else
         register(SoilGuide::new, FarmlandBlock.class, DirtPathBlock.class);
+        //#endif
 
         register(FlowerPotGuide::new, FlowerPotBlock.class);
 

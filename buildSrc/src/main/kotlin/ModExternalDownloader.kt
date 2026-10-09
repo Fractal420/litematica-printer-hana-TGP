@@ -10,8 +10,8 @@ import java.nio.file.StandardCopyOption
 
 object ExternalModDownloader {
 
-    private const val CONNECT_TIMEOUT = 10000
-    private const val READ_TIMEOUT = 30000
+    private const val CONNECT_TIMEOUT = 30000
+    private const val READ_TIMEOUT = 120000
 
     private val USER_AGENT = "Gradle/${GradleVersion.current().version}"
 

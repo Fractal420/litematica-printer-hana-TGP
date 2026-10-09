@@ -9,6 +9,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 //#if MC >= 12103
 import net.minecraft.world.entity.player.Input;
+//#endif
+//#if MC >= 12105
 import net.minecraft.world.phys.Vec2;
 //#endif
 
@@ -31,10 +33,15 @@ public abstract class MixinKeyboardInput {
                 || RuntimeAccess.get().manualVanillaRefill().allowsPlayerMovement()) {
             return;
         }
-        //#if MC >= 12103
+        //#if MC >= 12105
         KeyboardInput self = (KeyboardInput) (Object) this;
         self.keyPresses = Input.EMPTY;
         ((ClientInputAccessor) (Object) this).litematica_printer$setMoveVector(Vec2.ZERO);
+        //#elseif MC >= 12103
+        //$$ KeyboardInput self = (KeyboardInput) (Object) this;
+        //$$ self.keyPresses = Input.EMPTY;
+        //$$ self.leftImpulse = 0.0F;
+        //$$ self.forwardImpulse = 0.0F;
         //#else
         //$$ KeyboardInput self = (KeyboardInput) (Object) this;
         //$$ self.forwardImpulse = 0.0F;

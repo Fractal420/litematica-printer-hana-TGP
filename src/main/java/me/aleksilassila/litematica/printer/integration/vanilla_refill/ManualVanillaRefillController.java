@@ -13,6 +13,7 @@ import me.aleksilassila.litematica.printer.utils.InteractionUtils;
 import me.aleksilassila.litematica.printer.utils.CarriedItemUtils;
 import me.aleksilassila.litematica.printer.utils.InventoryUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.MessageUtils;
+import me.aleksilassila.litematica.printer.utils.minecraft.BlockUtils;
 import me.aleksilassila.litematica.printer.utils.minecraft.NetworkUtils;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.client.Minecraft;
@@ -1775,7 +1776,11 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         }
         InteractionUtils.getRuntime().continueDestroyBlockForMine(pos, face, true);
         this.client.gameMode.startDestroyBlock(pos, face);
-        player.swing(InteractionHand.MAIN_HAND);
+        //#if MC >= 260300
+                    //$$ player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+                    //#else
+                    player.swing(InteractionHand.MAIN_HAND);
+                    //#endif
         InteractionUtils.getRuntime().continueDestroyBlockForMine(pos, face, true);
     }
 
@@ -1790,7 +1795,11 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         }
         InteractionUtils.getRuntime().continueDestroyBlockForMine(pos, face, true);
         this.client.gameMode.continueDestroyBlock(pos, face);
-        player.swing(InteractionHand.MAIN_HAND);
+        //#if MC >= 260300
+                    //$$ player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+                    //#else
+                    player.swing(InteractionHand.MAIN_HAND);
+                    //#endif
         if (this.settleTicks > 0 && this.settleTicks % 20 == 0) {
             //#if MC >= 11900
             NetworkUtils.sendPacket(sequence -> new ServerboundPlayerActionPacket(
@@ -2304,7 +2313,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         if (isWaterBlock(state)) {
             return true;
         }
-        return state.canBeReplaced() && state.getFluidState().isEmpty();
+        return BlockUtils.isReplaceable(state) && state.getFluidState().isEmpty();
     }
 
     private static boolean isWaterBlock(BlockState state) {
@@ -2331,7 +2340,7 @@ public final class ManualVanillaRefillController implements RuntimeComponent {
         return !state.isAir()
                 && !isWaterBlock(state)
                 && !isLavaBlock(state)
-                && !state.canBeReplaced();
+                && !BlockUtils.isReplaceable(state);
     }
 
     private void enterLavaWait() {

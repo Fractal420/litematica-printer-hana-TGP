@@ -34,7 +34,13 @@ public class Reference {
         return version;
     }
 
+    //#if MC >= 260300
+    //$$ public static final Item[] COMPOSTABLE_ITEMS = net.minecraft.core.registries.BuiltInRegistries.ITEM.stream()
+    //$$         .filter(item -> item.components().has(net.minecraft.core.component.DataComponents.COMPOSTABLE))
+    //$$         .toArray(Item[]::new);
+    //#else
     public static final Item[] COMPOSTABLE_ITEMS = Arrays.stream(ComposterBlock.COMPOSTABLES.keySet().toArray(ItemLike[]::new)).map(ItemLike::asItem).toArray(Item[]::new);
+    //#endif
     public static final Item[] HOE_ITEMS = {Items.DIAMOND_HOE, Items.IRON_HOE, Items.GOLDEN_HOE, Items.NETHERITE_HOE, Items.STONE_HOE, Items.WOODEN_HOE};
     public static final Item[] SHOVEL_ITEMS = {Items.DIAMOND_SHOVEL, Items.IRON_SHOVEL, Items.GOLDEN_SHOVEL, Items.NETHERITE_SHOVEL, Items.STONE_SHOVEL, Items.WOODEN_SHOVEL};
     public static final Item[] AXE_ITEMS = {Items.DIAMOND_AXE, Items.IRON_AXE, Items.GOLDEN_AXE, Items.NETHERITE_AXE, Items.STONE_AXE, Items.WOODEN_AXE};

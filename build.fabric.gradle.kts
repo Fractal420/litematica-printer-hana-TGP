@@ -102,20 +102,24 @@ dependencies {
         exclude(group = "fi.dy.masa.malilib")
     }
 
-    val quickshulkerUrl = prop("quickshulker").toString()
+    val quickshulkerUrl = propStrOrNull("quickshulker")?.trim().orEmpty()
     if (quickshulkerUrl.isNotEmpty()) {
         val quickshulkerFile = downloadDependencyMod(quickshulkerUrl)
-        if (quickshulkerFile != null && quickshulkerFile.exists()) {
-            implementation(files(quickshulkerFile))
+        require(quickshulkerFile != null && quickshulkerFile.exists()) {
+            "Failed to download quickshulker dependency from $quickshulkerUrl"
         }
+        implementation(files(quickshulkerFile))
+        compileOnly(files(quickshulkerFile))
     }
 
-    val chestTrackerUrl = propStrOrNull("chesttracker")
-    if (chestTrackerUrl?.startsWith("http") == true) {
+    val chestTrackerUrl = propStrOrNull("chesttracker")?.trim()
+    if (!chestTrackerUrl.isNullOrEmpty() && chestTrackerUrl.startsWith("http")) {
         val chestTrackerFile = downloadDependencyMod(chestTrackerUrl)
-        if (chestTrackerFile != null && chestTrackerFile.exists()) {
-            implementation(files(chestTrackerFile))
+        require(chestTrackerFile != null && chestTrackerFile.exists()) {
+            "Failed to download chesttracker dependency from $chestTrackerUrl"
         }
+        implementation(files(chestTrackerFile))
+        compileOnly(files(chestTrackerFile))
     }
 
     implementation("me.fallenbreath:conditional-mixin-fabric:0.6.4")

@@ -42,8 +42,12 @@ import org.joml.Vector4f;
 
 //#if MC >= 260100
 import org.joml.Matrix4fc;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+//#if MC >= 260300
+//$$ import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+//#else
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+//#endif
 //#else
 //$$ import org.joml.Matrix4f;
 //#endif
@@ -197,7 +201,9 @@ public class HighlightBlockRenderer implements IRenderer {
     }
 
     @Override
-    //#if MC >= 260100
+    //#if MC >= 260300
+    //$$ public void onRenderWorldLast(RenderTarget fb, CameraRenderState cameraState, Frustum culling, RenderBuffers buffers, GpuBufferSlice terrainFog, Vector4f fogColor, ProfilerFiller profiler) {
+    //#elseif MC >= 260100
     public void onRenderWorldLast(RenderTarget fb, Matrix4fc matrices, CameraRenderState cameraState, Frustum culling, RenderBuffers buffers, GpuBufferSlice terrainFog, Vector4f fogColor, ProfilerFiller profiler) {
     //#elseif MC > 12004
     //$$ public void onRenderWorldLast(Matrix4f matrices, Matrix4f projMatrix) {
@@ -234,7 +240,11 @@ public class HighlightBlockRenderer implements IRenderer {
         shaderIng = true;
         try {
             for (HighlightRenderSnapshot snapshot : snapshots) {
+                //#if MC >= 260300
+                //$$ test3(null, snapshot.color, snapshot.pos);
+                //#else
                 test3(matrices, snapshot.color, snapshot.pos);
+                //#endif
             }
         } catch (RuntimeException exception) {
             logRenderFailure(exception);
