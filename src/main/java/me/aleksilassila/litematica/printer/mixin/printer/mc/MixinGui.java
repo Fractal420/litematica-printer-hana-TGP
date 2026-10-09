@@ -2,6 +2,7 @@ package me.aleksilassila.litematica.printer.mixin.printer.mc;
 
 import me.aleksilassila.litematica.printer.render.Render2D;
 import me.aleksilassila.litematica.printer.render.HudVisibilityPolicy;
+import me.aleksilassila.litematica.printer.render.WorkCrosshairRenderer;
 import me.aleksilassila.litematica.printer.utils.render.Render2DUtils;
 import me.aleksilassila.litematica.printer.config.Configs;
 import net.minecraft.client.Minecraft;
@@ -50,12 +51,17 @@ public abstract class MixinGui {
     //$$ private void hookRenderHud(PoseStack poseStack, float f, CallbackInfo ci) {
     //#endif
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null || mc.player.isSpectator()
-                || !HudVisibilityPolicy.shouldRender(
-                        Configs.Core.WORK_SWITCH.getBooleanValue(),
-                        Configs.Core.RENDER_HUD.getBooleanValue(),
-                        Configs.Core.MISSING_MATERIAL_HUD.getBooleanValue()
-                )) {
+        if (mc.player == null || mc.level == null || mc.player.isSpectator()) {
+            return;
+        }
+
+        boolean workEnabled = Configs.Core.WORK_SWITCH.getBooleanValue();
+        boolean showHud = HudVisibilityPolicy.shouldRender(
+                workEnabled,
+                Configs.Core.RENDER_HUD.getBooleanValue(),
+                Configs.Core.MISSING_MATERIAL_HUD.getBooleanValue()
+        );
+        if (!workEnabled && !showHud) {
             return;
         }
 
@@ -67,7 +73,26 @@ public abstract class MixinGui {
 
         float scaledWidth = mc.getWindow().getGuiScaledWidth();
         float scaledHeight = mc.getWindow().getGuiScaledHeight();
-        Render2D.INSTANCE.render(scaledWidth, scaledHeight);
+        if (workEnabled) {
+            WorkCrosshairRenderer.INSTANCE.render(scaledWidth, scaledHeight);
+        }
+        if (showHud) {
+            Render2D.INSTANCE.render(scaledWidth, scaledHeight);
+        }
     }
 
+    //#if MC > 12006
+    @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
+    private void litematicaPrinter$hideVanillaCrosshair(GuiGraphicsExtractor guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+    //#elseif MC > 11904
+    //$$ @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
+    //$$ private void litematicaPrinter$hideVanillaCrosshair(GuiGraphics guiGraphics, CallbackInfo ci) {
+    //#else
+    //$$ @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true)
+    //$$ private void litematicaPrinter$hideVanillaCrosshair(PoseStack poseStack, CallbackInfo ci) {
+    //#endif
+        if (Configs.Core.WORK_SWITCH.getBooleanValue()) {
+            ci.cancel();
+        }
+    }
 }
